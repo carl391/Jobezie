@@ -1,4 +1,12 @@
-name: CI/CD Pipeline
+# WAT Layer 1: Main CI Orchestrator
+# Coordinates all CI stages with proper parallelism and dependencies
+#
+# Architecture (WAT Framework):
+# - Layer 1 (This file): Orchestration & instructions
+# - Layer 2 (_*.yml): Reusable workflows (agents)
+# - Layer 3 (actions/): Composite actions (tools)
+
+name: CI Pipeline
 
 on:
   push:
@@ -6,174 +14,77 @@ on:
   pull_request:
     branches: [main, develop]
 
-env:
-  PYTHON_VERSION: '3.11'
-  FLASK_ENV: testing
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
+  # ============================================
+  # Stage 1: Parallel Linting (Backend + Frontend)
+  # ============================================
+  backend-lint:
+    name: Backend Lint
+    uses: ./.github/workflows/_backend-ci.yml
+    with:
+      stage: lint
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  frontend-lint:
+    name: Frontend Lint
+    uses: ./.github/workflows/_frontend-ci.yml
+    with:
+      stage: lint
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
+  # ============================================
+  # Stage 2: Parallel Testing (depends on lint)
+  # ============================================
+  backend-test:
+    name: Backend Test
+    needs: backend-lint
+    uses: ./.github/workflows/_backend-ci.yml
+    with:
+      stage: test
 
-      - name: Cache pip dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-lint-${{ hashFiles('requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-lint-
+  frontend-test:
+    name: Frontend Test
+    needs: frontend-lint
+    uses: ./.github/workflows/_frontend-ci.yml
+    with:
+      stage: test
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install flake8 black isort
-
-      - name: Check formatting with Black
-        run: black --check app tests
-
-      - name: Check imports with isort
-        run: isort --check-only app tests
-
-      - name: Lint with flake8
-        run: flake8 app tests --max-line-length=100 --ignore=E501,W503
-
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    needs: lint
-
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: jobezie_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-      redis:
-        image: redis:7
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Cache pip dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest pytest-cov
-
-      - name: Run tests with coverage
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/jobezie_test
-          REDIS_URL: redis://localhost:6379/0
-          SECRET_KEY: test-secret-key
-          JWT_SECRET_KEY: test-jwt-secret-key
-        run: |
-          pytest tests/ -v --cov=app --cov-report=xml --cov-report=term-missing --cov-fail-under=70
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./coverage.xml
-          fail_ci_if_error: false
-
+  # ============================================
+  # Stage 3: Security Scan (parallel with tests)
+  # ============================================
   security:
     name: Security Scan
+    needs: [backend-lint, frontend-lint]
+    uses: ./.github/workflows/_security-scan.yml
+
+  # ============================================
+  # Stage 4: Build (depends on all checks)
+  # ============================================
+  build:
+    name: Build Frontend
+    needs: [backend-test, frontend-test, security]
+    uses: ./.github/workflows/_frontend-ci.yml
+    with:
+      stage: build
+
+  # ============================================
+  # Quality Gate: All checks must pass
+  # ============================================
+  ci-complete:
+    name: CI Complete
+    needs: [backend-test, frontend-test, security, build]
     runs-on: ubuntu-latest
-    needs: lint
-
+    if: always()
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install dependencies
+      - name: Check all jobs passed
         run: |
-          python -m pip install --upgrade pip
-          pip install bandit safety
-
-      - name: Run Bandit security scan
-        run: bandit -r app -ll -ii
-
-      - name: Check dependencies for vulnerabilities
-        run: |
-          pip install -r requirements.txt
-          safety check --full-report || true
-
-  deploy-staging:
-    name: Deploy to Staging (Railway)
-    runs-on: ubuntu-latest
-    needs: [test, security]
-    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install Railway CLI
-        run: npm i -g @railway/cli
-
-      - name: Deploy to Railway
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: railway up --service jobezie-api-staging
-
-  deploy-production:
-    name: Deploy to Production (Render)
-    runs-on: ubuntu-latest
-    needs: [test, security]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Deploy to Render
-        env:
-          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
-        run: |
-          curl -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
-            -H "Authorization: Bearer $RENDER_API_KEY" \
-            -H "Content-Type: application/json"
+          if [ "${{ needs.backend-test.result }}" != "success" ] || \
+             [ "${{ needs.frontend-test.result }}" != "success" ] || \
+             [ "${{ needs.security.result }}" != "success" ] || \
+             [ "${{ needs.build.result }}" != "success" ]; then
+            echo "One or more jobs failed"
+            exit 1
+          fi
+          echo "All CI checks passed successfully"

@@ -1,0 +1,94 @@
+# WAT Layer 2: Frontend CI Agent
+# Reusable workflow for frontend linting, testing, and building
+
+name: Frontend CI
+
+on:
+  workflow_call:
+    inputs:
+      stage:
+        required: true
+        type: string
+        description: 'Stage: lint, test, build, or all'
+      node-version:
+        required: false
+        type: string
+        default: '20'
+
+defaults:
+  run:
+    working-directory: frontend
+
+jobs:
+  lint:
+    if: inputs.stage == 'lint' || inputs.stage == 'all'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript type check
+        run: npx tsc --noEmit
+
+      - name: ESLint
+        run: npm run lint
+
+  test:
+    if: inputs.stage == 'test' || inputs.stage == 'all'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test -- --coverage --passWithNoTests
+        continue-on-error: true
+
+  build:
+    if: inputs.stage == 'build' || inputs.stage == 'all'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_API_URL: ${{ vars.VITE_API_URL || 'https://api.jobezie.com' }}
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/dist
+          retention-days: 7

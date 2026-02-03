@@ -5,26 +5,26 @@ Provides validation functions for user input with security hardening
 against XSS, SQL injection, and other common attacks.
 """
 
-import re
 import html
+import re
 from typing import Optional
 
 
 class ValidationError(Exception):
     """Raised when validation fails."""
+
     pass
 
 
 # Dangerous patterns for security validation
 DANGEROUS_PATTERNS = [
     # XSS patterns
-    r'<script[^>]*>',
-    r'javascript:',
-    r'on\w+\s*=',
-    r'<iframe[^>]*>',
-    r'<object[^>]*>',
-    r'<embed[^>]*>',
-
+    r"<script[^>]*>",
+    r"javascript:",
+    r"on\w+\s*=",
+    r"<iframe[^>]*>",
+    r"<object[^>]*>",
+    r"<embed[^>]*>",
     # SQL injection patterns
     r"'\s*;\s*drop\s+table",
     r"'\s*;\s*delete\s+from",
@@ -32,22 +32,19 @@ DANGEROUS_PATTERNS = [
     r"'\s*or\s+1\s*=\s*1",
     r"union\s+select",
     r"insert\s+into",
-
     # Command injection patterns
-    r'\bexec\s*\(',
-    r'\beval\s*\(',
-    r'__import__',
-    r'\bos\.',
-    r'\bsubprocess\.',
+    r"\bexec\s*\(",
+    r"\beval\s*\(",
+    r"__import__",
+    r"\bos\.",
+    r"\bsubprocess\.",
 ]
 
 # Email validation pattern (RFC 5322 simplified)
-EMAIL_PATTERN = re.compile(
-    r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-)
+EMAIL_PATTERN = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
 
 # Name validation pattern
-NAME_PATTERN = re.compile(r'^[\w\s\'-]+$', re.UNICODE)
+NAME_PATTERN = re.compile(r"^[\w\s\'-]+$", re.UNICODE)
 
 
 def validate_email(email: str) -> str:
@@ -64,19 +61,19 @@ def validate_email(email: str) -> str:
         ValidationError: If email is invalid
     """
     if not email:
-        raise ValidationError('Email is required')
+        raise ValidationError("Email is required")
 
     email = email.strip().lower()
 
     if len(email) > 255:
-        raise ValidationError('Email must be less than 255 characters')
+        raise ValidationError("Email must be less than 255 characters")
 
     if not EMAIL_PATTERN.match(email):
-        raise ValidationError('Invalid email format')
+        raise ValidationError("Invalid email format")
 
     # Check for dangerous patterns
     if contains_dangerous_patterns(email):
-        raise ValidationError('Email contains invalid characters')
+        raise ValidationError("Email contains invalid characters")
 
     return email
 
@@ -102,27 +99,27 @@ def validate_password(password: str, min_length: int = 8) -> str:
         ValidationError: If password doesn't meet requirements
     """
     if not password:
-        raise ValidationError('Password is required')
+        raise ValidationError("Password is required")
 
     if len(password) < min_length:
-        raise ValidationError(f'Password must be at least {min_length} characters')
+        raise ValidationError(f"Password must be at least {min_length} characters")
 
     if len(password) > 128:
-        raise ValidationError('Password must be less than 128 characters')
+        raise ValidationError("Password must be less than 128 characters")
 
-    if not re.search(r'[A-Z]', password):
-        raise ValidationError('Password must contain at least one uppercase letter')
+    if not re.search(r"[A-Z]", password):
+        raise ValidationError("Password must contain at least one uppercase letter")
 
-    if not re.search(r'[a-z]', password):
-        raise ValidationError('Password must contain at least one lowercase letter')
+    if not re.search(r"[a-z]", password):
+        raise ValidationError("Password must contain at least one lowercase letter")
 
-    if not re.search(r'\d', password):
-        raise ValidationError('Password must contain at least one digit')
+    if not re.search(r"\d", password):
+        raise ValidationError("Password must contain at least one digit")
 
     return password
 
 
-def validate_name(name: str, field_name: str = 'Name', max_length: int = 100) -> str:
+def validate_name(name: str, field_name: str = "Name", max_length: int = 100) -> str:
     """
     Validate a name field.
 
@@ -138,22 +135,22 @@ def validate_name(name: str, field_name: str = 'Name', max_length: int = 100) ->
         ValidationError: If name is invalid
     """
     if not name:
-        raise ValidationError(f'{field_name} is required')
+        raise ValidationError(f"{field_name} is required")
 
     name = name.strip()
 
     if len(name) > max_length:
-        raise ValidationError(f'{field_name} must be less than {max_length} characters')
+        raise ValidationError(f"{field_name} must be less than {max_length} characters")
 
     # Validate pattern BEFORE sanitization (apostrophes, hyphens are valid in names)
     if not NAME_PATTERN.match(name):
-        raise ValidationError(f'{field_name} contains invalid characters')
+        raise ValidationError(f"{field_name} contains invalid characters")
 
     # Sanitize after validation for safe storage/display
     return sanitize_string(name)
 
 
-def validate_url(url: str, field_name: str = 'URL') -> str:
+def validate_url(url: str, field_name: str = "URL") -> str:
     """
     Validate URL format.
 
@@ -168,39 +165,40 @@ def validate_url(url: str, field_name: str = 'URL') -> str:
         ValidationError: If URL is invalid
     """
     if not url:
-        raise ValidationError(f'{field_name} is required')
+        raise ValidationError(f"{field_name} is required")
 
     url = url.strip()
 
     if len(url) > 2000:
-        raise ValidationError(f'{field_name} must be less than 2000 characters')
+        raise ValidationError(f"{field_name} must be less than 2000 characters")
 
     # Basic URL pattern
     url_pattern = re.compile(
-        r'^https?://'
-        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|'
-        r'localhost|'
-        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'
-        r'(?::\d+)?'
-        r'(?:/?|[/?]\S+)$', re.IGNORECASE
+        r"^https?://"
+        r"(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|"
+        r"localhost|"
+        r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})"
+        r"(?::\d+)?"
+        r"(?:/?|[/?]\S+)$",
+        re.IGNORECASE,
     )
 
     if not url_pattern.match(url):
-        raise ValidationError(f'Invalid {field_name} format')
+        raise ValidationError(f"Invalid {field_name} format")
 
     # Check for javascript: URLs
-    if 'javascript:' in url.lower():
-        raise ValidationError(f'{field_name} contains invalid protocol')
+    if "javascript:" in url.lower():
+        raise ValidationError(f"{field_name} contains invalid protocol")
 
     return url
 
 
 def validate_string(
     value: str,
-    field_name: str = 'Field',
+    field_name: str = "Field",
     min_length: int = 0,
     max_length: int = 2000,
-    required: bool = True
+    required: bool = True,
 ) -> Optional[str]:
     """
     Validate and sanitize a string field.
@@ -220,19 +218,19 @@ def validate_string(
     """
     if not value or not value.strip():
         if required:
-            raise ValidationError(f'{field_name} is required')
+            raise ValidationError(f"{field_name} is required")
         return None
 
     value = sanitize_string(value.strip())
 
     if len(value) < min_length:
-        raise ValidationError(f'{field_name} must be at least {min_length} characters')
+        raise ValidationError(f"{field_name} must be at least {min_length} characters")
 
     if len(value) > max_length:
-        raise ValidationError(f'{field_name} must be less than {max_length} characters')
+        raise ValidationError(f"{field_name} must be less than {max_length} characters")
 
     if contains_dangerous_patterns(value):
-        raise ValidationError(f'{field_name} contains invalid content')
+        raise ValidationError(f"{field_name} contains invalid content")
 
     return value
 
@@ -254,11 +252,12 @@ def sanitize_string(value: str) -> str:
     value = html.escape(value, quote=True)
 
     # Remove null bytes
-    value = value.replace('\x00', '')
+    value = value.replace("\x00", "")
 
     # Normalize unicode (NFKC normalization)
     import unicodedata
-    value = unicodedata.normalize('NFKC', value)
+
+    value = unicodedata.normalize("NFKC", value)
 
     return value
 
@@ -286,10 +285,7 @@ def contains_dangerous_patterns(value: str) -> bool:
 
 
 def validate_list(
-    items: list,
-    field_name: str = 'Items',
-    max_items: int = 100,
-    validate_item=None
+    items: list, field_name: str = "Items", max_items: int = 100, validate_item=None
 ) -> list:
     """
     Validate a list of items.
@@ -307,10 +303,10 @@ def validate_list(
         ValidationError: If list is invalid
     """
     if not isinstance(items, list):
-        raise ValidationError(f'{field_name} must be a list')
+        raise ValidationError(f"{field_name} must be a list")
 
     if len(items) > max_items:
-        raise ValidationError(f'{field_name} cannot have more than {max_items} items')
+        raise ValidationError(f"{field_name} cannot have more than {max_items} items")
 
     if validate_item:
         return [validate_item(item) for item in items]
@@ -320,10 +316,7 @@ def validate_list(
 
 
 def validate_integer(
-    value,
-    field_name: str = 'Value',
-    min_value: int = None,
-    max_value: int = None
+    value, field_name: str = "Value", min_value: int = None, max_value: int = None
 ) -> int:
     """
     Validate and convert to integer.
@@ -343,12 +336,12 @@ def validate_integer(
     try:
         value = int(value)
     except (TypeError, ValueError):
-        raise ValidationError(f'{field_name} must be a valid integer')
+        raise ValidationError(f"{field_name} must be a valid integer")
 
     if min_value is not None and value < min_value:
-        raise ValidationError(f'{field_name} must be at least {min_value}')
+        raise ValidationError(f"{field_name} must be at least {min_value}")
 
     if max_value is not None and value > max_value:
-        raise ValidationError(f'{field_name} must be at most {max_value}')
+        raise ValidationError(f"{field_name} must be at most {max_value}")
 
     return value

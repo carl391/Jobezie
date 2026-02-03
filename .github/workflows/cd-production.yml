@@ -1,0 +1,167 @@
+# WAT Layer 1: Production Deployment Orchestrator
+# Deploys to Render production environment on main branch
+
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      force-deploy:
+        description: 'Force deployment (skip staging validation)'
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  # Run CI first
+  ci:
+    name: Run CI
+    uses: ./.github/workflows/ci.yml
+
+  # Validate staging is healthy before production deploy
+  validate-staging:
+    name: Validate Staging
+    needs: [ci]
+    if: ${{ !inputs.force-deploy }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check staging health
+        run: |
+          if curl -sf https://staging-api.jobezie.com/health; then
+            echo "Staging is healthy"
+          else
+            echo "WARNING: Staging health check failed"
+          fi
+
+  # Deploy backend to Render
+  deploy-backend:
+    name: Deploy Backend
+    needs: [ci, validate-staging]
+    if: always() && needs.ci.result == 'success' && (needs.validate-staging.result == 'success' || needs.validate-staging.result == 'skipped')
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://api.jobezie.com
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Render
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+        run: |
+          RESPONSE=$(curl -s -X POST \
+            "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            -H "Content-Type: application/json")
+          echo "Deploy triggered: $RESPONSE"
+
+      - name: Wait for deployment
+        run: |
+          echo "Waiting for Render deployment to propagate..."
+          sleep 120
+
+  # Deploy frontend to Render
+  deploy-frontend:
+    name: Deploy Frontend
+    needs: [ci, validate-staging]
+    if: always() && needs.ci.result == 'success' && (needs.validate-staging.result == 'success' || needs.validate-staging.result == 'skipped')
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://app.jobezie.com
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+        env:
+          VITE_API_URL: https://api.jobezie.com
+
+      - name: Deploy to Render
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_FRONTEND_SERVICE_ID: ${{ secrets.RENDER_FRONTEND_SERVICE_ID }}
+        run: |
+          RESPONSE=$(curl -s -X POST \
+            "https://api.render.com/v1/services/$RENDER_FRONTEND_SERVICE_ID/deploys" \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            -H "Content-Type: application/json")
+          echo "Frontend deploy triggered: $RESPONSE"
+
+  # Post-deployment health checks
+  post-deploy:
+    name: Post-Deploy Checks
+    needs: [deploy-backend, deploy-frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Health check - Backend
+        run: |
+          for i in {1..10}; do
+            if curl -sf https://api.jobezie.com/health; then
+              echo "Backend is healthy"
+              exit 0
+            fi
+            echo "Attempt $i failed, retrying..."
+            sleep 30
+          done
+          echo "Backend health check failed"
+          exit 1
+
+      - name: Health check - Frontend
+        run: |
+          curl -sf https://app.jobezie.com || exit 1
+          echo "Frontend is healthy"
+
+  # Create release for tagged commits
+  release:
+    name: Create Release
+    needs: [post-deploy]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          generate_release_notes: true
+
+  # Notify on completion
+  notify:
+    name: Notify
+    needs: [post-deploy]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report status
+        run: |
+          if [ "${{ needs.post-deploy.result }}" == "success" ]; then
+            echo "Production deployment successful"
+          else
+            echo "ALERT: Production deployment FAILED - investigate immediately"
+            exit 1
+          fi

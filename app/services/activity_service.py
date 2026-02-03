@@ -100,20 +100,19 @@ class ActivityService:
 
         total = query.count()
 
-        activities = query.order_by(
-            Activity.created_at.desc()
-        ).offset(offset).limit(limit).all()
+        activities = query.order_by(Activity.created_at.desc()).offset(offset).limit(limit).all()
 
         return activities, total
 
     @staticmethod
     def get_recent_activities(user_id: str, limit: int = 10) -> List[Activity]:
         """Get most recent activities for dashboard timeline."""
-        return Activity.query.filter_by(
-            user_id=user_id
-        ).order_by(
-            Activity.created_at.desc()
-        ).limit(limit).all()
+        return (
+            Activity.query.filter_by(user_id=user_id)
+            .order_by(Activity.created_at.desc())
+            .limit(limit)
+            .all()
+        )
 
     @staticmethod
     def get_activity_counts(user_id: str, days: int = 30) -> Dict:
@@ -130,8 +129,7 @@ class ActivityService:
         start_date = datetime.utcnow() - timedelta(days=days)
 
         activities = Activity.query.filter(
-            Activity.user_id == user_id,
-            Activity.created_at >= start_date
+            Activity.user_id == user_id, Activity.created_at >= start_date
         ).all()
 
         counts = {t.value: 0 for t in ActivityType}
@@ -140,9 +138,9 @@ class ActivityService:
                 counts[activity.activity_type] += 1
 
         return {
-            'period_days': days,
-            'total': len(activities),
-            'by_type': counts,
+            "period_days": days,
+            "total": len(activities),
+            "by_type": counts,
         }
 
     # Pipeline / Kanban Management
@@ -157,29 +155,31 @@ class ActivityService:
         """
         pipeline = {stage.value: [] for stage in PipelineStage}
 
-        items = PipelineItem.query.filter_by(
-            user_id=user_id
-        ).order_by(
-            PipelineItem.position
-        ).all()
+        items = PipelineItem.query.filter_by(user_id=user_id).order_by(PipelineItem.position).all()
 
         for item in items:
             recruiter = Recruiter.query.get(item.recruiter_id)
             if recruiter:
-                pipeline[item.stage].append({
-                    'id': str(item.id),
-                    'recruiter_id': str(item.recruiter_id),
-                    'recruiter_name': recruiter.full_name,
-                    'company': recruiter.company,
-                    'position': item.position,
-                    'priority_score': item.priority_score,
-                    'days_in_stage': item.days_in_stage,
-                    'last_activity_date': item.last_activity_date.isoformat() if item.last_activity_date else None,
-                    'next_action': item.next_action,
-                    'next_action_date': item.next_action_date.isoformat() if item.next_action_date else None,
-                    'engagement_score': recruiter.engagement_score,
-                    'fit_score': recruiter.fit_score,
-                })
+                pipeline[item.stage].append(
+                    {
+                        "id": str(item.id),
+                        "recruiter_id": str(item.recruiter_id),
+                        "recruiter_name": recruiter.full_name,
+                        "company": recruiter.company,
+                        "position": item.position,
+                        "priority_score": item.priority_score,
+                        "days_in_stage": item.days_in_stage,
+                        "last_activity_date": (
+                            item.last_activity_date.isoformat() if item.last_activity_date else None
+                        ),
+                        "next_action": item.next_action,
+                        "next_action_date": (
+                            item.next_action_date.isoformat() if item.next_action_date else None
+                        ),
+                        "engagement_score": recruiter.engagement_score,
+                        "fit_score": recruiter.fit_score,
+                    }
+                )
 
         return pipeline
 
@@ -202,10 +202,7 @@ class ActivityService:
         Returns:
             Updated PipelineItem
         """
-        item = PipelineItem.query.filter_by(
-            id=item_id,
-            user_id=user_id
-        ).first()
+        item = PipelineItem.query.filter_by(id=item_id, user_id=user_id).first()
 
         if not item:
             raise ValueError("Pipeline item not found")
@@ -241,12 +238,12 @@ class ActivityService:
         # Update position
         if new_position is not None:
             # Reorder items in the stage
-            items_in_stage = PipelineItem.query.filter_by(
-                user_id=user_id,
-                stage=new_stage
-            ).filter(
-                PipelineItem.id != item_id
-            ).order_by(PipelineItem.position).all()
+            items_in_stage = (
+                PipelineItem.query.filter_by(user_id=user_id, stage=new_stage)
+                .filter(PipelineItem.id != item_id)
+                .order_by(PipelineItem.position)
+                .all()
+            )
 
             # Insert at new position
             for i, other_item in enumerate(items_in_stage):
@@ -258,10 +255,12 @@ class ActivityService:
             item.position = new_position
         else:
             # Add to end of stage
-            max_pos = db.session.query(db.func.max(PipelineItem.position)).filter_by(
-                user_id=user_id,
-                stage=new_stage
-            ).scalar() or -1
+            max_pos = (
+                db.session.query(db.func.max(PipelineItem.position))
+                .filter_by(user_id=user_id, stage=new_stage)
+                .scalar()
+                or -1
+            )
             item.position = max_pos + 1
 
         item.updated_at = datetime.utcnow()
@@ -342,20 +341,20 @@ class ActivityService:
             Dictionary with stage counts and metrics
         """
         stats = {
-            'total': 0,
-            'by_stage': {},
-            'avg_days_in_stage': {},
-            'items_needing_action': 0,
-            'stale_items': 0,  # No activity in 14+ days
+            "total": 0,
+            "by_stage": {},
+            "avg_days_in_stage": {},
+            "items_needing_action": 0,
+            "stale_items": 0,  # No activity in 14+ days
         }
 
         items = PipelineItem.query.filter_by(user_id=user_id).all()
-        stats['total'] = len(items)
+        stats["total"] = len(items)
 
         # Initialize stage counts
         for stage in PipelineStage:
-            stats['by_stage'][stage.value] = 0
-            stats['avg_days_in_stage'][stage.value] = 0
+            stats["by_stage"][stage.value] = 0
+            stats["avg_days_in_stage"][stage.value] = 0
 
         if not items:
             return stats
@@ -364,19 +363,19 @@ class ActivityService:
         stage_days = {stage.value: [] for stage in PipelineStage}
 
         for item in items:
-            stats['by_stage'][item.stage] += 1
+            stats["by_stage"][item.stage] += 1
             stage_days[item.stage].append(item.days_in_stage or 0)
 
             if item.next_action:
-                stats['items_needing_action'] += 1
+                stats["items_needing_action"] += 1
 
             if item.days_in_stage and item.days_in_stage >= 14:
-                stats['stale_items'] += 1
+                stats["stale_items"] += 1
 
         # Calculate averages
         for stage, days_list in stage_days.items():
             if days_list:
-                stats['avg_days_in_stage'][stage] = round(sum(days_list) / len(days_list), 1)
+                stats["avg_days_in_stage"][stage] = round(sum(days_list) / len(days_list), 1)
 
         return stats
 
@@ -402,27 +401,26 @@ class ActivityService:
         if recruiter_id:
             query = query.filter_by(recruiter_id=recruiter_id)
 
-        activities = query.order_by(
-            Activity.created_at.desc()
-        ).limit(limit).all()
+        activities = query.order_by(Activity.created_at.desc()).limit(limit).all()
 
         timeline = []
         for activity in activities:
             item = {
-                'id': str(activity.id),
-                'type': activity.activity_type,
-                'description': activity.description or ActivityService._get_default_description(activity),
-                'timestamp': activity.created_at.isoformat(),
-                'recruiter_id': str(activity.recruiter_id) if activity.recruiter_id else None,
-                'extra_data': activity.extra_data,
+                "id": str(activity.id),
+                "type": activity.activity_type,
+                "description": activity.description
+                or ActivityService._get_default_description(activity),
+                "timestamp": activity.created_at.isoformat(),
+                "recruiter_id": (str(activity.recruiter_id) if activity.recruiter_id else None),
+                "extra_data": activity.extra_data,
             }
 
             # Add recruiter name if available
             if activity.recruiter_id:
                 recruiter = Recruiter.query.get(activity.recruiter_id)
                 if recruiter:
-                    item['recruiter_name'] = recruiter.full_name
-                    item['company'] = recruiter.company
+                    item["recruiter_name"] = recruiter.full_name
+                    item["company"] = recruiter.company
 
             timeline.append(item)
 
@@ -462,38 +460,41 @@ class ActivityService:
         start_of_week = datetime.utcnow() - timedelta(days=7)
 
         activities = Activity.query.filter(
-            Activity.user_id == user_id,
-            Activity.created_at >= start_of_week
+            Activity.user_id == user_id, Activity.created_at >= start_of_week
         ).all()
 
         summary = {
-            'total_activities': len(activities),
-            'messages_sent': 0,
-            'responses_received': 0,
-            'interviews_scheduled': 0,
-            'recruiters_added': 0,
-            'resumes_tailored': 0,
-            'highlights': [],
+            "total_activities": len(activities),
+            "messages_sent": 0,
+            "responses_received": 0,
+            "interviews_scheduled": 0,
+            "recruiters_added": 0,
+            "resumes_tailored": 0,
+            "highlights": [],
         }
 
         for activity in activities:
             if activity.activity_type == ActivityType.MESSAGE_SENT.value:
-                summary['messages_sent'] += 1
+                summary["messages_sent"] += 1
             elif activity.activity_type == ActivityType.RESPONSE_RECEIVED.value:
-                summary['responses_received'] += 1
+                summary["responses_received"] += 1
             elif activity.activity_type == ActivityType.INTERVIEW_SCHEDULED.value:
-                summary['interviews_scheduled'] += 1
+                summary["interviews_scheduled"] += 1
             elif activity.activity_type == ActivityType.RECRUITER_ADDED.value:
-                summary['recruiters_added'] += 1
+                summary["recruiters_added"] += 1
             elif activity.activity_type == ActivityType.RESUME_TAILORED.value:
-                summary['resumes_tailored'] += 1
+                summary["resumes_tailored"] += 1
 
         # Generate highlights
-        if summary['responses_received'] > 0:
-            summary['highlights'].append(f"Received {summary['responses_received']} response(s)")
-        if summary['interviews_scheduled'] > 0:
-            summary['highlights'].append(f"Scheduled {summary['interviews_scheduled']} interview(s)")
-        if summary['messages_sent'] > 5:
-            summary['highlights'].append(f"Sent {summary['messages_sent']} messages - great outreach!")
+        if summary["responses_received"] > 0:
+            summary["highlights"].append(f"Received {summary['responses_received']} response(s)")
+        if summary["interviews_scheduled"] > 0:
+            summary["highlights"].append(
+                f"Scheduled {summary['interviews_scheduled']} interview(s)"
+            )
+        if summary["messages_sent"] > 5:
+            summary["highlights"].append(
+                f"Sent {summary['messages_sent']} messages - great outreach!"
+            )
 
         return summary

@@ -4,16 +4,15 @@ Resume Routes
 API endpoints for resume management and ATS scoring.
 """
 
-from flask import Blueprint, request, jsonify, current_app
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask import Blueprint, current_app, jsonify, request
+from flask_jwt_extended import get_jwt_identity, jwt_required
 
 from app.services.resume_service import ResumeService
 
+resume_bp = Blueprint("resume", __name__, url_prefix="/api/resumes")
 
-resume_bp = Blueprint('resume', __name__, url_prefix='/api/resumes')
 
-
-@resume_bp.route('', methods=['POST'])
+@resume_bp.route("", methods=["POST"])
 @jwt_required()
 def upload_resume():
     """
@@ -26,15 +25,15 @@ def upload_resume():
     """
     user_id = get_jwt_identity()
 
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file provided'}), 400
+    if "file" not in request.files:
+        return jsonify({"error": "No file provided"}), 400
 
-    file = request.files['file']
+    file = request.files["file"]
     if not file.filename:
-        return jsonify({'error': 'No file selected'}), 400
+        return jsonify({"error": "No file selected"}), 400
 
-    title = request.form.get('title')
-    is_master = request.form.get('is_master', 'false').lower() == 'true'
+    title = request.form.get("title")
+    is_master = request.form.get("is_master", "false").lower() == "true"
 
     try:
         resume, ats_result = ResumeService.upload_resume(
@@ -44,20 +43,25 @@ def upload_resume():
             is_master=is_master,
         )
 
-        return jsonify({
-            'message': 'Resume uploaded successfully',
-            'resume': resume.to_dict(),
-            'ats_analysis': ats_result,
-        }), 201
+        return (
+            jsonify(
+                {
+                    "message": "Resume uploaded successfully",
+                    "resume": resume.to_dict(),
+                    "ats_analysis": ats_result,
+                }
+            ),
+            201,
+        )
 
     except ValueError as e:
-        return jsonify({'error': str(e)}), 400
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         current_app.logger.error(f"Resume upload error: {str(e)}")
-        return jsonify({'error': 'Failed to process resume'}), 500
+        return jsonify({"error": "Failed to process resume"}), 500
 
 
-@resume_bp.route('', methods=['GET'])
+@resume_bp.route("", methods=["GET"])
 @jwt_required()
 def get_resumes():
     """
@@ -70,17 +74,22 @@ def get_resumes():
         JSON array of resume objects
     """
     user_id = get_jwt_identity()
-    include_deleted = request.args.get('include_deleted', 'false').lower() == 'true'
+    include_deleted = request.args.get("include_deleted", "false").lower() == "true"
 
     resumes = ResumeService.get_user_resumes(user_id, include_deleted)
 
-    return jsonify({
-        'resumes': [r.to_dict() for r in resumes],
-        'count': len(resumes),
-    }), 200
+    return (
+        jsonify(
+            {
+                "resumes": [r.to_dict() for r in resumes],
+                "count": len(resumes),
+            }
+        ),
+        200,
+    )
 
 
-@resume_bp.route('/master', methods=['GET'])
+@resume_bp.route("/master", methods=["GET"])
 @jwt_required()
 def get_master_resume():
     """
@@ -93,17 +102,19 @@ def get_master_resume():
     resume = ResumeService.get_master_resume(user_id)
 
     if not resume:
-        return jsonify({
-            'resume': None,
-            'message': 'No master resume set'
-        }), 200
+        return jsonify({"resume": None, "message": "No master resume set"}), 200
 
-    return jsonify({
-        'resume': resume.to_dict(include_analysis=True),
-    }), 200
+    return (
+        jsonify(
+            {
+                "resume": resume.to_dict(include_analysis=True),
+            }
+        ),
+        200,
+    )
 
 
-@resume_bp.route('/<resume_id>', methods=['GET'])
+@resume_bp.route("/<resume_id>", methods=["GET"])
 @jwt_required()
 def get_resume(resume_id):
     """
@@ -116,14 +127,19 @@ def get_resume(resume_id):
     resume = ResumeService.get_resume(resume_id, user_id)
 
     if not resume:
-        return jsonify({'error': 'Resume not found'}), 404
+        return jsonify({"error": "Resume not found"}), 404
 
-    return jsonify({
-        'resume': resume.to_dict(include_analysis=True),
-    }), 200
+    return (
+        jsonify(
+            {
+                "resume": resume.to_dict(include_analysis=True),
+            }
+        ),
+        200,
+    )
 
 
-@resume_bp.route('/<resume_id>', methods=['DELETE'])
+@resume_bp.route("/<resume_id>", methods=["DELETE"])
 @jwt_required()
 def delete_resume(resume_id):
     """
@@ -136,12 +152,12 @@ def delete_resume(resume_id):
 
     try:
         ResumeService.delete_resume(resume_id, user_id)
-        return jsonify({'message': 'Resume deleted successfully'}), 200
+        return jsonify({"message": "Resume deleted successfully"}), 200
     except ValueError as e:
-        return jsonify({'error': str(e)}), 404
+        return jsonify({"error": str(e)}), 404
 
 
-@resume_bp.route('/<resume_id>/master', methods=['PUT'])
+@resume_bp.route("/<resume_id>/master", methods=["PUT"])
 @jwt_required()
 def set_master(resume_id):
     """
@@ -154,15 +170,20 @@ def set_master(resume_id):
 
     try:
         resume = ResumeService.set_master_resume(resume_id, user_id)
-        return jsonify({
-            'message': 'Master resume updated',
-            'resume': resume.to_dict(),
-        }), 200
+        return (
+            jsonify(
+                {
+                    "message": "Master resume updated",
+                    "resume": resume.to_dict(),
+                }
+            ),
+            200,
+        )
     except ValueError as e:
-        return jsonify({'error': str(e)}), 404
+        return jsonify({"error": str(e)}), 404
 
 
-@resume_bp.route('/<resume_id>/score', methods=['POST'])
+@resume_bp.route("/<resume_id>/score", methods=["POST"])
 @jwt_required()
 def score_for_job(resume_id):
     """
@@ -178,11 +199,11 @@ def score_for_job(resume_id):
     user_id = get_jwt_identity()
     data = request.get_json() or {}
 
-    job_keywords = data.get('job_keywords', [])
-    target_role = data.get('target_role')
+    job_keywords = data.get("job_keywords", [])
+    target_role = data.get("target_role")
 
     if not job_keywords:
-        return jsonify({'error': 'job_keywords is required'}), 400
+        return jsonify({"error": "job_keywords is required"}), 400
 
     try:
         result = ResumeService.score_for_job(
@@ -192,19 +213,24 @@ def score_for_job(resume_id):
             target_role=target_role,
         )
 
-        return jsonify({
-            'score': result['total_score'],
-            'components': result['components'],
-            'recommendations': result['recommendations'],
-            'missing_keywords': result['missing_keywords'],
-            'weak_sections': result['weak_sections'],
-        }), 200
+        return (
+            jsonify(
+                {
+                    "score": result["total_score"],
+                    "components": result["components"],
+                    "recommendations": result["recommendations"],
+                    "missing_keywords": result["missing_keywords"],
+                    "weak_sections": result["weak_sections"],
+                }
+            ),
+            200,
+        )
 
     except ValueError as e:
-        return jsonify({'error': str(e)}), 404
+        return jsonify({"error": str(e)}), 404
 
 
-@resume_bp.route('/<resume_id>/tailor', methods=['POST'])
+@resume_bp.route("/<resume_id>/tailor", methods=["POST"])
 @jwt_required()
 def create_tailored_version(resume_id):
     """
@@ -221,12 +247,12 @@ def create_tailored_version(resume_id):
     user_id = get_jwt_identity()
     data = request.get_json() or {}
 
-    target_job_title = data.get('target_job_title')
+    target_job_title = data.get("target_job_title")
     if not target_job_title:
-        return jsonify({'error': 'target_job_title is required'}), 400
+        return jsonify({"error": "target_job_title is required"}), 400
 
-    target_company = data.get('target_company')
-    optimized_text = data.get('optimized_text')
+    target_company = data.get("target_company")
+    optimized_text = data.get("optimized_text")
 
     try:
         tailored = ResumeService.create_tailored_version(
@@ -237,16 +263,21 @@ def create_tailored_version(resume_id):
             optimized_text=optimized_text,
         )
 
-        return jsonify({
-            'message': 'Tailored resume created',
-            'resume': tailored.to_dict(include_analysis=True),
-        }), 201
+        return (
+            jsonify(
+                {
+                    "message": "Tailored resume created",
+                    "resume": tailored.to_dict(include_analysis=True),
+                }
+            ),
+            201,
+        )
 
     except ValueError as e:
-        return jsonify({'error': str(e)}), 404
+        return jsonify({"error": str(e)}), 404
 
 
-@resume_bp.route('/<resume_id>/suggestions', methods=['GET'])
+@resume_bp.route("/<resume_id>/suggestions", methods=["GET"])
 @jwt_required()
 def get_suggestions(resume_id):
     """
@@ -261,10 +292,10 @@ def get_suggestions(resume_id):
         suggestions = ResumeService.get_optimization_suggestions(resume_id, user_id)
         return jsonify(suggestions), 200
     except ValueError as e:
-        return jsonify({'error': str(e)}), 404
+        return jsonify({"error": str(e)}), 404
 
 
-@resume_bp.route('/<resume_id>/analysis', methods=['GET'])
+@resume_bp.route("/<resume_id>/analysis", methods=["GET"])
 @jwt_required()
 def get_analysis(resume_id):
     """
@@ -277,52 +308,57 @@ def get_analysis(resume_id):
     resume = ResumeService.get_resume(resume_id, user_id)
 
     if not resume:
-        return jsonify({'error': 'Resume not found'}), 404
+        return jsonify({"error": "Resume not found"}), 404
 
-    return jsonify({
-        'resume_id': str(resume.id),
-        'title': resume.title,
-        'ats_analysis': {
-            'total_score': resume.ats_total_score,
-            'components': {
-                'compatibility': {
-                    'score': resume.ats_compatibility_score,
-                    'weight': 15,
-                    'description': 'File format and parsing compatibility'
+    return (
+        jsonify(
+            {
+                "resume_id": str(resume.id),
+                "title": resume.title,
+                "ats_analysis": {
+                    "total_score": resume.ats_total_score,
+                    "components": {
+                        "compatibility": {
+                            "score": resume.ats_compatibility_score,
+                            "weight": 15,
+                            "description": "File format and parsing compatibility",
+                        },
+                        "keywords": {
+                            "score": resume.ats_keywords_score,
+                            "weight": 15,
+                            "description": "Industry and job-specific keywords",
+                        },
+                        "achievements": {
+                            "score": resume.ats_achievements_score,
+                            "weight": 25,
+                            "description": "Quantified achievements and impact statements",
+                        },
+                        "formatting": {
+                            "score": resume.ats_formatting_score,
+                            "weight": 15,
+                            "description": "Structure, headers, and readability",
+                        },
+                        "progression": {
+                            "score": resume.ats_progression_score,
+                            "weight": 15,
+                            "description": "Career growth and advancement",
+                        },
+                        "completeness": {
+                            "score": resume.ats_completeness_score,
+                            "weight": 10,
+                            "description": "Presence of all essential sections",
+                        },
+                        "fit": {
+                            "score": resume.ats_fit_score,
+                            "weight": 5,
+                            "description": "Alignment with target role",
+                        },
+                    },
+                    "recommendations": resume.ats_recommendations or [],
+                    "weak_sections": resume.weak_sections or [],
+                    "missing_keywords": resume.missing_keywords or [],
                 },
-                'keywords': {
-                    'score': resume.ats_keywords_score,
-                    'weight': 15,
-                    'description': 'Industry and job-specific keywords'
-                },
-                'achievements': {
-                    'score': resume.ats_achievements_score,
-                    'weight': 25,
-                    'description': 'Quantified achievements and impact statements'
-                },
-                'formatting': {
-                    'score': resume.ats_formatting_score,
-                    'weight': 15,
-                    'description': 'Structure, headers, and readability'
-                },
-                'progression': {
-                    'score': resume.ats_progression_score,
-                    'weight': 15,
-                    'description': 'Career growth and advancement'
-                },
-                'completeness': {
-                    'score': resume.ats_completeness_score,
-                    'weight': 10,
-                    'description': 'Presence of all essential sections'
-                },
-                'fit': {
-                    'score': resume.ats_fit_score,
-                    'weight': 5,
-                    'description': 'Alignment with target role'
-                },
-            },
-            'recommendations': resume.ats_recommendations or [],
-            'weak_sections': resume.weak_sections or [],
-            'missing_keywords': resume.missing_keywords or [],
-        }
-    }), 200
+            }
+        ),
+        200,
+    )

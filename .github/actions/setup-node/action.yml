@@ -1,0 +1,35 @@
+# WAT Layer 3: Node.js Setup Tool
+# Deterministic Node.js environment setup with npm caching
+
+name: 'Setup Node Environment'
+description: 'Sets up Node.js with npm caching and dependency installation'
+
+inputs:
+  node-version:
+    description: 'Node.js version to use'
+    required: false
+    default: '20'
+  working-directory:
+    description: 'Working directory for npm operations'
+    required: false
+    default: 'frontend'
+  install-deps:
+    description: 'Install npm dependencies'
+    required: false
+    default: 'true'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Node.js ${{ inputs.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: 'npm'
+        cache-dependency-path: ${{ inputs.working-directory }}/package-lock.json
+
+    - name: Install dependencies
+      if: inputs.install-deps == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: npm ci

@@ -14,19 +14,21 @@ from app.models.user import GUID, JSONType
 
 class MessageType(str, Enum):
     """Type of outreach message."""
-    INITIAL_OUTREACH = 'initial_outreach'
-    FOLLOW_UP = 'follow_up'
-    THANK_YOU = 'thank_you'
-    CHECK_IN = 'check_in'
+
+    INITIAL_OUTREACH = "initial_outreach"
+    FOLLOW_UP = "follow_up"
+    THANK_YOU = "thank_you"
+    CHECK_IN = "check_in"
 
 
 class MessageStatus(str, Enum):
     """Message status in lifecycle."""
-    DRAFT = 'draft'
-    READY = 'ready'
-    SENT = 'sent'
-    OPENED = 'opened'
-    RESPONDED = 'responded'
+
+    DRAFT = "draft"
+    READY = "ready"
+    SENT = "sent"
+    OPENED = "opened"
+    RESPONDED = "responded"
 
 
 class Message(db.Model):
@@ -42,11 +44,11 @@ class Message(db.Model):
     - Single CTA = reduces confusion
     """
 
-    __tablename__ = 'messages'
+    __tablename__ = "messages"
 
     id = db.Column(GUID(), primary_key=True, default=uuid.uuid4)
-    user_id = db.Column(GUID(), db.ForeignKey('users.id'), nullable=False, index=True)
-    recruiter_id = db.Column(GUID(), db.ForeignKey('recruiters.id'), nullable=True, index=True)
+    user_id = db.Column(GUID(), db.ForeignKey("users.id"), nullable=False, index=True)
+    recruiter_id = db.Column(GUID(), db.ForeignKey("recruiters.id"), nullable=True, index=True)
 
     # Message Content
     message_type = db.Column(db.String(50), default=MessageType.INITIAL_OUTREACH.value)
@@ -87,52 +89,52 @@ class Message(db.Model):
 
     # Version Control (for edits)
     version = db.Column(db.Integer, default=1)
-    parent_message_id = db.Column(GUID(), db.ForeignKey('messages.id'), nullable=True)
+    parent_message_id = db.Column(GUID(), db.ForeignKey("messages.id"), nullable=True)
 
     # Timestamps
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
-    user = db.relationship('User', backref=db.backref('messages', lazy='dynamic'))
-    recruiter = db.relationship('Recruiter', backref=db.backref('messages', lazy='dynamic'))
-    versions = db.relationship('Message', backref=db.backref('parent_message', remote_side=[id]))
+    user = db.relationship("User", backref=db.backref("messages", lazy="dynamic"))
+    recruiter = db.relationship("Recruiter", backref=db.backref("messages", lazy="dynamic"))
+    versions = db.relationship("Message", backref=db.backref("parent_message", remote_side=[id]))
 
     def __repr__(self):
-        return f'<Message {self.id} - {self.message_type}>'
+        return f"<Message {self.id} - {self.message_type}>"
 
     @property
     def quality_breakdown(self) -> dict:
         """Return quality score breakdown with weights."""
         return {
-            'total': self.quality_score,
-            'components': {
-                'words': {
-                    'score': self.quality_words_score,
-                    'weight': 25,
-                    'weighted': (self.quality_words_score or 0) * 0.25
+            "total": self.quality_score,
+            "components": {
+                "words": {
+                    "score": self.quality_words_score,
+                    "weight": 25,
+                    "weighted": (self.quality_words_score or 0) * 0.25,
                 },
-                'personalization': {
-                    'score': self.quality_personalization_score,
-                    'weight': 25,
-                    'weighted': (self.quality_personalization_score or 0) * 0.25
+                "personalization": {
+                    "score": self.quality_personalization_score,
+                    "weight": 25,
+                    "weighted": (self.quality_personalization_score or 0) * 0.25,
                 },
-                'metrics': {
-                    'score': self.quality_metrics_score,
-                    'weight': 25,
-                    'weighted': (self.quality_metrics_score or 0) * 0.25
+                "metrics": {
+                    "score": self.quality_metrics_score,
+                    "weight": 25,
+                    "weighted": (self.quality_metrics_score or 0) * 0.25,
                 },
-                'cta': {
-                    'score': self.quality_cta_score,
-                    'weight': 20,
-                    'weighted': (self.quality_cta_score or 0) * 0.20
+                "cta": {
+                    "score": self.quality_cta_score,
+                    "weight": 20,
+                    "weighted": (self.quality_cta_score or 0) * 0.20,
                 },
-                'tone': {
-                    'score': self.quality_tone_score,
-                    'weight': 5,
-                    'weighted': (self.quality_tone_score or 0) * 0.05
-                }
-            }
+                "tone": {
+                    "score": self.quality_tone_score,
+                    "weight": 5,
+                    "weighted": (self.quality_tone_score or 0) * 0.05,
+                },
+            },
         }
 
     @property
@@ -151,34 +153,36 @@ class Message(db.Model):
     def to_dict(self, include_generation: bool = False) -> dict:
         """Convert message to dictionary representation."""
         data = {
-            'id': str(self.id),
-            'user_id': str(self.user_id),
-            'recruiter_id': str(self.recruiter_id) if self.recruiter_id else None,
-            'message_type': self.message_type,
-            'subject': self.subject,
-            'body': self.body,
-            'word_count': self.word_count,
-            'is_within_word_limit': self.is_within_word_limit,
-            'quality_score': self.quality_score,
-            'quality_breakdown': self.quality_breakdown,
-            'feedback': self.quality_feedback,
-            'suggestions': self.quality_suggestions,
-            'has_personalization': self.has_personalization,
-            'has_metrics': self.has_metrics,
-            'has_cta': self.has_cta,
-            'status': self.status,
-            'is_ai_generated': self.is_ai_generated,
-            'sent_at': self.sent_at.isoformat() if self.sent_at else None,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            "id": str(self.id),
+            "user_id": str(self.user_id),
+            "recruiter_id": str(self.recruiter_id) if self.recruiter_id else None,
+            "message_type": self.message_type,
+            "subject": self.subject,
+            "body": self.body,
+            "word_count": self.word_count,
+            "is_within_word_limit": self.is_within_word_limit,
+            "quality_score": self.quality_score,
+            "quality_breakdown": self.quality_breakdown,
+            "feedback": self.quality_feedback,
+            "suggestions": self.quality_suggestions,
+            "has_personalization": self.has_personalization,
+            "has_metrics": self.has_metrics,
+            "has_cta": self.has_cta,
+            "status": self.status,
+            "is_ai_generated": self.is_ai_generated,
+            "sent_at": self.sent_at.isoformat() if self.sent_at else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
 
         if include_generation:
-            data.update({
-                'generation_prompt': self.generation_prompt,
-                'generation_context': self.generation_context,
-                'ai_model_used': self.ai_model_used,
-                'personalization_elements': self.personalization_elements,
-            })
+            data.update(
+                {
+                    "generation_prompt": self.generation_prompt,
+                    "generation_context": self.generation_context,
+                    "ai_model_used": self.ai_model_used,
+                    "personalization_elements": self.personalization_elements,
+                }
+            )
 
         return data

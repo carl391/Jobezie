@@ -1,0 +1,127 @@
+# WAT Layer 1: Staging Deployment Orchestrator
+# Deploys to Railway staging environment on develop branch
+
+name: Deploy to Staging
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+    inputs:
+      skip-tests:
+        description: 'Skip CI tests (emergency deploy)'
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+jobs:
+  # Run CI first (unless skipped)
+  ci:
+    name: Run CI
+    if: ${{ !inputs.skip-tests }}
+    uses: ./.github/workflows/ci.yml
+
+  # Deploy backend to Railway
+  deploy-backend:
+    name: Deploy Backend
+    needs: [ci]
+    if: always() && (needs.ci.result == 'success' || inputs.skip-tests)
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging-api.jobezie.com
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: npm i -g @railway/cli
+
+      - name: Deploy to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: railway up --service jobezie-api-staging
+
+  # Deploy frontend to Railway
+  deploy-frontend:
+    name: Deploy Frontend
+    needs: [ci]
+    if: always() && (needs.ci.result == 'success' || inputs.skip-tests)
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging.jobezie.com
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+        env:
+          VITE_API_URL: https://staging-api.jobezie.com
+
+      - name: Install Railway CLI
+        run: npm i -g @railway/cli
+
+      - name: Deploy to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: railway up --service jobezie-frontend-staging
+
+  # Smoke test after deployment
+  smoke-test:
+    name: Smoke Test
+    needs: [deploy-backend, deploy-frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Health check - Backend
+        run: |
+          for i in {1..10}; do
+            if curl -sf https://staging-api.jobezie.com/health; then
+              echo "Backend is healthy"
+              exit 0
+            fi
+            echo "Attempt $i failed, retrying..."
+            sleep 15
+          done
+          echo "Backend health check failed"
+          exit 1
+
+      - name: Health check - Frontend
+        run: |
+          curl -sf https://staging.jobezie.com || exit 1
+          echo "Frontend is healthy"
+
+  # Notify on completion
+  notify:
+    name: Notify
+    needs: [smoke-test]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report status
+        run: |
+          if [ "${{ needs.smoke-test.result }}" == "success" ]; then
+            echo "Staging deployment successful"
+          else
+            echo "Staging deployment FAILED"
+            exit 1
+          fi

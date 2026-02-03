@@ -10,33 +10,31 @@ Fit Formula:
 fit = industry(30%) + location(20%) + specialty(25%) + tier(15%) + depth(10%)
 """
 
-import math
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Dict, List, Optional, Tuple
-
 
 # Engagement Score Weights
 ENGAGEMENT_WEIGHTS = {
-    'response_rate': 40,
-    'open_rate': 30,
-    'recency': 30,
+    "response_rate": 40,
+    "open_rate": 30,
+    "recency": 30,
 }
 
 # Fit Score Weights
 FIT_WEIGHTS = {
-    'industry': 30,
-    'location': 20,
-    'specialty': 25,
-    'tier': 15,
-    'depth': 10,
+    "industry": 30,
+    "location": 20,
+    "specialty": 25,
+    "tier": 15,
+    "depth": 10,
 }
 
 # Recency decay parameters (days)
 RECENCY_DECAY = {
-    'fresh': 7,      # Full score within 7 days
-    'warm': 14,      # 75% score within 14 days
-    'cooling': 30,   # 50% score within 30 days
-    'cold': 60,      # 25% score within 60 days
+    "fresh": 7,  # Full score within 7 days
+    "warm": 14,  # 75% score within 14 days
+    "cooling": 30,  # 50% score within 30 days
+    "cold": 60,  # 25% score within 60 days
 }
 
 
@@ -69,25 +67,30 @@ def calculate_engagement_score(
 
     # Calculate weighted total
     total_score = int(
-        response_score * (ENGAGEMENT_WEIGHTS['response_rate'] / 100) +
-        open_score * (ENGAGEMENT_WEIGHTS['open_rate'] / 100) +
-        recency_score * (ENGAGEMENT_WEIGHTS['recency'] / 100)
+        response_score * (ENGAGEMENT_WEIGHTS["response_rate"] / 100)
+        + open_score * (ENGAGEMENT_WEIGHTS["open_rate"] / 100)
+        + recency_score * (ENGAGEMENT_WEIGHTS["recency"] / 100)
     )
 
     return {
-        'total_score': total_score,
-        'components': {
-            'response_rate': response_score,
-            'open_rate': open_score,
-            'recency': recency_score,
+        "total_score": total_score,
+        "components": {
+            "response_rate": response_score,
+            "open_rate": open_score,
+            "recency": recency_score,
         },
-        'metrics': {
-            'messages_sent': messages_sent,
-            'messages_opened': messages_opened,
-            'responses_received': responses_received,
-            'response_rate': round((responses_received / messages_sent * 100) if messages_sent > 0 else 0, 1),
-            'open_rate': round((messages_opened / messages_sent * 100) if messages_sent > 0 else 0, 1),
-        }
+        "metrics": {
+            "messages_sent": messages_sent,
+            "messages_opened": messages_opened,
+            "responses_received": responses_received,
+            "response_rate": round(
+                (responses_received / messages_sent * 100) if messages_sent > 0 else 0,
+                1,
+            ),
+            "open_rate": round(
+                (messages_opened / messages_sent * 100) if messages_sent > 0 else 0, 1
+            ),
+        },
     }
 
 
@@ -155,13 +158,13 @@ def _calculate_recency_score(last_contact_date: Optional[datetime]) -> int:
 
     days_since = (datetime.utcnow() - last_contact_date).days
 
-    if days_since <= RECENCY_DECAY['fresh']:
+    if days_since <= RECENCY_DECAY["fresh"]:
         return 100
-    elif days_since <= RECENCY_DECAY['warm']:
+    elif days_since <= RECENCY_DECAY["warm"]:
         return 75
-    elif days_since <= RECENCY_DECAY['cooling']:
+    elif days_since <= RECENCY_DECAY["cooling"]:
         return 50
-    elif days_since <= RECENCY_DECAY['cold']:
+    elif days_since <= RECENCY_DECAY["cold"]:
         return 25
     else:
         return 10
@@ -199,29 +202,31 @@ def calculate_fit_score(
     industry_score = _calculate_industry_fit(user_industries, recruiter_industries)
     location_score = _calculate_location_fit(user_location, recruiter_locations)
     specialty_score = _calculate_specialty_fit(user_target_roles, recruiter_specialty)
-    tier_score = _calculate_tier_fit(user_salary_expectation, recruiter_company_type, recruiter_salary_range)
+    tier_score = _calculate_tier_fit(
+        user_salary_expectation, recruiter_company_type, recruiter_salary_range
+    )
     depth_score = _calculate_depth_score(
         recruiter_industries, recruiter_locations, recruiter_specialty
     )
 
     # Calculate weighted total
     total_score = int(
-        industry_score * (FIT_WEIGHTS['industry'] / 100) +
-        location_score * (FIT_WEIGHTS['location'] / 100) +
-        specialty_score * (FIT_WEIGHTS['specialty'] / 100) +
-        tier_score * (FIT_WEIGHTS['tier'] / 100) +
-        depth_score * (FIT_WEIGHTS['depth'] / 100)
+        industry_score * (FIT_WEIGHTS["industry"] / 100)
+        + location_score * (FIT_WEIGHTS["location"] / 100)
+        + specialty_score * (FIT_WEIGHTS["specialty"] / 100)
+        + tier_score * (FIT_WEIGHTS["tier"] / 100)
+        + depth_score * (FIT_WEIGHTS["depth"] / 100)
     )
 
     return {
-        'total_score': total_score,
-        'components': {
-            'industry': industry_score,
-            'location': location_score,
-            'specialty': specialty_score,
-            'tier': tier_score,
-            'depth': depth_score,
-        }
+        "total_score": total_score,
+        "components": {
+            "industry": industry_score,
+            "location": location_score,
+            "specialty": specialty_score,
+            "tier": tier_score,
+            "depth": depth_score,
+        },
     }
 
 
@@ -261,20 +266,24 @@ def _calculate_location_fit(user_location: Optional[str], recruiter_locations: L
         return 100
 
     # Partial match (same state/region)
-    user_parts = user_loc.replace(',', ' ').split()
+    user_parts = user_loc.replace(",", " ").split()
     for recruiter_loc in recruiter_locs:
-        recruiter_parts = recruiter_loc.replace(',', ' ').split()
+        recruiter_parts = recruiter_loc.replace(",", " ").split()
         if any(part in recruiter_parts for part in user_parts if len(part) > 2):
             return 75
 
     # Check for remote/nationwide
-    if any(term in ' '.join(recruiter_locs) for term in ['remote', 'nationwide', 'national', 'global']):
+    if any(
+        term in " ".join(recruiter_locs) for term in ["remote", "nationwide", "national", "global"]
+    ):
         return 80
 
     return 40
 
 
-def _calculate_specialty_fit(user_target_roles: List[str], recruiter_specialty: Optional[str]) -> int:
+def _calculate_specialty_fit(
+    user_target_roles: List[str], recruiter_specialty: Optional[str]
+) -> int:
     """Calculate role specialty match."""
     if not user_target_roles or not recruiter_specialty:
         return 50  # No data
@@ -293,7 +302,7 @@ def _calculate_specialty_fit(user_target_roles: List[str], recruiter_specialty: 
             return 100
 
     # Check for related terms
-    role_text = ' '.join(roles_lower)
+    role_text = " ".join(roles_lower)
     if any(term in specialty_lower for term in role_text.split() if len(term) > 4):
         return 70
 
@@ -303,7 +312,7 @@ def _calculate_specialty_fit(user_target_roles: List[str], recruiter_specialty: 
 def _calculate_tier_fit(
     user_salary: Optional[int],
     recruiter_type: Optional[str],
-    salary_range: Optional[Tuple[int, int]]
+    salary_range: Optional[Tuple[int, int]],
 ) -> int:
     """
     Calculate tier/level fit based on salary and recruiter type.
@@ -326,19 +335,17 @@ def _calculate_tier_fit(
     if recruiter_type:
         type_lower = recruiter_type.lower()
         if user_salary and user_salary > 150000:
-            if 'executive' in type_lower or 'retained' in type_lower:
+            if "executive" in type_lower or "retained" in type_lower:
                 score = min(100, score + 20)
         elif user_salary and user_salary < 60000:
-            if 'staffing' in type_lower or 'temp' in type_lower:
+            if "staffing" in type_lower or "temp" in type_lower:
                 score = min(100, score + 10)
 
     return score
 
 
 def _calculate_depth_score(
-    industries: List[str],
-    locations: List[str],
-    specialty: Optional[str]
+    industries: List[str], locations: List[str], specialty: Optional[str]
 ) -> int:
     """
     Score recruiter profile completeness/depth.
@@ -400,23 +407,23 @@ def calculate_priority_score(
 
     # Status adjustment
     status_multiplier = {
-        'new': 1.0,
-        'researching': 0.8,
-        'contacted': 1.2,
-        'responded': 1.5,
-        'interviewing': 1.3,
-        'offer': 0.5,
-        'accepted': 0.1,
-        'declined': 0.1,
+        "new": 1.0,
+        "researching": 0.8,
+        "contacted": 1.2,
+        "responded": 1.5,
+        "interviewing": 1.3,
+        "offer": 0.5,
+        "accepted": 0.1,
+        "declined": 0.1,
     }.get(status, 1.0)
 
     # Calculate weighted score
     raw_score = (
-        days_score * 0.30 +
-        pending_score * 0.25 +
-        potential_score * 0.20 +
-        30 * 0.15 +  # Research placeholder
-        response_score * 0.10
+        days_score * 0.30
+        + pending_score * 0.25
+        + potential_score * 0.20
+        + 30 * 0.15  # Research placeholder
+        + response_score * 0.10
     )
 
     return int(min(100, raw_score * status_multiplier))

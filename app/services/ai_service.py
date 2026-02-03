@@ -19,7 +19,7 @@ class AIService:
     """
 
     SYSTEM_PROMPTS = {
-        'message_generator': """You are an expert career coach helping job seekers write
+        "message_generator": """You are an expert career coach helping job seekers write
 highly effective recruiter outreach messages. You understand that:
 
 1. Messages under 150 words get 22% higher response rates
@@ -29,8 +29,7 @@ highly effective recruiter outreach messages. You understand that:
 
 Write concise, professional messages that are warm but not overly casual.
 Focus on the value the candidate brings, not just what they want.""",
-
-        'resume_optimizer': """You are an expert resume writer and ATS optimization specialist.
+        "resume_optimizer": """You are an expert resume writer and ATS optimization specialist.
 You understand that:
 
 1. ATS systems scan for keywords, clear formatting, and standard sections
@@ -39,8 +38,7 @@ You understand that:
 4. Resume length should be appropriate for experience level (1-2 pages max)
 
 Provide specific, actionable suggestions for improving resume content and formatting.""",
-
-        'career_coach': """You are an experienced career coach specializing in job search strategy.
+        "career_coach": """You are an experienced career coach specializing in job search strategy.
 You help users:
 
 1. Identify their unique value proposition
@@ -51,8 +49,7 @@ You help users:
 
 Provide personalized, actionable advice based on the user's specific situation.
 Be encouraging but realistic about job market conditions.""",
-
-        'interview_prep': """You are an expert interview coach who has helped thousands
+        "interview_prep": """You are an expert interview coach who has helped thousands
 of candidates succeed. You understand:
 
 1. Behavioral interview techniques (STAR method)
@@ -64,31 +61,31 @@ Help candidates prepare confident, structured responses that highlight their str
     }
 
     MODEL_CONFIG = {
-        'claude': {
-            'default_model': 'claude-3-sonnet-20240229',
-            'max_tokens': 1024,
-            'temperature': 0.7,
+        "claude": {
+            "default_model": "claude-3-sonnet-20240229",
+            "max_tokens": 1024,
+            "temperature": 0.7,
         },
-        'openai': {
-            'default_model': 'gpt-4-turbo-preview',
-            'max_tokens': 1024,
-            'temperature': 0.7,
+        "openai": {
+            "default_model": "gpt-4-turbo-preview",
+            "max_tokens": 1024,
+            "temperature": 0.7,
         },
     }
 
     @staticmethod
     def get_provider() -> str:
         """Determine which AI provider to use based on configuration."""
-        if os.getenv('ANTHROPIC_API_KEY'):
-            return 'claude'
-        elif os.getenv('OPENAI_API_KEY'):
-            return 'openai'
-        return 'none'
+        if os.getenv("ANTHROPIC_API_KEY"):
+            return "claude"
+        elif os.getenv("OPENAI_API_KEY"):
+            return "openai"
+        return "none"
 
     @staticmethod
     async def generate_message(
         context: Dict,
-        message_type: str = 'initial_outreach',
+        message_type: str = "initial_outreach",
         provider: Optional[str] = None,
     ) -> Dict:
         """
@@ -104,42 +101,42 @@ Help candidates prepare confident, structured responses that highlight their str
         """
         provider = provider or AIService.get_provider()
 
-        if provider == 'none':
+        if provider == "none":
             return {
-                'success': False,
-                'error': 'No AI provider configured',
-                'message': None,
+                "success": False,
+                "error": "No AI provider configured",
+                "message": None,
             }
 
         # Build prompt from context
         prompt = AIService._build_message_prompt(context, message_type)
 
         try:
-            if provider == 'claude':
+            if provider == "claude":
                 response = await AIService._call_claude(
-                    system_prompt=AIService.SYSTEM_PROMPTS['message_generator'],
+                    system_prompt=AIService.SYSTEM_PROMPTS["message_generator"],
                     user_prompt=prompt,
                 )
             else:
                 response = await AIService._call_openai(
-                    system_prompt=AIService.SYSTEM_PROMPTS['message_generator'],
+                    system_prompt=AIService.SYSTEM_PROMPTS["message_generator"],
                     user_prompt=prompt,
                 )
 
             return {
-                'success': True,
-                'message': response['content'],
-                'provider': provider,
-                'model': response['model'],
-                'tokens_used': response.get('tokens_used'),
+                "success": True,
+                "message": response["content"],
+                "provider": provider,
+                "model": response["model"],
+                "tokens_used": response.get("tokens_used"),
             }
 
         except Exception as e:
             current_app.logger.error(f"AI message generation error: {str(e)}")
             return {
-                'success': False,
-                'error': str(e),
-                'message': None,
+                "success": False,
+                "error": str(e),
+                "message": None,
             }
 
     @staticmethod
@@ -165,11 +162,11 @@ Help candidates prepare confident, structured responses that highlight their str
         """
         provider = provider or AIService.get_provider()
 
-        if provider == 'none':
+        if provider == "none":
             return {
-                'success': False,
-                'error': 'No AI provider configured',
-                'suggestions': None,
+                "success": False,
+                "error": "No AI provider configured",
+                "suggestions": None,
             }
 
         prompt = AIService._build_resume_prompt(
@@ -177,30 +174,30 @@ Help candidates prepare confident, structured responses that highlight their str
         )
 
         try:
-            if provider == 'claude':
+            if provider == "claude":
                 response = await AIService._call_claude(
-                    system_prompt=AIService.SYSTEM_PROMPTS['resume_optimizer'],
+                    system_prompt=AIService.SYSTEM_PROMPTS["resume_optimizer"],
                     user_prompt=prompt,
                 )
             else:
                 response = await AIService._call_openai(
-                    system_prompt=AIService.SYSTEM_PROMPTS['resume_optimizer'],
+                    system_prompt=AIService.SYSTEM_PROMPTS["resume_optimizer"],
                     user_prompt=prompt,
                 )
 
             return {
-                'success': True,
-                'suggestions': response['content'],
-                'provider': provider,
-                'model': response['model'],
+                "success": True,
+                "suggestions": response["content"],
+                "provider": provider,
+                "model": response["model"],
             }
 
         except Exception as e:
             current_app.logger.error(f"AI resume optimization error: {str(e)}")
             return {
-                'success': False,
-                'error': str(e),
-                'suggestions': None,
+                "success": False,
+                "error": str(e),
+                "suggestions": None,
             }
 
     @staticmethod
@@ -224,49 +221,49 @@ Help candidates prepare confident, structured responses that highlight their str
         """
         provider = provider or AIService.get_provider()
 
-        if provider == 'none':
+        if provider == "none":
             return {
-                'success': False,
-                'error': 'No AI provider configured',
-                'response': None,
+                "success": False,
+                "error": "No AI provider configured",
+                "response": None,
             }
 
         prompt = AIService._build_coaching_prompt(question, user_context)
 
         try:
-            if provider == 'claude':
+            if provider == "claude":
                 response = await AIService._call_claude(
-                    system_prompt=AIService.SYSTEM_PROMPTS['career_coach'],
+                    system_prompt=AIService.SYSTEM_PROMPTS["career_coach"],
                     user_prompt=prompt,
                     conversation_history=conversation_history,
                 )
             else:
                 response = await AIService._call_openai(
-                    system_prompt=AIService.SYSTEM_PROMPTS['career_coach'],
+                    system_prompt=AIService.SYSTEM_PROMPTS["career_coach"],
                     user_prompt=prompt,
                     conversation_history=conversation_history,
                 )
 
             return {
-                'success': True,
-                'response': response['content'],
-                'provider': provider,
-                'model': response['model'],
+                "success": True,
+                "response": response["content"],
+                "provider": provider,
+                "model": response["model"],
             }
 
         except Exception as e:
             current_app.logger.error(f"AI career coaching error: {str(e)}")
             return {
-                'success': False,
-                'error': str(e),
-                'response': None,
+                "success": False,
+                "error": str(e),
+                "response": None,
             }
 
     @staticmethod
     async def interview_prep(
         job_title: str,
         company: Optional[str] = None,
-        interview_type: str = 'behavioral',
+        interview_type: str = "behavioral",
         user_experience: Optional[str] = None,
         provider: Optional[str] = None,
     ) -> Dict:
@@ -285,11 +282,11 @@ Help candidates prepare confident, structured responses that highlight their str
         """
         provider = provider or AIService.get_provider()
 
-        if provider == 'none':
+        if provider == "none":
             return {
-                'success': False,
-                'error': 'No AI provider configured',
-                'prep_materials': None,
+                "success": False,
+                "error": "No AI provider configured",
+                "prep_materials": None,
             }
 
         prompt = AIService._build_interview_prompt(
@@ -297,32 +294,32 @@ Help candidates prepare confident, structured responses that highlight their str
         )
 
         try:
-            if provider == 'claude':
+            if provider == "claude":
                 response = await AIService._call_claude(
-                    system_prompt=AIService.SYSTEM_PROMPTS['interview_prep'],
+                    system_prompt=AIService.SYSTEM_PROMPTS["interview_prep"],
                     user_prompt=prompt,
                     max_tokens=2048,  # Longer for interview prep
                 )
             else:
                 response = await AIService._call_openai(
-                    system_prompt=AIService.SYSTEM_PROMPTS['interview_prep'],
+                    system_prompt=AIService.SYSTEM_PROMPTS["interview_prep"],
                     user_prompt=prompt,
                     max_tokens=2048,
                 )
 
             return {
-                'success': True,
-                'prep_materials': response['content'],
-                'provider': provider,
-                'model': response['model'],
+                "success": True,
+                "prep_materials": response["content"],
+                "provider": provider,
+                "model": response["model"],
             }
 
         except Exception as e:
             current_app.logger.error(f"AI interview prep error: {str(e)}")
             return {
-                'success': False,
-                'error': str(e),
-                'prep_materials': None,
+                "success": False,
+                "error": str(e),
+                "prep_materials": None,
             }
 
     # Private helper methods
@@ -330,10 +327,10 @@ Help candidates prepare confident, structured responses that highlight their str
     @staticmethod
     def _build_message_prompt(context: Dict, message_type: str) -> str:
         """Build prompt for message generation."""
-        template = context.get('template', {})
-        user = context.get('user', {})
-        recruiter = context.get('recruiter', {})
-        achievements = context.get('achievements', [])
+        template = context.get("template", {})
+        user = context.get("user", {})
+        recruiter = context.get("recruiter", {})
+        achievements = context.get("achievements", [])
 
         prompt = f"""Generate a {message_type.replace('_', ' ')} message for a recruiter.
 
@@ -475,7 +472,7 @@ For each question, provide:
         import anthropic
 
         client = anthropic.Anthropic(
-            api_key=os.getenv('ANTHROPIC_API_KEY'),
+            api_key=os.getenv("ANTHROPIC_API_KEY"),
         )
 
         messages = []
@@ -483,29 +480,33 @@ For each question, provide:
         # Add conversation history if provided
         if conversation_history:
             for msg in conversation_history:
-                messages.append({
-                    'role': msg.get('role', 'user'),
-                    'content': msg.get('content', ''),
-                })
+                messages.append(
+                    {
+                        "role": msg.get("role", "user"),
+                        "content": msg.get("content", ""),
+                    }
+                )
 
-        messages.append({
-            'role': 'user',
-            'content': user_prompt,
-        })
+        messages.append(
+            {
+                "role": "user",
+                "content": user_prompt,
+            }
+        )
 
-        config = AIService.MODEL_CONFIG['claude']
+        config = AIService.MODEL_CONFIG["claude"]
 
         response = client.messages.create(
-            model=config['default_model'],
+            model=config["default_model"],
             max_tokens=max_tokens,
             system=system_prompt,
             messages=messages,
         )
 
         return {
-            'content': response.content[0].text,
-            'model': config['default_model'],
-            'tokens_used': response.usage.input_tokens + response.usage.output_tokens,
+            "content": response.content[0].text,
+            "model": config["default_model"],
+            "tokens_used": response.usage.input_tokens + response.usage.output_tokens,
         }
 
     @staticmethod
@@ -524,37 +525,41 @@ For each question, provide:
         from openai import OpenAI
 
         client = OpenAI(
-            api_key=os.getenv('OPENAI_API_KEY'),
+            api_key=os.getenv("OPENAI_API_KEY"),
         )
 
-        messages = [{'role': 'system', 'content': system_prompt}]
+        messages = [{"role": "system", "content": system_prompt}]
 
         # Add conversation history if provided
         if conversation_history:
             for msg in conversation_history:
-                messages.append({
-                    'role': msg.get('role', 'user'),
-                    'content': msg.get('content', ''),
-                })
+                messages.append(
+                    {
+                        "role": msg.get("role", "user"),
+                        "content": msg.get("content", ""),
+                    }
+                )
 
-        messages.append({
-            'role': 'user',
-            'content': user_prompt,
-        })
+        messages.append(
+            {
+                "role": "user",
+                "content": user_prompt,
+            }
+        )
 
-        config = AIService.MODEL_CONFIG['openai']
+        config = AIService.MODEL_CONFIG["openai"]
 
         response = client.chat.completions.create(
-            model=config['default_model'],
+            model=config["default_model"],
             messages=messages,
             max_tokens=max_tokens,
-            temperature=config['temperature'],
+            temperature=config["temperature"],
         )
 
         return {
-            'content': response.choices[0].message.content,
-            'model': config['default_model'],
-            'tokens_used': response.usage.total_tokens,
+            "content": response.choices[0].message.content,
+            "model": config["default_model"],
+            "tokens_used": response.usage.total_tokens,
         }
 
 
@@ -562,6 +567,7 @@ For each question, provide:
 def generate_message_sync(*args, **kwargs):
     """Synchronous wrapper for generate_message."""
     import asyncio
+
     loop = asyncio.new_event_loop()
     try:
         return loop.run_until_complete(AIService.generate_message(*args, **kwargs))
@@ -572,6 +578,7 @@ def generate_message_sync(*args, **kwargs):
 def optimize_resume_sync(*args, **kwargs):
     """Synchronous wrapper for optimize_resume."""
     import asyncio
+
     loop = asyncio.new_event_loop()
     try:
         return loop.run_until_complete(AIService.optimize_resume(*args, **kwargs))
@@ -582,6 +589,7 @@ def optimize_resume_sync(*args, **kwargs):
 def career_coaching_sync(*args, **kwargs):
     """Synchronous wrapper for career_coaching."""
     import asyncio
+
     loop = asyncio.new_event_loop()
     try:
         return loop.run_until_complete(AIService.career_coaching(*args, **kwargs))
@@ -592,6 +600,7 @@ def career_coaching_sync(*args, **kwargs):
 def interview_prep_sync(*args, **kwargs):
     """Synchronous wrapper for interview_prep."""
     import asyncio
+
     loop = asyncio.new_event_loop()
     try:
         return loop.run_until_complete(AIService.interview_prep(*args, **kwargs))

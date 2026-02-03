@@ -5,17 +5,17 @@ API endpoints for recruiter management and engagement tracking.
 """
 
 from datetime import datetime
-from flask import Blueprint, request, jsonify, current_app
-from flask_jwt_extended import jwt_required, get_jwt_identity
 
-from app.services.recruiter_service import RecruiterService
+from flask import Blueprint, current_app, jsonify, request
+from flask_jwt_extended import get_jwt_identity, jwt_required
+
 from app.models.activity import PipelineStage
+from app.services.recruiter_service import RecruiterService
+
+recruiter_bp = Blueprint("recruiter", __name__, url_prefix="/api/recruiters")
 
 
-recruiter_bp = Blueprint('recruiter', __name__, url_prefix='/api/recruiters')
-
-
-@recruiter_bp.route('', methods=['POST'])
+@recruiter_bp.route("", methods=["POST"])
 @jwt_required()
 def create_recruiter():
     """
@@ -43,38 +43,43 @@ def create_recruiter():
     data = request.get_json() or {}
 
     # Validate required fields
-    if not data.get('first_name') or not data.get('last_name'):
-        return jsonify({'error': 'first_name and last_name are required'}), 400
+    if not data.get("first_name") or not data.get("last_name"):
+        return jsonify({"error": "first_name and last_name are required"}), 400
 
     try:
         recruiter = RecruiterService.create_recruiter(
             user_id=user_id,
-            first_name=data['first_name'],
-            last_name=data['last_name'],
-            email=data.get('email'),
-            company=data.get('company'),
-            title=data.get('title'),
-            linkedin_url=data.get('linkedin_url'),
-            phone=data.get('phone'),
-            industries=data.get('industries'),
-            locations=data.get('locations'),
-            specialty=data.get('specialty'),
-            company_type=data.get('company_type'),
-            source=data.get('source'),
-            notes=data.get('notes'),
+            first_name=data["first_name"],
+            last_name=data["last_name"],
+            email=data.get("email"),
+            company=data.get("company"),
+            title=data.get("title"),
+            linkedin_url=data.get("linkedin_url"),
+            phone=data.get("phone"),
+            industries=data.get("industries"),
+            locations=data.get("locations"),
+            specialty=data.get("specialty"),
+            company_type=data.get("company_type"),
+            source=data.get("source"),
+            notes=data.get("notes"),
         )
 
-        return jsonify({
-            'message': 'Recruiter added successfully',
-            'recruiter': recruiter.to_dict(),
-        }), 201
+        return (
+            jsonify(
+                {
+                    "message": "Recruiter added successfully",
+                    "recruiter": recruiter.to_dict(),
+                }
+            ),
+            201,
+        )
 
     except Exception as e:
         current_app.logger.error(f"Create recruiter error: {str(e)}")
-        return jsonify({'error': 'Failed to create recruiter'}), 500
+        return jsonify({"error": "Failed to create recruiter"}), 500
 
 
-@recruiter_bp.route('', methods=['GET'])
+@recruiter_bp.route("", methods=["GET"])
 @jwt_required()
 def get_recruiters():
     """
@@ -93,12 +98,12 @@ def get_recruiters():
     """
     user_id = get_jwt_identity()
 
-    status = request.args.get('status')
-    industry = request.args.get('industry')
-    location = request.args.get('location')
-    sort_by = request.args.get('sort_by', 'priority')
-    limit = min(int(request.args.get('limit', 50)), 100)
-    offset = int(request.args.get('offset', 0))
+    status = request.args.get("status")
+    industry = request.args.get("industry")
+    location = request.args.get("location")
+    sort_by = request.args.get("sort_by", "priority")
+    limit = min(int(request.args.get("limit", 50)), 100)
+    offset = int(request.args.get("offset", 0))
 
     recruiters, total = RecruiterService.get_user_recruiters(
         user_id=user_id,
@@ -110,16 +115,21 @@ def get_recruiters():
         offset=offset,
     )
 
-    return jsonify({
-        'recruiters': [r.to_dict() for r in recruiters],
-        'total': total,
-        'limit': limit,
-        'offset': offset,
-        'has_more': (offset + len(recruiters)) < total,
-    }), 200
+    return (
+        jsonify(
+            {
+                "recruiters": [r.to_dict() for r in recruiters],
+                "total": total,
+                "limit": limit,
+                "offset": offset,
+                "has_more": (offset + len(recruiters)) < total,
+            }
+        ),
+        200,
+    )
 
 
-@recruiter_bp.route('/stats', methods=['GET'])
+@recruiter_bp.route("/stats", methods=["GET"])
 @jwt_required()
 def get_stats():
     """
@@ -134,7 +144,7 @@ def get_stats():
     return jsonify(stats), 200
 
 
-@recruiter_bp.route('/stages', methods=['GET'])
+@recruiter_bp.route("/stages", methods=["GET"])
 @jwt_required()
 def get_stages():
     """
@@ -143,15 +153,12 @@ def get_stages():
     Returns:
         JSON with stage definitions
     """
-    stages = [
-        {'value': s.value, 'label': s.value.replace('_', ' ').title()}
-        for s in PipelineStage
-    ]
+    stages = [{"value": s.value, "label": s.value.replace("_", " ").title()} for s in PipelineStage]
 
-    return jsonify({'stages': stages}), 200
+    return jsonify({"stages": stages}), 200
 
 
-@recruiter_bp.route('/recommendations', methods=['GET'])
+@recruiter_bp.route("/recommendations", methods=["GET"])
 @jwt_required()
 def get_recommendations():
     """
@@ -164,17 +171,22 @@ def get_recommendations():
         JSON with recommended actions
     """
     user_id = get_jwt_identity()
-    limit = min(int(request.args.get('limit', 10)), 25)
+    limit = min(int(request.args.get("limit", 10)), 25)
 
     recommendations = RecruiterService.get_follow_up_recommendations(user_id, limit)
 
-    return jsonify({
-        'recommendations': recommendations,
-        'count': len(recommendations),
-    }), 200
+    return (
+        jsonify(
+            {
+                "recommendations": recommendations,
+                "count": len(recommendations),
+            }
+        ),
+        200,
+    )
 
 
-@recruiter_bp.route('/<recruiter_id>', methods=['GET'])
+@recruiter_bp.route("/<recruiter_id>", methods=["GET"])
 @jwt_required()
 def get_recruiter(recruiter_id):
     """
@@ -187,14 +199,19 @@ def get_recruiter(recruiter_id):
     recruiter = RecruiterService.get_recruiter(recruiter_id, user_id)
 
     if not recruiter:
-        return jsonify({'error': 'Recruiter not found'}), 404
+        return jsonify({"error": "Recruiter not found"}), 404
 
-    return jsonify({
-        'recruiter': recruiter.to_dict(include_engagement=True),
-    }), 200
+    return (
+        jsonify(
+            {
+                "recruiter": recruiter.to_dict(include_engagement=True),
+            }
+        ),
+        200,
+    )
 
 
-@recruiter_bp.route('/<recruiter_id>', methods=['PUT'])
+@recruiter_bp.route("/<recruiter_id>", methods=["PUT"])
 @jwt_required()
 def update_recruiter(recruiter_id):
     """
@@ -211,21 +228,24 @@ def update_recruiter(recruiter_id):
 
     try:
         recruiter = RecruiterService.update_recruiter(
-            recruiter_id=recruiter_id,
-            user_id=user_id,
-            **data
+            recruiter_id=recruiter_id, user_id=user_id, **data
         )
 
-        return jsonify({
-            'message': 'Recruiter updated',
-            'recruiter': recruiter.to_dict(),
-        }), 200
+        return (
+            jsonify(
+                {
+                    "message": "Recruiter updated",
+                    "recruiter": recruiter.to_dict(),
+                }
+            ),
+            200,
+        )
 
     except ValueError as e:
-        return jsonify({'error': str(e)}), 404
+        return jsonify({"error": str(e)}), 404
 
 
-@recruiter_bp.route('/<recruiter_id>', methods=['DELETE'])
+@recruiter_bp.route("/<recruiter_id>", methods=["DELETE"])
 @jwt_required()
 def delete_recruiter(recruiter_id):
     """
@@ -238,12 +258,12 @@ def delete_recruiter(recruiter_id):
 
     try:
         RecruiterService.delete_recruiter(recruiter_id, user_id)
-        return jsonify({'message': 'Recruiter deleted'}), 200
+        return jsonify({"message": "Recruiter deleted"}), 200
     except ValueError as e:
-        return jsonify({'error': str(e)}), 404
+        return jsonify({"error": str(e)}), 404
 
 
-@recruiter_bp.route('/<recruiter_id>/stage', methods=['PUT'])
+@recruiter_bp.route("/<recruiter_id>/stage", methods=["PUT"])
 @jwt_required()
 def update_stage(recruiter_id):
     """
@@ -258,9 +278,9 @@ def update_stage(recruiter_id):
     user_id = get_jwt_identity()
     data = request.get_json() or {}
 
-    stage = data.get('stage')
+    stage = data.get("stage")
     if not stage:
-        return jsonify({'error': 'stage is required'}), 400
+        return jsonify({"error": "stage is required"}), 400
 
     try:
         recruiter = RecruiterService.update_pipeline_stage(
@@ -269,16 +289,21 @@ def update_stage(recruiter_id):
             new_stage=stage,
         )
 
-        return jsonify({
-            'message': f'Recruiter moved to {stage}',
-            'recruiter': recruiter.to_dict(),
-        }), 200
+        return (
+            jsonify(
+                {
+                    "message": f"Recruiter moved to {stage}",
+                    "recruiter": recruiter.to_dict(),
+                }
+            ),
+            200,
+        )
 
     except ValueError as e:
-        return jsonify({'error': str(e)}), 400
+        return jsonify({"error": str(e)}), 400
 
 
-@recruiter_bp.route('/<recruiter_id>/message-sent', methods=['POST'])
+@recruiter_bp.route("/<recruiter_id>/message-sent", methods=["POST"])
 @jwt_required()
 def record_message_sent(recruiter_id):
     """
@@ -297,20 +322,25 @@ def record_message_sent(recruiter_id):
         recruiter = RecruiterService.record_message_sent(
             recruiter_id=recruiter_id,
             user_id=user_id,
-            message_id=data.get('message_id'),
+            message_id=data.get("message_id"),
         )
 
-        return jsonify({
-            'message': 'Message recorded',
-            'engagement_score': recruiter.engagement_score,
-            'messages_sent': recruiter.messages_sent,
-        }), 200
+        return (
+            jsonify(
+                {
+                    "message": "Message recorded",
+                    "engagement_score": recruiter.engagement_score,
+                    "messages_sent": recruiter.messages_sent,
+                }
+            ),
+            200,
+        )
 
     except ValueError as e:
-        return jsonify({'error': str(e)}), 404
+        return jsonify({"error": str(e)}), 404
 
 
-@recruiter_bp.route('/<recruiter_id>/message-opened', methods=['POST'])
+@recruiter_bp.route("/<recruiter_id>/message-opened", methods=["POST"])
 @jwt_required()
 def record_message_opened(recruiter_id):
     """
@@ -327,17 +357,22 @@ def record_message_opened(recruiter_id):
             user_id=user_id,
         )
 
-        return jsonify({
-            'message': 'Open recorded',
-            'engagement_score': recruiter.engagement_score,
-            'messages_opened': recruiter.messages_opened,
-        }), 200
+        return (
+            jsonify(
+                {
+                    "message": "Open recorded",
+                    "engagement_score": recruiter.engagement_score,
+                    "messages_opened": recruiter.messages_opened,
+                }
+            ),
+            200,
+        )
 
     except ValueError as e:
-        return jsonify({'error': str(e)}), 404
+        return jsonify({"error": str(e)}), 404
 
 
-@recruiter_bp.route('/<recruiter_id>/response', methods=['POST'])
+@recruiter_bp.route("/<recruiter_id>/response", methods=["POST"])
 @jwt_required()
 def record_response(recruiter_id):
     """
@@ -356,19 +391,24 @@ def record_response(recruiter_id):
         recruiter = RecruiterService.record_response(
             recruiter_id=recruiter_id,
             user_id=user_id,
-            is_positive=data.get('is_positive', True),
+            is_positive=data.get("is_positive", True),
         )
 
-        return jsonify({
-            'message': 'Response recorded',
-            'recruiter': recruiter.to_dict(include_engagement=True),
-        }), 200
+        return (
+            jsonify(
+                {
+                    "message": "Response recorded",
+                    "recruiter": recruiter.to_dict(include_engagement=True),
+                }
+            ),
+            200,
+        )
 
     except ValueError as e:
-        return jsonify({'error': str(e)}), 404
+        return jsonify({"error": str(e)}), 404
 
 
-@recruiter_bp.route('/<recruiter_id>/fit-score', methods=['POST'])
+@recruiter_bp.route("/<recruiter_id>/fit-score", methods=["POST"])
 @jwt_required()
 def calculate_fit(recruiter_id):
     """
@@ -390,22 +430,27 @@ def calculate_fit(recruiter_id):
         result = RecruiterService.calculate_fit_score(
             recruiter_id=recruiter_id,
             user_id=user_id,
-            user_industries=data.get('user_industries', []),
-            user_location=data.get('user_location'),
-            user_target_roles=data.get('user_target_roles', []),
-            user_salary_expectation=data.get('user_salary_expectation'),
+            user_industries=data.get("user_industries", []),
+            user_location=data.get("user_location"),
+            user_target_roles=data.get("user_target_roles", []),
+            user_salary_expectation=data.get("user_salary_expectation"),
         )
 
-        return jsonify({
-            'fit_score': result['total_score'],
-            'components': result['components'],
-        }), 200
+        return (
+            jsonify(
+                {
+                    "fit_score": result["total_score"],
+                    "components": result["components"],
+                }
+            ),
+            200,
+        )
 
     except ValueError as e:
-        return jsonify({'error': str(e)}), 404
+        return jsonify({"error": str(e)}), 404
 
 
-@recruiter_bp.route('/<recruiter_id>/notes', methods=['GET'])
+@recruiter_bp.route("/<recruiter_id>/notes", methods=["GET"])
 @jwt_required()
 def get_notes(recruiter_id):
     """
@@ -418,14 +463,19 @@ def get_notes(recruiter_id):
 
     try:
         notes = RecruiterService.get_notes(recruiter_id, user_id)
-        return jsonify({
-            'notes': [n.to_dict() for n in notes],
-        }), 200
+        return (
+            jsonify(
+                {
+                    "notes": [n.to_dict() for n in notes],
+                }
+            ),
+            200,
+        )
     except ValueError as e:
-        return jsonify({'error': str(e)}), 404
+        return jsonify({"error": str(e)}), 404
 
 
-@recruiter_bp.route('/<recruiter_id>/notes', methods=['POST'])
+@recruiter_bp.route("/<recruiter_id>/notes", methods=["POST"])
 @jwt_required()
 def add_note(recruiter_id):
     """
@@ -441,28 +491,33 @@ def add_note(recruiter_id):
     user_id = get_jwt_identity()
     data = request.get_json() or {}
 
-    content = data.get('content')
+    content = data.get("content")
     if not content:
-        return jsonify({'error': 'content is required'}), 400
+        return jsonify({"error": "content is required"}), 400
 
     try:
         note = RecruiterService.add_note(
             recruiter_id=recruiter_id,
             user_id=user_id,
             content=content,
-            note_type=data.get('note_type', 'general'),
+            note_type=data.get("note_type", "general"),
         )
 
-        return jsonify({
-            'message': 'Note added',
-            'note': note.to_dict(),
-        }), 201
+        return (
+            jsonify(
+                {
+                    "message": "Note added",
+                    "note": note.to_dict(),
+                }
+            ),
+            201,
+        )
 
     except ValueError as e:
-        return jsonify({'error': str(e)}), 404
+        return jsonify({"error": str(e)}), 404
 
 
-@recruiter_bp.route('/<recruiter_id>/next-action', methods=['PUT'])
+@recruiter_bp.route("/<recruiter_id>/next-action", methods=["PUT"])
 @jwt_required()
 def set_next_action(recruiter_id):
     """
@@ -478,16 +533,16 @@ def set_next_action(recruiter_id):
     user_id = get_jwt_identity()
     data = request.get_json() or {}
 
-    action = data.get('action')
+    action = data.get("action")
     if not action:
-        return jsonify({'error': 'action is required'}), 400
+        return jsonify({"error": "action is required"}), 400
 
     due_date = None
-    if data.get('due_date'):
+    if data.get("due_date"):
         try:
-            due_date = datetime.fromisoformat(data['due_date'].replace('Z', '+00:00'))
+            due_date = datetime.fromisoformat(data["due_date"].replace("Z", "+00:00"))
         except ValueError:
-            return jsonify({'error': 'Invalid due_date format'}), 400
+            return jsonify({"error": "Invalid due_date format"}), 400
 
     try:
         recruiter = RecruiterService.set_next_action(
@@ -497,10 +552,15 @@ def set_next_action(recruiter_id):
             due_date=due_date,
         )
 
-        return jsonify({
-            'message': 'Next action set',
-            'recruiter': recruiter.to_dict(),
-        }), 200
+        return (
+            jsonify(
+                {
+                    "message": "Next action set",
+                    "recruiter": recruiter.to_dict(),
+                }
+            ),
+            200,
+        )
 
     except ValueError as e:
-        return jsonify({'error': str(e)}), 404
+        return jsonify({"error": str(e)}), 404

@@ -4,12 +4,12 @@ Recruiter CRM Service
 Handles recruiter management, engagement tracking, and fit scoring.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 
 from app.extensions import db
-from app.models.recruiter import Recruiter, RecruiterNote
 from app.models.activity import PipelineItem, PipelineStage
+from app.models.recruiter import Recruiter, RecruiterNote
 from app.services.scoring.engagement import (
     calculate_engagement_score,
     calculate_fit_score,
@@ -93,7 +93,7 @@ class RecruiterService:
             note = RecruiterNote(
                 recruiter_id=recruiter.id,
                 content=notes,
-                note_type='general',
+                note_type="general",
             )
             db.session.add(note)
 
@@ -104,10 +104,7 @@ class RecruiterService:
     @staticmethod
     def get_recruiter(recruiter_id: str, user_id: str) -> Optional[Recruiter]:
         """Get a recruiter by ID, verifying ownership."""
-        return Recruiter.query.filter_by(
-            id=recruiter_id,
-            user_id=user_id
-        ).first()
+        return Recruiter.query.filter_by(id=recruiter_id, user_id=user_id).first()
 
     @staticmethod
     def get_user_recruiters(
@@ -115,7 +112,7 @@ class RecruiterService:
         status: Optional[str] = None,
         industry: Optional[str] = None,
         location: Optional[str] = None,
-        sort_by: str = 'priority',
+        sort_by: str = "priority",
         limit: int = 50,
         offset: int = 0,
     ) -> Tuple[List[Recruiter], int]:
@@ -146,17 +143,17 @@ class RecruiterService:
         total = query.count()
 
         # Apply sorting
-        if sort_by == 'priority':
+        if sort_by == "priority":
             query = query.order_by(Recruiter.priority_score.desc())
-        elif sort_by == 'name':
+        elif sort_by == "name":
             query = query.order_by(Recruiter.last_name, Recruiter.first_name)
-        elif sort_by == 'company':
+        elif sort_by == "company":
             query = query.order_by(Recruiter.company)
-        elif sort_by == 'last_contact':
+        elif sort_by == "last_contact":
             query = query.order_by(Recruiter.last_contact_date.desc())
-        elif sort_by == 'engagement':
+        elif sort_by == "engagement":
             query = query.order_by(Recruiter.engagement_score.desc())
-        elif sort_by == 'fit':
+        elif sort_by == "fit":
             query = query.order_by(Recruiter.fit_score.desc())
         else:
             query = query.order_by(Recruiter.created_at.desc())
@@ -166,11 +163,7 @@ class RecruiterService:
         return recruiters, total
 
     @staticmethod
-    def update_recruiter(
-        recruiter_id: str,
-        user_id: str,
-        **updates
-    ) -> Recruiter:
+    def update_recruiter(recruiter_id: str, user_id: str, **updates) -> Recruiter:
         """
         Update recruiter information.
 
@@ -187,9 +180,19 @@ class RecruiterService:
             raise ValueError("Recruiter not found")
 
         allowed_fields = {
-            'first_name', 'last_name', 'email', 'company', 'title',
-            'linkedin_url', 'phone', 'industries', 'locations',
-            'specialty', 'company_type', 'salary_range_min', 'salary_range_max',
+            "first_name",
+            "last_name",
+            "email",
+            "company",
+            "title",
+            "linkedin_url",
+            "phone",
+            "industries",
+            "locations",
+            "specialty",
+            "company_type",
+            "salary_range_min",
+            "salary_range_max",
         }
 
         for field, value in updates.items():
@@ -242,13 +245,10 @@ class RecruiterService:
         if new_stage not in valid_stages:
             raise ValueError(f"Invalid stage. Must be one of: {', '.join(valid_stages)}")
 
-        old_stage = recruiter.status
         recruiter.status = new_stage
 
         # Update pipeline item
-        pipeline_item = PipelineItem.query.filter_by(
-            recruiter_id=recruiter_id
-        ).first()
+        pipeline_item = PipelineItem.query.filter_by(recruiter_id=recruiter_id).first()
 
         if pipeline_item:
             pipeline_item.stage = new_stage
@@ -385,8 +385,8 @@ class RecruiterService:
             recruiter_salary_range=salary_range,
         )
 
-        recruiter.fit_score = result['total_score']
-        recruiter.fit_components = result['components']
+        recruiter.fit_score = result["total_score"]
+        recruiter.fit_components = result["components"]
 
         RecruiterService._update_priority_score(recruiter)
 
@@ -404,8 +404,8 @@ class RecruiterService:
             last_contact_date=recruiter.last_contact_date,
         )
 
-        recruiter.engagement_score = result['total_score']
-        recruiter.engagement_components = result['components']
+        recruiter.engagement_score = result["total_score"]
+        recruiter.engagement_components = result["components"]
 
     @staticmethod
     def _update_priority_score(recruiter: Recruiter) -> None:
@@ -427,7 +427,7 @@ class RecruiterService:
             engagement_score=recruiter.engagement_score or 50,
             fit_score=recruiter.fit_score or 50,
             has_responded=recruiter.has_responded or False,
-            status=recruiter.status or 'new',
+            status=recruiter.status or "new",
         )
 
         recruiter.priority_score = score
@@ -437,7 +437,7 @@ class RecruiterService:
         recruiter_id: str,
         user_id: str,
         content: str,
-        note_type: str = 'general',
+        note_type: str = "general",
     ) -> RecruiterNote:
         """
         Add a note to a recruiter.
@@ -473,9 +473,11 @@ class RecruiterService:
         if not recruiter:
             raise ValueError("Recruiter not found")
 
-        return RecruiterNote.query.filter_by(
-            recruiter_id=recruiter_id
-        ).order_by(RecruiterNote.created_at.desc()).all()
+        return (
+            RecruiterNote.query.filter_by(recruiter_id=recruiter_id)
+            .order_by(RecruiterNote.created_at.desc())
+            .all()
+        )
 
     @staticmethod
     def set_next_action(
@@ -504,9 +506,7 @@ class RecruiterService:
         recruiter.next_action_date = due_date
 
         # Update pipeline item
-        pipeline_item = PipelineItem.query.filter_by(
-            recruiter_id=recruiter_id
-        ).first()
+        pipeline_item = PipelineItem.query.filter_by(recruiter_id=recruiter_id).first()
 
         if pipeline_item:
             pipeline_item.next_action = action
@@ -525,17 +525,21 @@ class RecruiterService:
 
         Returns recruiters needing follow-up with action suggestions.
         """
-        recruiters = Recruiter.query.filter_by(
-            user_id=user_id
-        ).filter(
-            Recruiter.status.in_([
-                PipelineStage.CONTACTED.value,
-                PipelineStage.RESPONDED.value,
-                PipelineStage.INTERVIEWING.value,
-            ])
-        ).order_by(
-            Recruiter.priority_score.desc()
-        ).limit(limit).all()
+        recruiters = (
+            Recruiter.query.filter_by(user_id=user_id)
+            .filter(
+                Recruiter.status.in_(
+                    [
+                        PipelineStage.CONTACTED.value,
+                        PipelineStage.RESPONDED.value,
+                        PipelineStage.INTERVIEWING.value,
+                    ]
+                )
+            )
+            .order_by(Recruiter.priority_score.desc())
+            .limit(limit)
+            .all()
+        )
 
         recommendations = []
         for recruiter in recruiters:
@@ -545,17 +549,19 @@ class RecruiterService:
 
             action = RecruiterService._suggest_action(recruiter, days_since)
 
-            recommendations.append({
-                'recruiter_id': str(recruiter.id),
-                'recruiter_name': recruiter.full_name,
-                'company': recruiter.company,
-                'status': recruiter.status,
-                'priority_score': recruiter.priority_score,
-                'days_since_contact': days_since,
-                'suggested_action': action['action'],
-                'action_type': action['type'],
-                'urgency': action['urgency'],
-            })
+            recommendations.append(
+                {
+                    "recruiter_id": str(recruiter.id),
+                    "recruiter_name": recruiter.full_name,
+                    "company": recruiter.company,
+                    "status": recruiter.status,
+                    "priority_score": recruiter.priority_score,
+                    "days_since_contact": days_since,
+                    "suggested_action": action["action"],
+                    "action_type": action["type"],
+                    "urgency": action["urgency"],
+                }
+            )
 
         return recommendations
 
@@ -564,51 +570,51 @@ class RecruiterService:
         """Generate action suggestion based on recruiter state."""
         if recruiter.status == PipelineStage.RESPONDED.value:
             return {
-                'action': 'Schedule a call to discuss opportunities',
-                'type': 'schedule_call',
-                'urgency': 'high' if days_since > 2 else 'medium',
+                "action": "Schedule a call to discuss opportunities",
+                "type": "schedule_call",
+                "urgency": "high" if days_since > 2 else "medium",
             }
 
         if recruiter.status == PipelineStage.INTERVIEWING.value:
             return {
-                'action': 'Send thank you note if interview completed',
-                'type': 'thank_you',
-                'urgency': 'high',
+                "action": "Send thank you note if interview completed",
+                "type": "thank_you",
+                "urgency": "high",
             }
 
         if not recruiter.has_responded:
             if days_since >= 7:
                 return {
-                    'action': 'Send follow-up message',
-                    'type': 'follow_up',
-                    'urgency': 'high' if days_since >= 14 else 'medium',
+                    "action": "Send follow-up message",
+                    "type": "follow_up",
+                    "urgency": "high" if days_since >= 14 else "medium",
                 }
             elif days_since >= 3:
                 return {
-                    'action': 'Consider sending follow-up in a few days',
-                    'type': 'follow_up',
-                    'urgency': 'low',
+                    "action": "Consider sending follow-up in a few days",
+                    "type": "follow_up",
+                    "urgency": "low",
                 }
 
         return {
-            'action': 'Review and update recruiter information',
-            'type': 'research',
-            'urgency': 'low',
+            "action": "Review and update recruiter information",
+            "type": "research",
+            "urgency": "low",
         }
 
     @staticmethod
     def get_pipeline_stats(user_id: str) -> Dict:
         """Get pipeline statistics for dashboard."""
         stats = {
-            'total': 0,
-            'by_stage': {},
-            'response_rate': 0,
-            'avg_engagement': 0,
-            'avg_fit': 0,
+            "total": 0,
+            "by_stage": {},
+            "response_rate": 0,
+            "avg_engagement": 0,
+            "avg_fit": 0,
         }
 
         recruiters = Recruiter.query.filter_by(user_id=user_id).all()
-        stats['total'] = len(recruiters)
+        stats["total"] = len(recruiters)
 
         if not recruiters:
             return stats
@@ -616,21 +622,21 @@ class RecruiterService:
         # Count by stage
         for stage in PipelineStage:
             count = sum(1 for r in recruiters if r.status == stage.value)
-            stats['by_stage'][stage.value] = count
+            stats["by_stage"][stage.value] = count
 
         # Calculate response rate
         total_contacted = sum(1 for r in recruiters if r.messages_sent and r.messages_sent > 0)
         total_responded = sum(1 for r in recruiters if r.has_responded)
         if total_contacted > 0:
-            stats['response_rate'] = round((total_responded / total_contacted) * 100, 1)
+            stats["response_rate"] = round((total_responded / total_contacted) * 100, 1)
 
         # Calculate averages
         engagement_scores = [r.engagement_score for r in recruiters if r.engagement_score]
         fit_scores = [r.fit_score for r in recruiters if r.fit_score]
 
         if engagement_scores:
-            stats['avg_engagement'] = round(sum(engagement_scores) / len(engagement_scores), 1)
+            stats["avg_engagement"] = round(sum(engagement_scores) / len(engagement_scores), 1)
         if fit_scores:
-            stats['avg_fit'] = round(sum(fit_scores) / len(fit_scores), 1)
+            stats["avg_fit"] = round(sum(fit_scores) / len(fit_scores), 1)
 
         return stats

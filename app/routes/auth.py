@@ -5,26 +5,27 @@ Handles user registration, login, token refresh, logout, and password management
 """
 
 from datetime import datetime
-from flask import Blueprint, request, jsonify
+
+from flask import Blueprint, jsonify, request
 from flask_jwt_extended import (
     create_access_token,
     create_refresh_token,
-    jwt_required,
-    get_jwt_identity,
     get_jwt,
+    get_jwt_identity,
+    jwt_required,
 )
 
 from app.extensions import db
 from app.models.user import User
-from app.utils.validators import validate_email, validate_password, ValidationError
+from app.utils.validators import ValidationError, validate_email, validate_password
 
-auth_bp = Blueprint('auth', __name__)
+auth_bp = Blueprint("auth", __name__)
 
 # In-memory token blocklist (replace with Redis in production)
 _token_blocklist = set()
 
 
-@auth_bp.route('/register', methods=['POST'])
+@auth_bp.route("/register", methods=["POST"])
 def register():
     """
     Register a new user.
@@ -43,51 +44,55 @@ def register():
     data = request.get_json()
 
     if not data:
-        return jsonify({
-            'success': False,
-            'error': 'invalid_request',
-            'message': 'Request body is required'
-        }), 400
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "invalid_request",
+                    "message": "Request body is required",
+                }
+            ),
+            400,
+        )
 
-    email = data.get('email', '').strip().lower()
-    password = data.get('password', '')
-    first_name = data.get('first_name', '').strip() or None
-    last_name = data.get('last_name', '').strip() or None
+    email = data.get("email", "").strip().lower()
+    password = data.get("password", "")
+    first_name = data.get("first_name", "").strip() or None
+    last_name = data.get("last_name", "").strip() or None
 
     # Validate email
     try:
         validate_email(email)
     except ValidationError as e:
-        return jsonify({
-            'success': False,
-            'error': 'validation_error',
-            'message': str(e)
-        }), 400
+        return (
+            jsonify({"success": False, "error": "validation_error", "message": str(e)}),
+            400,
+        )
 
     # Validate password
     try:
         validate_password(password)
     except ValidationError as e:
-        return jsonify({
-            'success': False,
-            'error': 'validation_error',
-            'message': str(e)
-        }), 400
+        return (
+            jsonify({"success": False, "error": "validation_error", "message": str(e)}),
+            400,
+        )
 
     # Check if email already exists
     if User.query.filter_by(email=email).first():
-        return jsonify({
-            'success': False,
-            'error': 'email_exists',
-            'message': 'An account with this email already exists'
-        }), 409
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "email_exists",
+                    "message": "An account with this email already exists",
+                }
+            ),
+            409,
+        )
 
     # Create user
-    user = User(
-        email=email,
-        first_name=first_name,
-        last_name=last_name
-    )
+    user = User(email=email, first_name=first_name, last_name=last_name)
     user.set_password(password)
 
     db.session.add(user)
@@ -97,18 +102,23 @@ def register():
     access_token = create_access_token(identity=str(user.id))
     refresh_token = create_refresh_token(identity=str(user.id))
 
-    return jsonify({
-        'success': True,
-        'message': 'User registered successfully',
-        'data': {
-            'user': user.to_dict(),
-            'access_token': access_token,
-            'refresh_token': refresh_token
-        }
-    }), 201
+    return (
+        jsonify(
+            {
+                "success": True,
+                "message": "User registered successfully",
+                "data": {
+                    "user": user.to_dict(),
+                    "access_token": access_token,
+                    "refresh_token": refresh_token,
+                },
+            }
+        ),
+        201,
+    )
 
 
-@auth_bp.route('/login', methods=['POST'])
+@auth_bp.route("/login", methods=["POST"])
 def login():
     """
     Authenticate user and return tokens.
@@ -125,38 +135,58 @@ def login():
     data = request.get_json()
 
     if not data:
-        return jsonify({
-            'success': False,
-            'error': 'invalid_request',
-            'message': 'Request body is required'
-        }), 400
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "invalid_request",
+                    "message": "Request body is required",
+                }
+            ),
+            400,
+        )
 
-    email = data.get('email', '').strip().lower()
-    password = data.get('password', '')
+    email = data.get("email", "").strip().lower()
+    password = data.get("password", "")
 
     if not email or not password:
-        return jsonify({
-            'success': False,
-            'error': 'validation_error',
-            'message': 'Email and password are required'
-        }), 400
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "validation_error",
+                    "message": "Email and password are required",
+                }
+            ),
+            400,
+        )
 
     # Find user
     user = User.query.filter_by(email=email).first()
 
     if not user or not user.check_password(password):
-        return jsonify({
-            'success': False,
-            'error': 'invalid_credentials',
-            'message': 'Invalid email or password'
-        }), 401
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "invalid_credentials",
+                    "message": "Invalid email or password",
+                }
+            ),
+            401,
+        )
 
     if not user.is_active:
-        return jsonify({
-            'success': False,
-            'error': 'account_disabled',
-            'message': 'This account has been disabled'
-        }), 401
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "account_disabled",
+                    "message": "This account has been disabled",
+                }
+            ),
+            401,
+        )
 
     # Update last login
     user.last_login_at = datetime.utcnow()
@@ -166,18 +196,23 @@ def login():
     access_token = create_access_token(identity=str(user.id))
     refresh_token = create_refresh_token(identity=str(user.id))
 
-    return jsonify({
-        'success': True,
-        'message': 'Login successful',
-        'data': {
-            'user': user.to_dict(include_private=True),
-            'access_token': access_token,
-            'refresh_token': refresh_token
-        }
-    }), 200
+    return (
+        jsonify(
+            {
+                "success": True,
+                "message": "Login successful",
+                "data": {
+                    "user": user.to_dict(include_private=True),
+                    "access_token": access_token,
+                    "refresh_token": refresh_token,
+                },
+            }
+        ),
+        200,
+    )
 
 
-@auth_bp.route('/refresh', methods=['POST'])
+@auth_bp.route("/refresh", methods=["POST"])
 @jwt_required(refresh=True)
 def refresh():
     """
@@ -195,23 +230,23 @@ def refresh():
     # Verify user still exists and is active
     user = User.query.get(current_user_id)
     if not user or not user.is_active:
-        return jsonify({
-            'success': False,
-            'error': 'invalid_user',
-            'message': 'User not found or account disabled'
-        }), 401
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "invalid_user",
+                    "message": "User not found or account disabled",
+                }
+            ),
+            401,
+        )
 
     access_token = create_access_token(identity=current_user_id)
 
-    return jsonify({
-        'success': True,
-        'data': {
-            'access_token': access_token
-        }
-    }), 200
+    return jsonify({"success": True, "data": {"access_token": access_token}}), 200
 
 
-@auth_bp.route('/logout', methods=['POST'])
+@auth_bp.route("/logout", methods=["POST"])
 @jwt_required()
 def logout():
     """
@@ -223,16 +258,13 @@ def logout():
     Returns:
         200: Logout successful
     """
-    jti = get_jwt()['jti']
+    jti = get_jwt()["jti"]
     _token_blocklist.add(jti)
 
-    return jsonify({
-        'success': True,
-        'message': 'Logged out successfully'
-    }), 200
+    return jsonify({"success": True, "message": "Logged out successfully"}), 200
 
 
-@auth_bp.route('/me', methods=['GET'])
+@auth_bp.route("/me", methods=["GET"])
 @jwt_required()
 def get_current_user():
     """
@@ -250,21 +282,24 @@ def get_current_user():
     user = User.query.get(current_user_id)
 
     if not user:
-        return jsonify({
-            'success': False,
-            'error': 'user_not_found',
-            'message': 'User not found'
-        }), 404
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "user_not_found",
+                    "message": "User not found",
+                }
+            ),
+            404,
+        )
 
-    return jsonify({
-        'success': True,
-        'data': {
-            'user': user.to_dict(include_private=True)
-        }
-    }), 200
+    return (
+        jsonify({"success": True, "data": {"user": user.to_dict(include_private=True)}}),
+        200,
+    )
 
 
-@auth_bp.route('/password', methods=['PUT'])
+@auth_bp.route("/password", methods=["PUT"])
 @jwt_required()
 def change_password():
     """
@@ -286,53 +321,64 @@ def change_password():
     user = User.query.get(current_user_id)
 
     if not user:
-        return jsonify({
-            'success': False,
-            'error': 'user_not_found',
-            'message': 'User not found'
-        }), 404
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "user_not_found",
+                    "message": "User not found",
+                }
+            ),
+            404,
+        )
 
     data = request.get_json()
 
     if not data:
-        return jsonify({
-            'success': False,
-            'error': 'invalid_request',
-            'message': 'Request body is required'
-        }), 400
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "invalid_request",
+                    "message": "Request body is required",
+                }
+            ),
+            400,
+        )
 
-    current_password = data.get('current_password', '')
-    new_password = data.get('new_password', '')
+    current_password = data.get("current_password", "")
+    new_password = data.get("new_password", "")
 
     # Verify current password
     if not user.check_password(current_password):
-        return jsonify({
-            'success': False,
-            'error': 'invalid_password',
-            'message': 'Current password is incorrect'
-        }), 401
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "invalid_password",
+                    "message": "Current password is incorrect",
+                }
+            ),
+            401,
+        )
 
     # Validate new password
     try:
         validate_password(new_password)
     except ValidationError as e:
-        return jsonify({
-            'success': False,
-            'error': 'validation_error',
-            'message': str(e)
-        }), 400
+        return (
+            jsonify({"success": False, "error": "validation_error", "message": str(e)}),
+            400,
+        )
 
     # Update password
     user.set_password(new_password)
     db.session.commit()
 
-    return jsonify({
-        'success': True,
-        'message': 'Password changed successfully'
-    }), 200
+    return jsonify({"success": True, "message": "Password changed successfully"}), 200
 
 
-@auth_bp.route('/forgot-password', methods=['POST'])
+@auth_bp.route("/forgot-password", methods=["POST"])
 def forgot_password():
     """
     Request password reset email.
@@ -346,13 +392,18 @@ def forgot_password():
     data = request.get_json()
 
     if not data:
-        return jsonify({
-            'success': False,
-            'error': 'invalid_request',
-            'message': 'Request body is required'
-        }), 400
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "invalid_request",
+                    "message": "Request body is required",
+                }
+            ),
+            400,
+        )
 
-    email = data.get('email', '').strip().lower()
+    email = data.get("email", "").strip().lower()
 
     # Always return success to prevent email enumeration
     # In production, this would send an email if user exists
@@ -361,21 +412,28 @@ def forgot_password():
     if user:
         # Generate reset token and send email via SendGrid
         import uuid
+
         reset_token = str(uuid.uuid4())
         user.verification_token = reset_token
         db.session.commit()
 
         # Send password reset email
         from app.services.email_service import EmailService
+
         EmailService.send_password_reset_email(user, reset_token)
 
-    return jsonify({
-        'success': True,
-        'message': 'If an account exists with this email, a password reset link has been sent'
-    }), 200
+    return (
+        jsonify(
+            {
+                "success": True,
+                "message": "If an account exists with this email, a password reset link has been sent",
+            }
+        ),
+        200,
+    )
 
 
-@auth_bp.route('/reset-password', methods=['POST'])
+@auth_bp.route("/reset-password", methods=["POST"])
 def reset_password():
     """
     Reset password using token from email.
@@ -391,55 +449,74 @@ def reset_password():
     data = request.get_json()
 
     if not data:
-        return jsonify({
-            'success': False,
-            'error': 'invalid_request',
-            'message': 'Request body is required'
-        }), 400
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "invalid_request",
+                    "message": "Request body is required",
+                }
+            ),
+            400,
+        )
 
-    token = data.get('token', '')
-    new_password = data.get('new_password', '')
+    token = data.get("token", "")
+    new_password = data.get("new_password", "")
 
     if not token:
-        return jsonify({
-            'success': False,
-            'error': 'validation_error',
-            'message': 'Reset token is required'
-        }), 400
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "validation_error",
+                    "message": "Reset token is required",
+                }
+            ),
+            400,
+        )
 
     # Find user with token
     user = User.query.filter_by(verification_token=token).first()
 
     if not user:
-        return jsonify({
-            'success': False,
-            'error': 'invalid_token',
-            'message': 'Invalid or expired reset token'
-        }), 400
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "invalid_token",
+                    "message": "Invalid or expired reset token",
+                }
+            ),
+            400,
+        )
 
     # Validate new password
     try:
         validate_password(new_password)
     except ValidationError as e:
-        return jsonify({
-            'success': False,
-            'error': 'validation_error',
-            'message': str(e)
-        }), 400
+        return (
+            jsonify({"success": False, "error": "validation_error", "message": str(e)}),
+            400,
+        )
 
     # Update password and clear token
     user.set_password(new_password)
     user.verification_token = None
     db.session.commit()
 
-    return jsonify({
-        'success': True,
-        'message': 'Password reset successful. You can now log in with your new password.'
-    }), 200
+    return (
+        jsonify(
+            {
+                "success": True,
+                "message": "Password reset successful. You can now log in with your new password.",
+            }
+        ),
+        200,
+    )
 
 
 # Token blocklist checker for JWT
 def check_if_token_revoked(jwt_header, jwt_payload):
     """Check if token is in blocklist."""
-    jti = jwt_payload['jti']
+    jti = jwt_payload["jti"]
     return jti in _token_blocklist

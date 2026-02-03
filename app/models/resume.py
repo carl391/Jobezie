@@ -25,10 +25,10 @@ class Resume(db.Model):
     - Fit (5%): Match to target role
     """
 
-    __tablename__ = 'resumes'
+    __tablename__ = "resumes"
 
     id = db.Column(GUID(), primary_key=True, default=uuid.uuid4)
-    user_id = db.Column(GUID(), db.ForeignKey('users.id'), nullable=False, index=True)
+    user_id = db.Column(GUID(), db.ForeignKey("users.id"), nullable=False, index=True)
 
     # File Information
     title = db.Column(db.String(255), nullable=True)  # Display title
@@ -68,13 +68,13 @@ class Resume(db.Model):
     is_tailored = db.Column(db.Boolean, default=False)
     target_job_title = db.Column(db.String(255), nullable=True)
     target_company = db.Column(db.String(255), nullable=True)
-    source_resume_id = db.Column(GUID(), db.ForeignKey('resumes.id'), nullable=True)
+    source_resume_id = db.Column(GUID(), db.ForeignKey("resumes.id"), nullable=True)
 
     # Status
     is_master = db.Column(db.Boolean, default=False)
     is_deleted = db.Column(db.Boolean, default=False)
     deleted_at = db.Column(db.DateTime, nullable=True)
-    parse_status = db.Column(db.String(50), default='pending')
+    parse_status = db.Column(db.String(50), default="pending")
 
     # Timestamps
     analyzed_at = db.Column(db.DateTime, nullable=True)
@@ -82,11 +82,13 @@ class Resume(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
-    user = db.relationship('User', backref=db.backref('resumes', lazy='dynamic'))
-    tailored_versions = db.relationship('Resume', backref=db.backref('source_resume', remote_side=[id]))
+    user = db.relationship("User", backref=db.backref("resumes", lazy="dynamic"))
+    tailored_versions = db.relationship(
+        "Resume", backref=db.backref("source_resume", remote_side=[id])
+    )
 
     def __repr__(self):
-        return f'<Resume {self.id} - {self.title}>'
+        return f"<Resume {self.id} - {self.title}>"
 
     @property
     def word_count(self) -> int:
@@ -99,67 +101,69 @@ class Resume(db.Model):
     def ats_score_breakdown(self) -> dict:
         """Return ATS score breakdown with weights."""
         return {
-            'total': self.ats_total_score,
-            'components': {
-                'compatibility': {
-                    'score': self.ats_compatibility_score,
-                    'weight': 15,
+            "total": self.ats_total_score,
+            "components": {
+                "compatibility": {
+                    "score": self.ats_compatibility_score,
+                    "weight": 15,
                 },
-                'keywords': {
-                    'score': self.ats_keywords_score,
-                    'weight': 15,
+                "keywords": {
+                    "score": self.ats_keywords_score,
+                    "weight": 15,
                 },
-                'achievements': {
-                    'score': self.ats_achievements_score,
-                    'weight': 25,
+                "achievements": {
+                    "score": self.ats_achievements_score,
+                    "weight": 25,
                 },
-                'formatting': {
-                    'score': self.ats_formatting_score,
-                    'weight': 15,
+                "formatting": {
+                    "score": self.ats_formatting_score,
+                    "weight": 15,
                 },
-                'progression': {
-                    'score': self.ats_progression_score,
-                    'weight': 15,
+                "progression": {
+                    "score": self.ats_progression_score,
+                    "weight": 15,
                 },
-                'completeness': {
-                    'score': self.ats_completeness_score,
-                    'weight': 10,
+                "completeness": {
+                    "score": self.ats_completeness_score,
+                    "weight": 10,
                 },
-                'fit': {
-                    'score': self.ats_fit_score,
-                    'weight': 5,
-                }
-            }
+                "fit": {
+                    "score": self.ats_fit_score,
+                    "weight": 5,
+                },
+            },
         }
 
     def to_dict(self, include_analysis: bool = False) -> dict:
         """Convert resume to dictionary representation."""
         data = {
-            'id': str(self.id),
-            'user_id': str(self.user_id),
-            'title': self.title,
-            'file_name': self.file_name,
-            'file_type': self.file_type,
-            'word_count': self.word_count,
-            'is_master': self.is_master,
-            'is_tailored': self.is_tailored,
-            'target_job_title': self.target_job_title,
-            'parse_status': self.parse_status,
-            'ats_total_score': self.ats_total_score,
-            'analyzed_at': self.analyzed_at.isoformat() if self.analyzed_at else None,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            "id": str(self.id),
+            "user_id": str(self.user_id),
+            "title": self.title,
+            "file_name": self.file_name,
+            "file_type": self.file_type,
+            "word_count": self.word_count,
+            "is_master": self.is_master,
+            "is_tailored": self.is_tailored,
+            "target_job_title": self.target_job_title,
+            "parse_status": self.parse_status,
+            "ats_total_score": self.ats_total_score,
+            "analyzed_at": self.analyzed_at.isoformat() if self.analyzed_at else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
 
         if include_analysis:
-            data.update({
-                'ats_breakdown': self.ats_score_breakdown,
-                'recommendations': self.ats_recommendations,
-                'missing_keywords': self.missing_keywords,
-                'weak_sections': self.weak_sections,
-                'parsed_sections': self.parsed_sections,
-                'contact_info': self.contact_info,
-            })
+            data.update(
+                {
+                    "ats_breakdown": self.ats_score_breakdown,
+                    "recommendations": self.ats_recommendations,
+                    "missing_keywords": self.missing_keywords,
+                    "weak_sections": self.weak_sections,
+                    "parsed_sections": self.parsed_sections,
+                    "contact_info": self.contact_info,
+                }
+            )
 
         return data
 
@@ -171,10 +175,10 @@ class ResumeVersion(db.Model):
     Stores snapshots of resume content at different points in time.
     """
 
-    __tablename__ = 'resume_versions'
+    __tablename__ = "resume_versions"
 
     id = db.Column(GUID(), primary_key=True, default=uuid.uuid4)
-    resume_id = db.Column(GUID(), db.ForeignKey('resumes.id'), nullable=False, index=True)
+    resume_id = db.Column(GUID(), db.ForeignKey("resumes.id"), nullable=False, index=True)
 
     # Version Info
     version_number = db.Column(db.Integer, default=1)
@@ -191,18 +195,18 @@ class ResumeVersion(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Relationships
-    resume = db.relationship('Resume', backref=db.backref('versions', lazy='dynamic'))
+    resume = db.relationship("Resume", backref=db.backref("versions", lazy="dynamic"))
 
     def __repr__(self):
-        return f'<ResumeVersion {self.resume_id} v{self.version_number}>'
+        return f"<ResumeVersion {self.resume_id} v{self.version_number}>"
 
     def to_dict(self) -> dict:
         """Convert version to dictionary representation."""
         return {
-            'id': str(self.id),
-            'resume_id': str(self.resume_id),
-            'version_number': self.version_number,
-            'change_summary': self.change_summary,
-            'ats_score': self.ats_score,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
+            "id": str(self.id),
+            "resume_id": str(self.resume_id),
+            "version_number": self.version_number,
+            "change_summary": self.change_summary,
+            "ats_score": self.ats_score,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
         }

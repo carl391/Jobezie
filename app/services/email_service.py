@@ -5,12 +5,20 @@ Handles email sending via SendGrid for transactional emails.
 """
 
 import os
-from typing import Dict, List, Optional
 from datetime import datetime
+from typing import Dict, List, Optional
 
 from flask import current_app, render_template_string
 from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail, Email, To, Content, Attachment, FileContent, FileName, FileType
+from sendgrid.helpers.mail import (
+    Attachment,
+    Email,
+    FileContent,
+    FileName,
+    FileType,
+    Mail,
+    To,
+)
 
 
 class EmailService:
@@ -18,14 +26,14 @@ class EmailService:
     Service for sending transactional emails via SendGrid.
     """
 
-    FROM_EMAIL = os.getenv('SENDGRID_FROM_EMAIL', 'noreply@jobezie.com')
-    FROM_NAME = os.getenv('SENDGRID_FROM_NAME', 'Jobezie')
+    FROM_EMAIL = os.getenv("SENDGRID_FROM_EMAIL", "noreply@jobezie.com")
+    FROM_NAME = os.getenv("SENDGRID_FROM_NAME", "Jobezie")
 
     # Email templates
     TEMPLATES = {
-        'welcome': {
-            'subject': 'Welcome to Jobezie! Let\'s Start Your Career Journey',
-            'template': '''
+        "welcome": {
+            "subject": "Welcome to Jobezie! Let's Start Your Career Journey",
+            "template": """
 Hello {{ name }},
 
 Welcome to Jobezie! We're excited to help you take control of your career journey.
@@ -41,11 +49,11 @@ If you have any questions, just reply to this email.
 Best of luck on your job search!
 
 The Jobezie Team
-            ''',
+            """,
         },
-        'password_reset': {
-            'subject': 'Reset Your Jobezie Password',
-            'template': '''
+        "password_reset": {
+            "subject": "Reset Your Jobezie Password",
+            "template": """
 Hello {{ name }},
 
 We received a request to reset your password. Click the link below to create a new password:
@@ -57,11 +65,11 @@ This link will expire in 1 hour.
 If you didn't request this, you can safely ignore this email.
 
 The Jobezie Team
-            ''',
+            """,
         },
-        'email_verification': {
-            'subject': 'Verify Your Jobezie Email',
-            'template': '''
+        "email_verification": {
+            "subject": "Verify Your Jobezie Email",
+            "template": """
 Hello {{ name }},
 
 Please verify your email address by clicking the link below:
@@ -71,11 +79,11 @@ Please verify your email address by clicking the link below:
 This link will expire in 24 hours.
 
 The Jobezie Team
-            ''',
+            """,
         },
-        'subscription_confirmed': {
-            'subject': 'Your Jobezie {{ tier }} Subscription is Active!',
-            'template': '''
+        "subscription_confirmed": {
+            "subject": "Your Jobezie {{ tier }} Subscription is Active!",
+            "template": """
 Hello {{ name }},
 
 Great news! Your {{ tier }} subscription is now active.
@@ -90,11 +98,11 @@ Start using your new features now at: {{ dashboard_url }}
 If you have any questions about your subscription, just reply to this email.
 
 The Jobezie Team
-            ''',
+            """,
         },
-        'subscription_cancelled': {
-            'subject': 'Your Jobezie Subscription Has Been Cancelled',
-            'template': '''
+        "subscription_cancelled": {
+            "subject": "Your Jobezie Subscription Has Been Cancelled",
+            "template": """
 Hello {{ name }},
 
 We're sorry to see you go. Your subscription has been cancelled and will remain active until {{ end_date }}.
@@ -106,11 +114,11 @@ If you change your mind, you can resubscribe anytime at: {{ resubscribe_url }}
 We'd love to hear your feedback on how we can improve. Just reply to this email.
 
 The Jobezie Team
-            ''',
+            """,
         },
-        'payment_failed': {
-            'subject': 'Action Required: Payment Failed for Your Jobezie Subscription',
-            'template': '''
+        "payment_failed": {
+            "subject": "Action Required: Payment Failed for Your Jobezie Subscription",
+            "template": """
 Hello {{ name }},
 
 We were unable to process your payment for your Jobezie subscription.
@@ -121,11 +129,11 @@ Please update your payment method to avoid service interruption:
 If you're having trouble, please reply to this email and we'll help.
 
 The Jobezie Team
-            ''',
+            """,
         },
-        'weekly_summary': {
-            'subject': 'Your Weekly Jobezie Summary',
-            'template': '''
+        "weekly_summary": {
+            "subject": "Your Weekly Jobezie Summary",
+            "template": """
 Hello {{ name }},
 
 Here's your weekly career activity summary:
@@ -144,11 +152,11 @@ TOP PRIORITIES THIS WEEK
 Keep up the momentum! Log in to continue your progress: {{ dashboard_url }}
 
 The Jobezie Team
-            ''',
+            """,
         },
-        'follow_up_reminder': {
-            'subject': 'Time to Follow Up: {{ recruiter_name }} at {{ company }}',
-            'template': '''
+        "follow_up_reminder": {
+            "subject": "Time to Follow Up: {{ recruiter_name }} at {{ company }}",
+            "template": """
 Hello {{ name }},
 
 It's been {{ days }} days since you last contacted {{ recruiter_name }} at {{ company }}.
@@ -160,14 +168,14 @@ Quick actions:
 - View recruiter details: {{ recruiter_url }}
 
 The Jobezie Team
-            ''',
+            """,
         },
     }
 
     @staticmethod
     def _get_client() -> Optional[SendGridAPIClient]:
         """Get SendGrid client."""
-        api_key = os.getenv('SENDGRID_API_KEY')
+        api_key = os.getenv("SENDGRID_API_KEY")
         if not api_key:
             current_app.logger.warning("SendGrid API key not configured")
             return None
@@ -179,7 +187,7 @@ The Jobezie Team
         to_email: str,
         subject: str,
         content: str,
-        content_type: str = 'text/plain',
+        content_type: str = "text/plain",
         attachments: Optional[List[Dict]] = None,
     ) -> Dict:
         """
@@ -198,25 +206,25 @@ The Jobezie Team
         client = cls._get_client()
         if not client:
             return {
-                'success': False,
-                'error': 'Email service not configured',
+                "success": False,
+                "error": "Email service not configured",
             }
 
         message = Mail(
             from_email=Email(cls.FROM_EMAIL, cls.FROM_NAME),
             to_emails=To(to_email),
             subject=subject,
-            plain_text_content=content if content_type == 'text/plain' else None,
-            html_content=content if content_type == 'text/html' else None,
+            plain_text_content=content if content_type == "text/plain" else None,
+            html_content=content if content_type == "text/html" else None,
         )
 
         # Add attachments if any
         if attachments:
             for att in attachments:
                 attachment = Attachment(
-                    FileContent(att['content']),
-                    FileName(att['filename']),
-                    FileType(att.get('type', 'application/octet-stream')),
+                    FileContent(att["content"]),
+                    FileName(att["filename"]),
+                    FileType(att.get("type", "application/octet-stream")),
                 )
                 message.add_attachment(attachment)
 
@@ -224,15 +232,15 @@ The Jobezie Team
             response = client.send(message)
 
             return {
-                'success': response.status_code in [200, 202],
-                'status_code': response.status_code,
+                "success": response.status_code in [200, 202],
+                "status_code": response.status_code,
             }
 
         except Exception as e:
             current_app.logger.error(f"SendGrid error: {str(e)}")
             return {
-                'success': False,
-                'error': str(e),
+                "success": False,
+                "error": str(e),
             }
 
     @classmethod
@@ -256,13 +264,13 @@ The Jobezie Team
         template = cls.TEMPLATES.get(template_name)
         if not template:
             return {
-                'success': False,
-                'error': f'Unknown template: {template_name}',
+                "success": False,
+                "error": f"Unknown template: {template_name}",
             }
 
         # Render template with context
-        subject = render_template_string(template['subject'], **context)
-        content = render_template_string(template['template'], **context)
+        subject = render_template_string(template["subject"], **context)
+        content = render_template_string(template["template"], **context)
 
         return cls.send_email(to_email, subject, content)
 
@@ -271,84 +279,84 @@ The Jobezie Team
         """Send welcome email to new user."""
         return cls.send_template_email(
             to_email=user.email,
-            template_name='welcome',
+            template_name="welcome",
             context={
-                'name': user.first_name or 'there',
+                "name": user.first_name or "there",
             },
         )
 
     @classmethod
     def send_password_reset_email(cls, user, reset_token: str) -> Dict:
         """Send password reset email."""
-        base_url = os.getenv('FRONTEND_URL', 'https://app.jobezie.com')
+        base_url = os.getenv("FRONTEND_URL", "https://app.jobezie.com")
         reset_url = f"{base_url}/reset-password?token={reset_token}"
 
         return cls.send_template_email(
             to_email=user.email,
-            template_name='password_reset',
+            template_name="password_reset",
             context={
-                'name': user.first_name or 'there',
-                'reset_url': reset_url,
+                "name": user.first_name or "there",
+                "reset_url": reset_url,
             },
         )
 
     @classmethod
     def send_verification_email(cls, user, verification_token: str) -> Dict:
         """Send email verification email."""
-        base_url = os.getenv('FRONTEND_URL', 'https://app.jobezie.com')
+        base_url = os.getenv("FRONTEND_URL", "https://app.jobezie.com")
         verification_url = f"{base_url}/verify-email?token={verification_token}"
 
         return cls.send_template_email(
             to_email=user.email,
-            template_name='email_verification',
+            template_name="email_verification",
             context={
-                'name': user.first_name or 'there',
-                'verification_url': verification_url,
+                "name": user.first_name or "there",
+                "verification_url": verification_url,
             },
         )
 
     @classmethod
     def send_subscription_confirmed_email(cls, user, tier: str, features: List[str]) -> Dict:
         """Send subscription confirmation email."""
-        base_url = os.getenv('FRONTEND_URL', 'https://app.jobezie.com')
+        base_url = os.getenv("FRONTEND_URL", "https://app.jobezie.com")
 
         return cls.send_template_email(
             to_email=user.email,
-            template_name='subscription_confirmed',
+            template_name="subscription_confirmed",
             context={
-                'name': user.first_name or 'there',
-                'tier': tier.title(),
-                'features': features,
-                'dashboard_url': f"{base_url}/dashboard",
+                "name": user.first_name or "there",
+                "tier": tier.title(),
+                "features": features,
+                "dashboard_url": f"{base_url}/dashboard",
             },
         )
 
     @classmethod
     def send_subscription_cancelled_email(cls, user, end_date: datetime) -> Dict:
         """Send subscription cancellation email."""
-        base_url = os.getenv('FRONTEND_URL', 'https://app.jobezie.com')
+        base_url = os.getenv("FRONTEND_URL", "https://app.jobezie.com")
 
         return cls.send_template_email(
             to_email=user.email,
-            template_name='subscription_cancelled',
+            template_name="subscription_cancelled",
             context={
-                'name': user.first_name or 'there',
-                'end_date': end_date.strftime('%B %d, %Y'),
-                'resubscribe_url': f"{base_url}/pricing",
+                "name": user.first_name or "there",
+                "end_date": end_date.strftime("%B %d, %Y"),
+                "resubscribe_url": f"{base_url}/pricing",
             },
         )
 
     @classmethod
     def send_payment_failed_email(cls, user) -> Dict:
         """Send payment failure notification email."""
-        base_url = os.getenv('FRONTEND_URL', 'https://app.jobezie.com')
+        base_url = os.getenv("FRONTEND_URL", "https://app.jobezie.com")
 
         return cls.send_template_email(
             to_email=user.email,
-            template_name='payment_failed',
+            template_name="payment_failed",
             context={
-                'name': user.first_name or 'there',
-                'update_payment_url': f"{base_url}/settings/billing",
+                "name": user.first_name or "there",
+                "update_payment_url": f"{base_url}/settings/billing",
             },
         )
 
@@ -360,19 +368,19 @@ The Jobezie Team
         priorities: List[str],
     ) -> Dict:
         """Send weekly summary email."""
-        base_url = os.getenv('FRONTEND_URL', 'https://app.jobezie.com')
+        base_url = os.getenv("FRONTEND_URL", "https://app.jobezie.com")
 
         return cls.send_template_email(
             to_email=user.email,
-            template_name='weekly_summary',
+            template_name="weekly_summary",
             context={
-                'name': user.first_name or 'there',
-                'messages_sent': stats.get('messages_sent', 0),
-                'responses_received': stats.get('responses_received', 0),
-                'response_rate': stats.get('response_rate', 0),
-                'recruiters_added': stats.get('recruiters_added', 0),
-                'priorities': priorities,
-                'dashboard_url': f"{base_url}/dashboard",
+                "name": user.first_name or "there",
+                "messages_sent": stats.get("messages_sent", 0),
+                "responses_received": stats.get("responses_received", 0),
+                "response_rate": stats.get("response_rate", 0),
+                "recruiters_added": stats.get("recruiters_added", 0),
+                "priorities": priorities,
+                "dashboard_url": f"{base_url}/dashboard",
             },
         )
 
@@ -384,17 +392,17 @@ The Jobezie Team
         days_since_contact: int,
     ) -> Dict:
         """Send follow-up reminder email."""
-        base_url = os.getenv('FRONTEND_URL', 'https://app.jobezie.com')
+        base_url = os.getenv("FRONTEND_URL", "https://app.jobezie.com")
 
         return cls.send_template_email(
             to_email=user.email,
-            template_name='follow_up_reminder',
+            template_name="follow_up_reminder",
             context={
-                'name': user.first_name or 'there',
-                'recruiter_name': recruiter.full_name,
-                'company': recruiter.company or 'their company',
-                'days': days_since_contact,
-                'message_url': f"{base_url}/messages/new?recruiter={recruiter.id}",
-                'recruiter_url': f"{base_url}/recruiters/{recruiter.id}",
+                "name": user.first_name or "there",
+                "recruiter_name": recruiter.full_name,
+                "company": recruiter.company or "their company",
+                "days": days_since_contact,
+                "message_url": f"{base_url}/messages/new?recruiter={recruiter.id}",
+                "recruiter_url": f"{base_url}/recruiters/{recruiter.id}",
             },
         )

@@ -5,17 +5,17 @@ API endpoints for activity tracking and Kanban pipeline management.
 """
 
 from datetime import datetime
-from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
 
-from app.services.activity_service import ActivityService
+from flask import Blueprint, jsonify, request
+from flask_jwt_extended import get_jwt_identity, jwt_required
+
 from app.models.activity import ActivityType, PipelineStage
+from app.services.activity_service import ActivityService
+
+activity_bp = Blueprint("activity", __name__, url_prefix="/api/activities")
 
 
-activity_bp = Blueprint('activity', __name__, url_prefix='/api/activities')
-
-
-@activity_bp.route('', methods=['POST'])
+@activity_bp.route("", methods=["POST"])
 @jwt_required()
 def log_activity():
     """
@@ -35,32 +35,40 @@ def log_activity():
     user_id = get_jwt_identity()
     data = request.get_json() or {}
 
-    activity_type = data.get('activity_type')
+    activity_type = data.get("activity_type")
     if not activity_type:
-        return jsonify({'error': 'activity_type is required'}), 400
+        return jsonify({"error": "activity_type is required"}), 400
 
     # Validate activity type
     valid_types = [t.value for t in ActivityType]
     if activity_type not in valid_types:
-        return jsonify({'error': f'Invalid activity_type. Must be one of: {", ".join(valid_types)}'}), 400
+        return (
+            jsonify({"error": f'Invalid activity_type. Must be one of: {", ".join(valid_types)}'}),
+            400,
+        )
 
     activity = ActivityService.log_activity(
         user_id=user_id,
         activity_type=activity_type,
-        description=data.get('description'),
-        recruiter_id=data.get('recruiter_id'),
-        resume_id=data.get('resume_id'),
-        message_id=data.get('message_id'),
-        extra_data=data.get('extra_data'),
+        description=data.get("description"),
+        recruiter_id=data.get("recruiter_id"),
+        resume_id=data.get("resume_id"),
+        message_id=data.get("message_id"),
+        extra_data=data.get("extra_data"),
     )
 
-    return jsonify({
-        'message': 'Activity logged',
-        'activity': activity.to_dict(),
-    }), 201
+    return (
+        jsonify(
+            {
+                "message": "Activity logged",
+                "activity": activity.to_dict(),
+            }
+        ),
+        201,
+    )
 
 
-@activity_bp.route('', methods=['GET'])
+@activity_bp.route("", methods=["GET"])
 @jwt_required()
 def get_activities():
     """
@@ -79,23 +87,25 @@ def get_activities():
     """
     user_id = get_jwt_identity()
 
-    activity_type = request.args.get('activity_type')
-    recruiter_id = request.args.get('recruiter_id')
-    limit = min(int(request.args.get('limit', 50)), 100)
-    offset = int(request.args.get('offset', 0))
+    activity_type = request.args.get("activity_type")
+    recruiter_id = request.args.get("recruiter_id")
+    limit = min(int(request.args.get("limit", 50)), 100)
+    offset = int(request.args.get("offset", 0))
 
     start_date = None
     end_date = None
 
-    if request.args.get('start_date'):
+    if request.args.get("start_date"):
         try:
-            start_date = datetime.fromisoformat(request.args.get('start_date').replace('Z', '+00:00'))
+            start_date = datetime.fromisoformat(
+                request.args.get("start_date").replace("Z", "+00:00")
+            )
         except ValueError:
             pass
 
-    if request.args.get('end_date'):
+    if request.args.get("end_date"):
         try:
-            end_date = datetime.fromisoformat(request.args.get('end_date').replace('Z', '+00:00'))
+            end_date = datetime.fromisoformat(request.args.get("end_date").replace("Z", "+00:00"))
         except ValueError:
             pass
 
@@ -109,16 +119,21 @@ def get_activities():
         offset=offset,
     )
 
-    return jsonify({
-        'activities': [a.to_dict() for a in activities],
-        'total': total,
-        'limit': limit,
-        'offset': offset,
-        'has_more': (offset + len(activities)) < total,
-    }), 200
+    return (
+        jsonify(
+            {
+                "activities": [a.to_dict() for a in activities],
+                "total": total,
+                "limit": limit,
+                "offset": offset,
+                "has_more": (offset + len(activities)) < total,
+            }
+        ),
+        200,
+    )
 
 
-@activity_bp.route('/recent', methods=['GET'])
+@activity_bp.route("/recent", methods=["GET"])
 @jwt_required()
 def get_recent():
     """
@@ -131,16 +146,21 @@ def get_recent():
         JSON array of recent activities
     """
     user_id = get_jwt_identity()
-    limit = min(int(request.args.get('limit', 10)), 25)
+    limit = min(int(request.args.get("limit", 10)), 25)
 
     activities = ActivityService.get_recent_activities(user_id, limit)
 
-    return jsonify({
-        'activities': [a.to_dict() for a in activities],
-    }), 200
+    return (
+        jsonify(
+            {
+                "activities": [a.to_dict() for a in activities],
+            }
+        ),
+        200,
+    )
 
 
-@activity_bp.route('/counts', methods=['GET'])
+@activity_bp.route("/counts", methods=["GET"])
 @jwt_required()
 def get_counts():
     """
@@ -153,14 +173,14 @@ def get_counts():
         JSON with counts by activity type
     """
     user_id = get_jwt_identity()
-    days = min(int(request.args.get('days', 30)), 365)
+    days = min(int(request.args.get("days", 30)), 365)
 
     counts = ActivityService.get_activity_counts(user_id, days)
 
     return jsonify(counts), 200
 
 
-@activity_bp.route('/timeline', methods=['GET'])
+@activity_bp.route("/timeline", methods=["GET"])
 @jwt_required()
 def get_timeline():
     """
@@ -174,8 +194,8 @@ def get_timeline():
         JSON array of timeline items
     """
     user_id = get_jwt_identity()
-    recruiter_id = request.args.get('recruiter_id')
-    limit = min(int(request.args.get('limit', 20)), 50)
+    recruiter_id = request.args.get("recruiter_id")
+    limit = min(int(request.args.get("limit", 20)), 50)
 
     timeline = ActivityService.get_activity_timeline(
         user_id=user_id,
@@ -183,12 +203,17 @@ def get_timeline():
         limit=limit,
     )
 
-    return jsonify({
-        'timeline': timeline,
-    }), 200
+    return (
+        jsonify(
+            {
+                "timeline": timeline,
+            }
+        ),
+        200,
+    )
 
 
-@activity_bp.route('/weekly-summary', methods=['GET'])
+@activity_bp.route("/weekly-summary", methods=["GET"])
 @jwt_required()
 def get_weekly_summary():
     """
@@ -203,7 +228,7 @@ def get_weekly_summary():
     return jsonify(summary), 200
 
 
-@activity_bp.route('/types', methods=['GET'])
+@activity_bp.route("/types", methods=["GET"])
 @jwt_required()
 def get_types():
     """
@@ -212,17 +237,15 @@ def get_types():
     Returns:
         JSON with type definitions
     """
-    types = [
-        {'value': t.value, 'label': t.value.replace('_', ' ').title()}
-        for t in ActivityType
-    ]
+    types = [{"value": t.value, "label": t.value.replace("_", " ").title()} for t in ActivityType]
 
-    return jsonify({'types': types}), 200
+    return jsonify({"types": types}), 200
 
 
 # Pipeline / Kanban Endpoints
 
-@activity_bp.route('/pipeline', methods=['GET'])
+
+@activity_bp.route("/pipeline", methods=["GET"])
 @jwt_required()
 def get_pipeline():
     """
@@ -234,13 +257,18 @@ def get_pipeline():
     user_id = get_jwt_identity()
     pipeline = ActivityService.get_pipeline(user_id)
 
-    return jsonify({
-        'pipeline': pipeline,
-        'stages': [s.value for s in PipelineStage],
-    }), 200
+    return (
+        jsonify(
+            {
+                "pipeline": pipeline,
+                "stages": [s.value for s in PipelineStage],
+            }
+        ),
+        200,
+    )
 
 
-@activity_bp.route('/pipeline/stats', methods=['GET'])
+@activity_bp.route("/pipeline/stats", methods=["GET"])
 @jwt_required()
 def get_pipeline_stats():
     """
@@ -255,7 +283,7 @@ def get_pipeline_stats():
     return jsonify(stats), 200
 
 
-@activity_bp.route('/pipeline/stages', methods=['GET'])
+@activity_bp.route("/pipeline/stages", methods=["GET"])
 @jwt_required()
 def get_stages():
     """
@@ -264,15 +292,12 @@ def get_stages():
     Returns:
         JSON with stage definitions
     """
-    stages = [
-        {'value': s.value, 'label': s.value.replace('_', ' ').title()}
-        for s in PipelineStage
-    ]
+    stages = [{"value": s.value, "label": s.value.replace("_", " ").title()} for s in PipelineStage]
 
-    return jsonify({'stages': stages}), 200
+    return jsonify({"stages": stages}), 200
 
 
-@activity_bp.route('/pipeline/<item_id>/move', methods=['PUT'])
+@activity_bp.route("/pipeline/<item_id>/move", methods=["PUT"])
 @jwt_required()
 def move_item(item_id):
     """
@@ -288,28 +313,33 @@ def move_item(item_id):
     user_id = get_jwt_identity()
     data = request.get_json() or {}
 
-    stage = data.get('stage')
+    stage = data.get("stage")
     if not stage:
-        return jsonify({'error': 'stage is required'}), 400
+        return jsonify({"error": "stage is required"}), 400
 
     try:
         item = ActivityService.move_pipeline_item(
             user_id=user_id,
             item_id=item_id,
             new_stage=stage,
-            new_position=data.get('position'),
+            new_position=data.get("position"),
         )
 
-        return jsonify({
-            'message': f'Moved to {stage}',
-            'item': item.to_dict(),
-        }), 200
+        return (
+            jsonify(
+                {
+                    "message": f"Moved to {stage}",
+                    "item": item.to_dict(),
+                }
+            ),
+            200,
+        )
 
     except ValueError as e:
-        return jsonify({'error': str(e)}), 400
+        return jsonify({"error": str(e)}), 400
 
 
-@activity_bp.route('/pipeline/refresh', methods=['POST'])
+@activity_bp.route("/pipeline/refresh", methods=["POST"])
 @jwt_required()
 def refresh_pipeline():
     """
@@ -325,8 +355,13 @@ def refresh_pipeline():
     days_updated = ActivityService.update_days_in_stage(user_id)
     priorities_updated = ActivityService.update_priority_scores(user_id)
 
-    return jsonify({
-        'message': 'Pipeline refreshed',
-        'days_in_stage_updated': days_updated,
-        'priority_scores_updated': priorities_updated,
-    }), 200
+    return (
+        jsonify(
+            {
+                "message": "Pipeline refreshed",
+                "days_in_stage_updated": days_updated,
+                "priority_scores_updated": priorities_updated,
+            }
+        ),
+        200,
+    )

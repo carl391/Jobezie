@@ -4,16 +4,15 @@ Message Routes
 API endpoints for message management and quality scoring.
 """
 
-from flask import Blueprint, request, jsonify, current_app
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask import Blueprint, current_app, jsonify, request
+from flask_jwt_extended import get_jwt_identity, jwt_required
 
 from app.services.message_service import MessageService
 
+message_bp = Blueprint("message", __name__, url_prefix="/api/messages")
 
-message_bp = Blueprint('message', __name__, url_prefix='/api/messages')
 
-
-@message_bp.route('', methods=['POST'])
+@message_bp.route("", methods=["POST"])
 @jwt_required()
 def create_message():
     """
@@ -35,42 +34,47 @@ def create_message():
     user_id = get_jwt_identity()
     data = request.get_json() or {}
 
-    body = data.get('body')
+    body = data.get("body")
     if not body:
-        return jsonify({'error': 'body is required'}), 400
+        return jsonify({"error": "body is required"}), 400
 
     try:
         message, quality_result = MessageService.create_message(
             user_id=user_id,
             body=body,
-            message_type=data.get('message_type', 'initial_outreach'),
-            subject=data.get('subject'),
-            recruiter_id=data.get('recruiter_id'),
-            signature=data.get('signature'),
-            is_ai_generated=data.get('is_ai_generated', False),
-            generation_prompt=data.get('generation_prompt'),
-            generation_context=data.get('generation_context'),
-            ai_model_used=data.get('ai_model_used'),
+            message_type=data.get("message_type", "initial_outreach"),
+            subject=data.get("subject"),
+            recruiter_id=data.get("recruiter_id"),
+            signature=data.get("signature"),
+            is_ai_generated=data.get("is_ai_generated", False),
+            generation_prompt=data.get("generation_prompt"),
+            generation_context=data.get("generation_context"),
+            ai_model_used=data.get("ai_model_used"),
         )
 
-        return jsonify({
-            'message': message.to_dict(),
-            'quality_analysis': {
-                'score': quality_result['total_score'],
-                'components': quality_result['components'],
-                'feedback': quality_result['feedback'],
-                'suggestions': quality_result['suggestions'],
-                'word_count': quality_result['word_count'],
-                'is_within_word_limit': quality_result['word_count'] <= 150,
-            },
-        }), 201
+        return (
+            jsonify(
+                {
+                    "message": message.to_dict(),
+                    "quality_analysis": {
+                        "score": quality_result["total_score"],
+                        "components": quality_result["components"],
+                        "feedback": quality_result["feedback"],
+                        "suggestions": quality_result["suggestions"],
+                        "word_count": quality_result["word_count"],
+                        "is_within_word_limit": quality_result["word_count"] <= 150,
+                    },
+                }
+            ),
+            201,
+        )
 
     except Exception as e:
         current_app.logger.error(f"Create message error: {str(e)}")
-        return jsonify({'error': 'Failed to create message'}), 500
+        return jsonify({"error": "Failed to create message"}), 500
 
 
-@message_bp.route('', methods=['GET'])
+@message_bp.route("", methods=["GET"])
 @jwt_required()
 def get_messages():
     """
@@ -88,11 +92,11 @@ def get_messages():
     """
     user_id = get_jwt_identity()
 
-    recruiter_id = request.args.get('recruiter_id')
-    status = request.args.get('status')
-    message_type = request.args.get('message_type')
-    limit = min(int(request.args.get('limit', 50)), 100)
-    offset = int(request.args.get('offset', 0))
+    recruiter_id = request.args.get("recruiter_id")
+    status = request.args.get("status")
+    message_type = request.args.get("message_type")
+    limit = min(int(request.args.get("limit", 50)), 100)
+    offset = int(request.args.get("offset", 0))
 
     messages, total = MessageService.get_user_messages(
         user_id=user_id,
@@ -103,16 +107,21 @@ def get_messages():
         offset=offset,
     )
 
-    return jsonify({
-        'messages': [m.to_dict() for m in messages],
-        'total': total,
-        'limit': limit,
-        'offset': offset,
-        'has_more': (offset + len(messages)) < total,
-    }), 200
+    return (
+        jsonify(
+            {
+                "messages": [m.to_dict() for m in messages],
+                "total": total,
+                "limit": limit,
+                "offset": offset,
+                "has_more": (offset + len(messages)) < total,
+            }
+        ),
+        200,
+    )
 
 
-@message_bp.route('/stats', methods=['GET'])
+@message_bp.route("/stats", methods=["GET"])
 @jwt_required()
 def get_stats():
     """
@@ -127,7 +136,7 @@ def get_stats():
     return jsonify(stats), 200
 
 
-@message_bp.route('/tips/<message_type>', methods=['GET'])
+@message_bp.route("/tips/<message_type>", methods=["GET"])
 @jwt_required()
 def get_tips(message_type):
     """
@@ -140,7 +149,7 @@ def get_tips(message_type):
     return jsonify(tips), 200
 
 
-@message_bp.route('/validate', methods=['POST'])
+@message_bp.route("/validate", methods=["POST"])
 @jwt_required()
 def validate_message():
     """
@@ -155,15 +164,15 @@ def validate_message():
     """
     data = request.get_json() or {}
 
-    body = data.get('body', '')
-    message_type = data.get('message_type', 'initial_outreach')
+    body = data.get("body", "")
+    message_type = data.get("message_type", "initial_outreach")
 
     result = MessageService.validate_message(body, message_type)
 
     return jsonify(result), 200
 
 
-@message_bp.route('/context', methods=['POST'])
+@message_bp.route("/context", methods=["POST"])
 @jwt_required()
 def get_generation_context():
     """
@@ -180,21 +189,21 @@ def get_generation_context():
     user_id = get_jwt_identity()
     data = request.get_json() or {}
 
-    recruiter_id = data.get('recruiter_id')
+    recruiter_id = data.get("recruiter_id")
     if not recruiter_id:
-        return jsonify({'error': 'recruiter_id is required'}), 400
+        return jsonify({"error": "recruiter_id is required"}), 400
 
     context = MessageService.get_generation_context(
         user_id=user_id,
         recruiter_id=recruiter_id,
-        message_type=data.get('message_type', 'initial_outreach'),
-        resume_id=data.get('resume_id'),
+        message_type=data.get("message_type", "initial_outreach"),
+        resume_id=data.get("resume_id"),
     )
 
     return jsonify(context), 200
 
 
-@message_bp.route('/<message_id>', methods=['GET'])
+@message_bp.route("/<message_id>", methods=["GET"])
 @jwt_required()
 def get_message(message_id):
     """
@@ -207,14 +216,19 @@ def get_message(message_id):
     message = MessageService.get_message(message_id, user_id)
 
     if not message:
-        return jsonify({'error': 'Message not found'}), 404
+        return jsonify({"error": "Message not found"}), 404
 
-    return jsonify({
-        'message': message.to_dict(include_generation=True),
-    }), 200
+    return (
+        jsonify(
+            {
+                "message": message.to_dict(include_generation=True),
+            }
+        ),
+        200,
+    )
 
 
-@message_bp.route('/<message_id>', methods=['PUT'])
+@message_bp.route("/<message_id>", methods=["PUT"])
 @jwt_required()
 def update_message(message_id):
     """
@@ -235,27 +249,32 @@ def update_message(message_id):
         message, quality_result = MessageService.update_message(
             message_id=message_id,
             user_id=user_id,
-            body=data.get('body'),
-            subject=data.get('subject'),
-            signature=data.get('signature'),
+            body=data.get("body"),
+            subject=data.get("subject"),
+            signature=data.get("signature"),
         )
 
-        return jsonify({
-            'message': message.to_dict(),
-            'quality_analysis': {
-                'score': quality_result['total_score'],
-                'components': quality_result['components'],
-                'feedback': quality_result['feedback'],
-                'suggestions': quality_result['suggestions'],
-                'word_count': quality_result['word_count'],
-            },
-        }), 200
+        return (
+            jsonify(
+                {
+                    "message": message.to_dict(),
+                    "quality_analysis": {
+                        "score": quality_result["total_score"],
+                        "components": quality_result["components"],
+                        "feedback": quality_result["feedback"],
+                        "suggestions": quality_result["suggestions"],
+                        "word_count": quality_result["word_count"],
+                    },
+                }
+            ),
+            200,
+        )
 
     except ValueError as e:
-        return jsonify({'error': str(e)}), 400
+        return jsonify({"error": str(e)}), 400
 
 
-@message_bp.route('/<message_id>', methods=['DELETE'])
+@message_bp.route("/<message_id>", methods=["DELETE"])
 @jwt_required()
 def delete_message(message_id):
     """
@@ -268,12 +287,12 @@ def delete_message(message_id):
 
     try:
         MessageService.delete_message(message_id, user_id)
-        return jsonify({'message': 'Message deleted'}), 200
+        return jsonify({"message": "Message deleted"}), 200
     except ValueError as e:
-        return jsonify({'error': str(e)}), 400
+        return jsonify({"error": str(e)}), 400
 
 
-@message_bp.route('/<message_id>/send', methods=['POST'])
+@message_bp.route("/<message_id>/send", methods=["POST"])
 @jwt_required()
 def mark_sent(message_id):
     """
@@ -286,15 +305,20 @@ def mark_sent(message_id):
 
     try:
         message = MessageService.mark_as_sent(message_id, user_id)
-        return jsonify({
-            'message': 'Message marked as sent',
-            'data': message.to_dict(),
-        }), 200
+        return (
+            jsonify(
+                {
+                    "message": "Message marked as sent",
+                    "data": message.to_dict(),
+                }
+            ),
+            200,
+        )
     except ValueError as e:
-        return jsonify({'error': str(e)}), 404
+        return jsonify({"error": str(e)}), 404
 
 
-@message_bp.route('/<message_id>/opened', methods=['POST'])
+@message_bp.route("/<message_id>/opened", methods=["POST"])
 @jwt_required()
 def mark_opened(message_id):
     """
@@ -307,15 +331,20 @@ def mark_opened(message_id):
 
     try:
         message = MessageService.mark_as_opened(message_id, user_id)
-        return jsonify({
-            'message': 'Message marked as opened',
-            'data': message.to_dict(),
-        }), 200
+        return (
+            jsonify(
+                {
+                    "message": "Message marked as opened",
+                    "data": message.to_dict(),
+                }
+            ),
+            200,
+        )
     except ValueError as e:
-        return jsonify({'error': str(e)}), 404
+        return jsonify({"error": str(e)}), 404
 
 
-@message_bp.route('/<message_id>/responded', methods=['POST'])
+@message_bp.route("/<message_id>/responded", methods=["POST"])
 @jwt_required()
 def mark_responded(message_id):
     """
@@ -328,15 +357,20 @@ def mark_responded(message_id):
 
     try:
         message = MessageService.mark_as_responded(message_id, user_id)
-        return jsonify({
-            'message': 'Response recorded',
-            'data': message.to_dict(),
-        }), 200
+        return (
+            jsonify(
+                {
+                    "message": "Response recorded",
+                    "data": message.to_dict(),
+                }
+            ),
+            200,
+        )
     except ValueError as e:
-        return jsonify({'error': str(e)}), 404
+        return jsonify({"error": str(e)}), 404
 
 
-@message_bp.route('/<message_id>/score', methods=['GET'])
+@message_bp.route("/<message_id>/score", methods=["GET"])
 @jwt_required()
 def get_quality_score(message_id):
     """
@@ -349,17 +383,22 @@ def get_quality_score(message_id):
     message = MessageService.get_message(message_id, user_id)
 
     if not message:
-        return jsonify({'error': 'Message not found'}), 404
+        return jsonify({"error": "Message not found"}), 404
 
-    return jsonify({
-        'message_id': str(message.id),
-        'quality_breakdown': message.quality_breakdown,
-        'word_count': message.word_count,
-        'is_within_word_limit': message.is_within_word_limit,
-        'has_personalization': message.has_personalization,
-        'has_metrics': message.has_metrics,
-        'has_cta': message.has_cta,
-        'personalization_elements': message.personalization_elements,
-        'feedback': message.quality_feedback,
-        'suggestions': message.quality_suggestions,
-    }), 200
+    return (
+        jsonify(
+            {
+                "message_id": str(message.id),
+                "quality_breakdown": message.quality_breakdown,
+                "word_count": message.word_count,
+                "is_within_word_limit": message.is_within_word_limit,
+                "has_personalization": message.has_personalization,
+                "has_metrics": message.has_metrics,
+                "has_cta": message.has_cta,
+                "personalization_elements": message.personalization_elements,
+                "feedback": message.quality_feedback,
+                "suggestions": message.quality_suggestions,
+            }
+        ),
+        200,
+    )

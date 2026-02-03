@@ -5,16 +5,17 @@ Handles subscription management endpoints.
 """
 
 import os
-from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
+
+from flask import Blueprint, jsonify, request
+from flask_jwt_extended import get_jwt_identity, jwt_required
 
 from app.models.user import User
 from app.services.stripe_service import StripeService
 
-subscription_bp = Blueprint('subscription', __name__, url_prefix='/api/subscription')
+subscription_bp = Blueprint("subscription", __name__, url_prefix="/api/subscription")
 
 
-@subscription_bp.route('/tiers', methods=['GET'])
+@subscription_bp.route("/tiers", methods=["GET"])
 def get_tiers():
     """
     Get available subscription tiers.
@@ -24,13 +25,10 @@ def get_tiers():
     """
     tiers = StripeService.get_tier_info()
 
-    return jsonify({
-        'success': True,
-        'data': tiers
-    }), 200
+    return jsonify({"success": True, "data": tiers}), 200
 
 
-@subscription_bp.route('/status', methods=['GET'])
+@subscription_bp.route("/status", methods=["GET"])
 @jwt_required()
 def get_status():
     """
@@ -44,21 +42,17 @@ def get_status():
     user = User.query.get(user_id)
 
     if not user:
-        return jsonify({
-            'success': False,
-            'error': 'not_found',
-            'message': 'User not found'
-        }), 404
+        return (
+            jsonify({"success": False, "error": "not_found", "message": "User not found"}),
+            404,
+        )
 
     status = StripeService.get_subscription_status(user)
 
-    return jsonify({
-        'success': True,
-        'data': status
-    }), 200
+    return jsonify({"success": True, "data": status}), 200
 
 
-@subscription_bp.route('/checkout', methods=['POST'])
+@subscription_bp.route("/checkout", methods=["POST"])
 @jwt_required()
 def create_checkout():
     """
@@ -78,25 +72,29 @@ def create_checkout():
     user = User.query.get(user_id)
 
     if not user:
-        return jsonify({
-            'success': False,
-            'error': 'not_found',
-            'message': 'User not found'
-        }), 404
+        return (
+            jsonify({"success": False, "error": "not_found", "message": "User not found"}),
+            404,
+        )
 
     data = request.get_json() or {}
 
-    tier = data.get('tier')
+    tier = data.get("tier")
     if not tier:
-        return jsonify({
-            'success': False,
-            'error': 'validation_error',
-            'message': 'Tier is required'
-        }), 400
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "validation_error",
+                    "message": "Tier is required",
+                }
+            ),
+            400,
+        )
 
-    base_url = os.getenv('FRONTEND_URL', 'https://app.jobezie.com')
-    success_url = data.get('success_url', f'{base_url}/subscription/success')
-    cancel_url = data.get('cancel_url', f'{base_url}/subscription/cancel')
+    base_url = os.getenv("FRONTEND_URL", "https://app.jobezie.com")
+    success_url = data.get("success_url", f"{base_url}/subscription/success")
+    cancel_url = data.get("cancel_url", f"{base_url}/subscription/cancel")
 
     result = StripeService.create_checkout_session(
         user=user,
@@ -105,23 +103,33 @@ def create_checkout():
         cancel_url=cancel_url,
     )
 
-    if not result['success']:
-        return jsonify({
-            'success': False,
-            'error': 'checkout_error',
-            'message': result.get('error', 'Failed to create checkout')
-        }), 400
+    if not result["success"]:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "checkout_error",
+                    "message": result.get("error", "Failed to create checkout"),
+                }
+            ),
+            400,
+        )
 
-    return jsonify({
-        'success': True,
-        'data': {
-            'checkout_url': result['checkout_url'],
-            'session_id': result['session_id'],
-        }
-    }), 200
+    return (
+        jsonify(
+            {
+                "success": True,
+                "data": {
+                    "checkout_url": result["checkout_url"],
+                    "session_id": result["session_id"],
+                },
+            }
+        ),
+        200,
+    )
 
 
-@subscription_bp.route('/portal', methods=['POST'])
+@subscription_bp.route("/portal", methods=["POST"])
 @jwt_required()
 def create_portal():
     """
@@ -139,35 +147,44 @@ def create_portal():
     user = User.query.get(user_id)
 
     if not user:
-        return jsonify({
-            'success': False,
-            'error': 'not_found',
-            'message': 'User not found'
-        }), 404
+        return (
+            jsonify({"success": False, "error": "not_found", "message": "User not found"}),
+            404,
+        )
 
     data = request.get_json() or {}
 
-    base_url = os.getenv('FRONTEND_URL', 'https://app.jobezie.com')
-    return_url = data.get('return_url', f'{base_url}/settings/billing')
+    base_url = os.getenv("FRONTEND_URL", "https://app.jobezie.com")
+    return_url = data.get("return_url", f"{base_url}/settings/billing")
 
     result = StripeService.create_portal_session(user, return_url)
 
-    if not result['success']:
-        return jsonify({
-            'success': False,
-            'error': 'portal_error',
-            'message': result.get('error', 'Failed to create portal session')
-        }), 400
+    if not result["success"]:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "portal_error",
+                    "message": result.get("error", "Failed to create portal session"),
+                }
+            ),
+            400,
+        )
 
-    return jsonify({
-        'success': True,
-        'data': {
-            'portal_url': result['portal_url'],
-        }
-    }), 200
+    return (
+        jsonify(
+            {
+                "success": True,
+                "data": {
+                    "portal_url": result["portal_url"],
+                },
+            }
+        ),
+        200,
+    )
 
 
-@subscription_bp.route('/cancel', methods=['POST'])
+@subscription_bp.route("/cancel", methods=["POST"])
 @jwt_required()
 def cancel_subscription():
     """
@@ -182,31 +199,40 @@ def cancel_subscription():
     user = User.query.get(user_id)
 
     if not user:
-        return jsonify({
-            'success': False,
-            'error': 'not_found',
-            'message': 'User not found'
-        }), 404
+        return (
+            jsonify({"success": False, "error": "not_found", "message": "User not found"}),
+            404,
+        )
 
     result = StripeService.cancel_subscription(user)
 
-    if not result['success']:
-        return jsonify({
-            'success': False,
-            'error': 'cancellation_error',
-            'message': result.get('error', 'Failed to cancel subscription')
-        }), 400
+    if not result["success"]:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "cancellation_error",
+                    "message": result.get("error", "Failed to cancel subscription"),
+                }
+            ),
+            400,
+        )
 
-    return jsonify({
-        'success': True,
-        'data': {
-            'message': result['message'],
-            'cancels_at': result.get('cancels_at'),
-        }
-    }), 200
+    return (
+        jsonify(
+            {
+                "success": True,
+                "data": {
+                    "message": result["message"],
+                    "cancels_at": result.get("cancels_at"),
+                },
+            }
+        ),
+        200,
+    )
 
 
-@subscription_bp.route('/reactivate', methods=['POST'])
+@subscription_bp.route("/reactivate", methods=["POST"])
 @jwt_required()
 def reactivate_subscription():
     """
@@ -221,30 +247,39 @@ def reactivate_subscription():
     user = User.query.get(user_id)
 
     if not user:
-        return jsonify({
-            'success': False,
-            'error': 'not_found',
-            'message': 'User not found'
-        }), 404
+        return (
+            jsonify({"success": False, "error": "not_found", "message": "User not found"}),
+            404,
+        )
 
     result = StripeService.reactivate_subscription(user)
 
-    if not result['success']:
-        return jsonify({
-            'success': False,
-            'error': 'reactivation_error',
-            'message': result.get('error', 'Failed to reactivate subscription')
-        }), 400
+    if not result["success"]:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "reactivation_error",
+                    "message": result.get("error", "Failed to reactivate subscription"),
+                }
+            ),
+            400,
+        )
 
-    return jsonify({
-        'success': True,
-        'data': {
-            'message': result['message'],
-        }
-    }), 200
+    return (
+        jsonify(
+            {
+                "success": True,
+                "data": {
+                    "message": result["message"],
+                },
+            }
+        ),
+        200,
+    )
 
 
-@subscription_bp.route('/webhook', methods=['POST'])
+@subscription_bp.route("/webhook", methods=["POST"])
 def handle_webhook():
     """
     Handle Stripe webhook events.
@@ -254,17 +289,14 @@ def handle_webhook():
         400: Invalid webhook
     """
     payload = request.get_data()
-    sig_header = request.headers.get('Stripe-Signature')
+    sig_header = request.headers.get("Stripe-Signature")
 
     if not sig_header:
-        return jsonify({
-            'success': False,
-            'error': 'Missing signature header'
-        }), 400
+        return jsonify({"success": False, "error": "Missing signature header"}), 400
 
     result = StripeService.handle_webhook(payload, sig_header)
 
-    if not result['success']:
+    if not result["success"]:
         return jsonify(result), 400
 
     return jsonify(result), 200

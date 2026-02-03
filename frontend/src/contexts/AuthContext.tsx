@@ -28,7 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           const response = await authApi.getMe();
           setUser(response.data.data.user);
-        } catch (error) {
+        } catch (_error) {
           // Token is invalid, clear it
           localStorage.removeItem('access_token');
           localStorage.removeItem('refresh_token');
@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     try {
       await authApi.logout();
-    } catch (error) {
+    } catch (_error) {
       // Ignore logout errors
     } finally {
       localStorage.removeItem('access_token');
@@ -74,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const response = await authApi.getMe();
       setUser(response.data.data.user);
-    } catch (error) {
+    } catch (_error) {
       setUser(null);
     }
   };
@@ -96,6 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
