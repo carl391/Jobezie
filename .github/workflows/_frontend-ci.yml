@@ -38,7 +38,7 @@ jobs:
         run: npm ci
 
       - name: TypeScript type check
-        run: npx tsc -b --noEmit
+        run: npx tsc -p tsconfig.app.json --noEmit
 
       - name: ESLint
         run: npm run lint
