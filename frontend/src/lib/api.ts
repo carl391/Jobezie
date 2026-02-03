@@ -1,0 +1,191 @@
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+export const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Request interceptor to add auth token
+api.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    const token = localStorage.getItem('access_token');
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Response interceptor to handle token refresh
+api.interceptors.response.use(
+  (response) => response,
+  async (error: AxiosError) => {
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+
+    // If 401 and we haven't retried yet, try to refresh token
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        const refreshToken = localStorage.getItem('refresh_token');
+        if (refreshToken) {
+          const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {}, {
+            headers: { Authorization: `Bearer ${refreshToken}` },
+          });
+
+          const { access_token } = response.data.data;
+          localStorage.setItem('access_token', access_token);
+
+          if (originalRequest.headers) {
+            originalRequest.headers.Authorization = `Bearer ${access_token}`;
+          }
+          return api(originalRequest);
+        }
+      } catch (_refreshError) {
+        // Refresh failed, clear tokens and redirect to login
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        window.location.href = '/login';
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
+// Auth API
+export const authApi = {
+  register: (data: { email: string; password: string; name: string }) => {
+    // Split name into first_name and last_name for backend compatibility
+    const nameParts = data.name.trim().split(/\s+/);
+    const first_name = nameParts[0] || '';
+    const last_name = nameParts.slice(1).join(' ') || '';
+    return api.post('/auth/register', {
+      email: data.email,
+      password: data.password,
+      first_name,
+      last_name,
+    });
+  },
+
+  login: (data: { email: string; password: string }) =>
+    api.post('/auth/login', data),
+
+  logout: () => api.post('/auth/logout'),
+
+  getMe: () => api.get('/auth/me'),
+
+  changePassword: (data: { current_password: string; new_password: string }) =>
+    api.put('/auth/password', data),
+
+  forgotPassword: (email: string) =>
+    api.post('/auth/forgot-password', { email }),
+
+  resetPassword: (data: { token: string; password: string }) =>
+    api.post('/auth/reset-password', data),
+};
+
+// Dashboard API
+export const dashboardApi = {
+  getDashboard: () => api.get('/dashboard'),
+  getReadiness: () => api.get('/dashboard/readiness'),
+  getWeeklyStats: () => api.get('/dashboard/stats/weekly'),
+};
+
+// Resume API
+export const resumeApi = {
+  list: () => api.get('/resumes'),
+  get: (id: string) => api.get(`/resumes/${id}`),
+  upload: (formData: FormData) =>
+    api.post('/resumes', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  delete: (id: string) => api.delete(`/resumes/${id}`),
+  getMaster: () => api.get('/resumes/master'),
+  setMaster: (id: string) => api.put(`/resumes/${id}/master`),
+  score: (id: string, jobDescription?: string) =>
+    api.post(`/resumes/${id}/score`, { job_description: jobDescription }),
+  tailor: (id: string, jobDescription: string, company?: string) =>
+    api.post(`/resumes/${id}/tailor`, { job_description: jobDescription, company }),
+  getSuggestions: (id: string) => api.get(`/resumes/${id}/suggestions`),
+  getAnalysis: (id: string) => api.get(`/resumes/${id}/analysis`),
+};
+
+// Recruiter API
+export const recruiterApi = {
+  list: (params?: { stage?: string; sort_by?: string; limit?: number }) =>
+    api.get('/recruiters', { params }),
+  get: (id: string) => api.get(`/recruiters/${id}`),
+  create: (data: Record<string, unknown>) => api.post('/recruiters', data),
+  update: (id: string, data: Record<string, unknown>) => api.put(`/recruiters/${id}`, data),
+  delete: (id: string) => api.delete(`/recruiters/${id}`),
+  getStats: () => api.get('/recruiters/stats'),
+  getStages: () => api.get('/recruiters/stages'),
+  getRecommendations: () => api.get('/recruiters/recommendations'),
+  updateStage: (id: string, stage: string) => api.put(`/recruiters/${id}/stage`, { stage }),
+  getNotes: (id: string) => api.get(`/recruiters/${id}/notes`),
+  addNote: (id: string, content: string) => api.post(`/recruiters/${id}/notes`, { content }),
+};
+
+// Message API
+export const messageApi = {
+  list: (params?: { recruiter_id?: string; status?: string }) =>
+    api.get('/messages', { params }),
+  get: (id: string) => api.get(`/messages/${id}`),
+  create: (data: Record<string, unknown>) => api.post('/messages', data),
+  update: (id: string, data: Record<string, unknown>) => api.put(`/messages/${id}`, data),
+  delete: (id: string) => api.delete(`/messages/${id}`),
+  getStats: () => api.get('/messages/stats'),
+  getTips: (messageType: string) => api.get(`/messages/tips/${messageType}`),
+  validate: (data: { body: string; message_type?: string }) =>
+    api.post('/messages/validate', data),
+  getContext: (data: { recruiter_id: string; message_type: string }) =>
+    api.post('/messages/context', data),
+  markSent: (id: string) => api.post(`/messages/${id}/send`),
+  getScore: (id: string) => api.get(`/messages/${id}/score`),
+};
+
+// Activity API
+export const activityApi = {
+  list: (params?: { limit?: number; activity_type?: string }) =>
+    api.get('/activities', { params }),
+  log: (data: Record<string, unknown>) => api.post('/activities', data),
+  getRecent: (limit?: number) => api.get('/activities/recent', { params: { limit } }),
+  getCounts: () => api.get('/activities/counts'),
+  getTimeline: (days?: number) => api.get('/activities/timeline', { params: { days } }),
+  getWeeklySummary: () => api.get('/activities/weekly-summary'),
+  getPipeline: () => api.get('/activities/pipeline'),
+  getPipelineStats: () => api.get('/activities/pipeline/stats'),
+  movePipelineItem: (id: string, stage: string, position?: number) =>
+    api.put(`/activities/pipeline/${id}/move`, { stage, position }),
+};
+
+// AI API
+export const aiApi = {
+  getStatus: () => api.get('/ai/status'),
+  generateMessage: (data: Record<string, unknown>) => api.post('/ai/generate-message', data),
+  optimizeResume: (data: Record<string, unknown>) => api.post('/ai/optimize-resume', data),
+  careerCoach: (data: { question: string; context?: Record<string, unknown> }) =>
+    api.post('/ai/career-coach', data),
+  interviewPrep: (data: Record<string, unknown>) => api.post('/ai/interview-prep', data),
+  improveMessage: (data: { message: string; improvement_type?: string }) =>
+    api.post('/ai/improve-message', data),
+};
+
+// Subscription API
+export const subscriptionApi = {
+  getTiers: () => api.get('/subscription/tiers'),
+  getStatus: () => api.get('/subscription/status'),
+  createCheckout: (priceId: string) =>
+    api.post('/subscription/checkout', { price_id: priceId }),
+  getPortal: () => api.post('/subscription/portal'),
+  cancel: () => api.post('/subscription/cancel'),
+  reactivate: () => api.post('/subscription/reactivate'),
+};
+
+export default api;
