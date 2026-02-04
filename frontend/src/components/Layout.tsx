@@ -125,11 +125,11 @@ export function Layout({ children }: LayoutProps) {
               <div className="flex items-center">
                 <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center">
                   <span className="text-sm font-medium text-primary-700">
-                    {user?.name?.charAt(0).toUpperCase() || 'U'}
+                    {user?.full_name?.charAt(0).toUpperCase() || 'U'}
                   </span>
                 </div>
                 <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-900">{user?.name}</p>
+                  <p className="text-sm font-medium text-gray-900">{user?.full_name}</p>
                   <p className="text-xs text-gray-500 capitalize">{user?.subscription_tier} Plan</p>
                 </div>
               </div>
@@ -160,11 +160,11 @@ export function Layout({ children }: LayoutProps) {
               >
                 <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center">
                   <span className="text-sm font-medium text-primary-700">
-                    {user?.name?.charAt(0).toUpperCase() || 'U'}
+                    {user?.full_name?.charAt(0).toUpperCase() || 'U'}
                   </span>
                 </div>
                 <span className="hidden md:block text-sm font-medium text-gray-700">
-                  {user?.name}
+                  {user?.full_name}
                 </span>
                 <ChevronDown className="w-4 h-4 text-gray-500" />
               </button>

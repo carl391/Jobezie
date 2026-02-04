@@ -1,17 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { recruiterApi } from '../lib/api';
 import { Users, Plus, Search, Filter } from 'lucide-react';
+import { AddRecruiterModal } from '../components/recruiters/AddRecruiterModal';
+import { RecruiterDetailsModal } from '../components/recruiters/RecruiterDetailsModal';
 import type { Recruiter } from '../types';
 
 const PIPELINE_STAGES = [
-  { id: 'identified', label: 'Identified', color: 'bg-gray-100 text-gray-700' },
-  { id: 'researched', label: 'Researched', color: 'bg-blue-100 text-blue-700' },
+  { id: 'new', label: 'New', color: 'bg-gray-100 text-gray-700' },
+  { id: 'researching', label: 'Researching', color: 'bg-blue-100 text-blue-700' },
   { id: 'contacted', label: 'Contacted', color: 'bg-yellow-100 text-yellow-700' },
   { id: 'responded', label: 'Responded', color: 'bg-green-100 text-green-700' },
-  { id: 'meeting_scheduled', label: 'Meeting Scheduled', color: 'bg-purple-100 text-purple-700' },
-  { id: 'interviewed', label: 'Interviewed', color: 'bg-indigo-100 text-indigo-700' },
+  { id: 'interviewing', label: 'Interviewing', color: 'bg-purple-100 text-purple-700' },
   { id: 'offer', label: 'Offer', color: 'bg-emerald-100 text-emerald-700' },
-  { id: 'closed', label: 'Closed', color: 'bg-gray-100 text-gray-700' },
+  { id: 'accepted', label: 'Accepted', color: 'bg-green-100 text-green-700' },
+  { id: 'declined', label: 'Declined', color: 'bg-red-100 text-red-700' },
 ];
 
 export function Recruiters() {
@@ -20,29 +22,40 @@ export function Recruiters() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStage, setSelectedStage] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedRecruiterId, setSelectedRecruiterId] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchRecruiters = async () => {
-      try {
-        const response = await recruiterApi.list({ stage: selectedStage || undefined });
-        setRecruiters(response.data.recruiters || []);
-      } catch (error) {
-        console.error('Failed to fetch recruiters:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchRecruiters();
+  const fetchRecruiters = useCallback(async () => {
+    try {
+      const response = await recruiterApi.list({ status: selectedStage || undefined });
+      setRecruiters(response.data.recruiters || response.data.data?.recruiters || []);
+    } catch (error) {
+      console.error('Failed to fetch recruiters:', error);
+    } finally {
+      setIsLoading(false);
+    }
   }, [selectedStage]);
 
+  useEffect(() => {
+    fetchRecruiters();
+  }, [fetchRecruiters]);
+
+  const handleRecruiterAdded = (newRecruiter: Recruiter) => {
+    setRecruiters((prev) => [newRecruiter, ...prev]);
+  };
+
+  const handleRecruiterUpdated = (updatedRecruiter: Recruiter) => {
+    setRecruiters((prev) =>
+      prev.map((r) => (r.id === updatedRecruiter.id ? updatedRecruiter : r))
+    );
+  };
+
   const filteredRecruiters = recruiters.filter((r) =>
-    r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    r.company_name?.toLowerCase().includes(searchQuery.toLowerCase())
+    r.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    r.company?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const getStageColor = (stage: string) => {
-    return PIPELINE_STAGES.find((s) => s.id === stage)?.color || 'bg-gray-100 text-gray-700';
+  const getStageColor = (status: string) => {
+    return PIPELINE_STAGES.find((s) => s.id === status)?.color || 'bg-gray-100 text-gray-700';
   };
 
   if (isLoading) {
@@ -101,7 +114,7 @@ export function Recruiters() {
       {/* Pipeline stages overview */}
       <div className="flex gap-2 overflow-x-auto pb-2">
         {PIPELINE_STAGES.map((stage) => {
-          const count = recruiters.filter((r) => r.stage === stage.id).length;
+          const count = recruiters.filter((r) => r.status === stage.id).length;
           return (
             <button
               key={stage.id}
@@ -125,15 +138,15 @@ export function Recruiters() {
             <div key={recruiter.id} className="card hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="font-medium text-gray-900">{recruiter.name}</h3>
-                  {recruiter.title && recruiter.company_name && (
+                  <h3 className="font-medium text-gray-900">{recruiter.full_name}</h3>
+                  {recruiter.title && recruiter.company && (
                     <p className="text-sm text-gray-500">
-                      {recruiter.title} at {recruiter.company_name}
+                      {recruiter.title} at {recruiter.company}
                     </p>
                   )}
                 </div>
-                <span className={`text-xs px-2 py-1 rounded-full ${getStageColor(recruiter.stage)}`}>
-                  {PIPELINE_STAGES.find((s) => s.id === recruiter.stage)?.label || recruiter.stage}
+                <span className={`text-xs px-2 py-1 rounded-full ${getStageColor(recruiter.status)}`}>
+                  {PIPELINE_STAGES.find((s) => s.id === recruiter.status)?.label || recruiter.status}
                 </span>
               </div>
 
@@ -143,11 +156,11 @@ export function Recruiters() {
                   <p className="text-xs text-gray-500">Sent</p>
                 </div>
                 <div>
-                  <p className="text-lg font-semibold text-gray-900">{recruiter.messages_opened}</p>
+                  <p className="text-lg font-semibold text-gray-900">{recruiter.messages_opened || 0}</p>
                   <p className="text-xs text-gray-500">Opened</p>
                 </div>
                 <div>
-                  <p className="text-lg font-semibold text-gray-900">{recruiter.responses}</p>
+                  <p className="text-lg font-semibold text-gray-900">{recruiter.responses_received}</p>
                   <p className="text-xs text-gray-500">Replies</p>
                 </div>
               </div>
@@ -166,7 +179,12 @@ export function Recruiters() {
               )}
 
               <div className="mt-4 flex justify-end">
-                <button className="btn btn-outline text-sm">View Details</button>
+                <button
+                  onClick={() => setSelectedRecruiterId(recruiter.id)}
+                  className="btn btn-outline text-sm"
+                >
+                  View Details
+                </button>
               </div>
             </div>
           ))}
@@ -191,17 +209,21 @@ export function Recruiters() {
         </div>
       )}
 
-      {/* Add Modal placeholder */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
-          <div className="card max-w-md w-full">
-            <h2 className="text-lg font-semibold mb-4">Add Recruiter</h2>
-            <p className="text-gray-500 mb-4">Form coming soon...</p>
-            <button onClick={() => setShowAddModal(false)} className="btn btn-secondary">
-              Close
-            </button>
-          </div>
-        </div>
+      {/* Add Recruiter Modal */}
+      <AddRecruiterModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSuccess={handleRecruiterAdded}
+      />
+
+      {/* Recruiter Details Modal */}
+      {selectedRecruiterId && (
+        <RecruiterDetailsModal
+          isOpen={!!selectedRecruiterId}
+          onClose={() => setSelectedRecruiterId(null)}
+          recruiterId={selectedRecruiterId}
+          onUpdate={handleRecruiterUpdated}
+        />
       )}
     </div>
   );

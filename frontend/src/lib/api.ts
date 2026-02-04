@@ -9,13 +9,19 @@ export const api = axios.create({
   },
 });
 
-// Request interceptor to add auth token
+// Request interceptor to add auth token and handle FormData
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = localStorage.getItem('access_token');
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // For FormData, let the browser set the Content-Type with proper boundary
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
+
     return config;
   },
   (error) => Promise.reject(error)
@@ -88,6 +94,9 @@ export const authApi = {
 
   resetPassword: (data: { token: string; password: string }) =>
     api.post('/auth/reset-password', data),
+
+  updateProfile: (data: Record<string, unknown>) =>
+    api.put('/auth/profile', data),
 };
 
 // Dashboard API
@@ -102,23 +111,25 @@ export const resumeApi = {
   list: () => api.get('/resumes'),
   get: (id: string) => api.get(`/resumes/${id}`),
   upload: (formData: FormData) =>
-    api.post('/resumes', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+    api.post('/resumes', formData),
   delete: (id: string) => api.delete(`/resumes/${id}`),
   getMaster: () => api.get('/resumes/master'),
   setMaster: (id: string) => api.put(`/resumes/${id}/master`),
-  score: (id: string, jobDescription?: string) =>
-    api.post(`/resumes/${id}/score`, { job_description: jobDescription }),
-  tailor: (id: string, jobDescription: string, company?: string) =>
-    api.post(`/resumes/${id}/tailor`, { job_description: jobDescription, company }),
+  score: (id: string, jobKeywords?: string[], targetRole?: string) =>
+    api.post(`/resumes/${id}/score`, { job_keywords: jobKeywords, target_role: targetRole }),
+  tailor: (id: string, targetJobTitle: string, targetCompany?: string, optimizedText?: string) =>
+    api.post(`/resumes/${id}/tailor`, {
+      target_job_title: targetJobTitle,
+      target_company: targetCompany,
+      optimized_text: optimizedText
+    }),
   getSuggestions: (id: string) => api.get(`/resumes/${id}/suggestions`),
   getAnalysis: (id: string) => api.get(`/resumes/${id}/analysis`),
 };
 
 // Recruiter API
 export const recruiterApi = {
-  list: (params?: { stage?: string; sort_by?: string; limit?: number }) =>
+  list: (params?: { status?: string; sort_by?: string; limit?: number }) =>
     api.get('/recruiters', { params }),
   get: (id: string) => api.get(`/recruiters/${id}`),
   create: (data: Record<string, unknown>) => api.post('/recruiters', data),

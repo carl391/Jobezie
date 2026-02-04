@@ -2,13 +2,45 @@
 export interface User {
   id: string;
   email: string;
-  name: string;
+  first_name?: string;
+  last_name?: string;
+  full_name: string;
   subscription_tier: 'basic' | 'pro' | 'expert' | 'career_keeper';
   created_at: string;
-  profile_completed: boolean;
-  target_role?: string;
-  target_industry?: string;
-  experience_level?: string;
+  // Career info
+  years_experience?: number;
+  career_stage?: string;
+  current_role?: string;
+  target_roles?: string[];
+  target_industries?: string[];
+  // Onboarding
+  onboarding_completed: boolean;
+  onboarding_step?: number;
+}
+
+// Onboarding types
+export interface OnboardingData {
+  search_status?: string;
+  years_experience?: number;
+  career_stage?: string;
+  current_role?: string;
+  target_roles?: string[];
+  target_industries?: string[];
+}
+
+export interface ProfileUpdateData {
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+  location?: string;
+  linkedin_url?: string;
+  years_experience?: number;
+  career_stage?: string;
+  current_role?: string;
+  target_roles?: string[];
+  target_industries?: string[];
+  onboarding_step?: number;
+  onboarding_completed?: boolean;
 }
 
 export interface AuthTokens {
@@ -19,16 +51,40 @@ export interface AuthTokens {
 // Resume types
 export interface Resume {
   id: string;
-  name: string;
+  title: string;
+  file_name: string;
   file_type: string;
   file_size: number;
+  word_count?: number;
   is_master: boolean;
+  is_tailored?: boolean;
+  target_job_title?: string;
   parse_status: string;
+  ats_total_score?: number;
+  analyzed_at?: string;
   created_at: string;
   updated_at: string;
-  ats_score?: ATSScore;
+  // Extended fields (when include_analysis=true)
+  ats_breakdown?: ATSBreakdown;
+  recommendations?: string[];
+  missing_keywords?: string[];
+  weak_sections?: string[];
 }
 
+export interface ATSBreakdown {
+  total: number;
+  components: {
+    compatibility: { score: number; weight: number };
+    keywords: { score: number; weight: number };
+    achievements: { score: number; weight: number };
+    formatting: { score: number; weight: number };
+    progression: { score: number; weight: number };
+    completeness: { score: number; weight: number };
+    fit: { score: number; weight: number };
+  };
+}
+
+// Legacy ATSScore interface for backwards compatibility
 export interface ATSScore {
   overall_score: number;
   keyword_score: number;
@@ -43,22 +99,41 @@ export interface ATSScore {
 // Recruiter types
 export interface Recruiter {
   id: string;
-  name: string;
+  first_name: string;
+  last_name: string;
+  full_name: string;
   email?: string;
   phone?: string;
-  company_name?: string;
+  company?: string;
   title?: string;
   linkedin_url?: string;
-  stage: string;
+  status: string;
   priority_score: number;
   messages_sent: number;
-  messages_opened: number;
-  responses: number;
-  last_contact?: string;
+  messages_opened?: number;
+  responses_received: number;
+  has_responded: boolean;
+  engagement_score: number;
+  fit_score: number;
+  response_rate: number;
+  days_since_contact: number;
+  needs_follow_up: boolean;
+  last_contact_date?: string;
   next_action?: string;
   next_action_date?: string;
+  source?: string;
+  specialty?: string;
+  industries?: string[];
+  locations?: string[];
+  tags?: string[];
   created_at: string;
   updated_at: string;
+  // Convenience alias for backwards compatibility with frontend components
+  name?: string;
+  company_name?: string;
+  stage?: string;
+  responses?: number;
+  last_contact?: string;
 }
 
 export interface RecruiterNote {
