@@ -13,6 +13,7 @@ from flask import current_app
 
 from app.extensions import db
 from app.models.user import SubscriptionTier, User
+from app.services.email_service import EmailService
 
 
 class StripeService:
@@ -367,6 +368,17 @@ class StripeService:
 
         current_app.logger.info(f"User {user_id} subscribed to {tier}")
 
+        # Send subscription confirmation email
+        try:
+            tier_features = cls.get_tier_info()["tiers"]
+            features = next(
+                (t["features"] for t in tier_features if t["id"] == tier),
+                []
+            )
+            EmailService.send_subscription_confirmed_email(user, tier, features)
+        except Exception as e:
+            current_app.logger.error(f"Failed to send subscription email: {e}")
+
         return {"success": True, "message": "Subscription activated"}
 
     @classmethod
@@ -398,12 +410,19 @@ class StripeService:
             return {"success": False, "error": "User not found"}
 
         # Downgrade to basic
+        previous_tier = user.subscription_tier
         user.subscription_tier = SubscriptionTier.BASIC.value
         user.stripe_subscription_id = None
         user.subscription_expires_at = None
         db.session.commit()
 
         current_app.logger.info(f"User {user.id} subscription cancelled")
+
+        # Send subscription cancelled email
+        try:
+            EmailService.send_subscription_cancelled_email(user, datetime.now())
+        except Exception as e:
+            current_app.logger.error(f"Failed to send cancellation email: {e}")
 
         return {"success": True, "message": "Subscription cancelled"}
 
@@ -418,8 +437,11 @@ class StripeService:
 
         current_app.logger.warning(f"Payment failed for user {user.id}")
 
-        # Could trigger email notification here
-        # EmailService.send_payment_failed_email(user)
+        # Send payment failed notification email
+        try:
+            EmailService.send_payment_failed_email(user)
+        except Exception as e:
+            current_app.logger.error(f"Failed to send payment failure email: {e}")
 
         return {"success": True, "message": "Payment failure recorded"}
 

@@ -116,8 +116,8 @@ pages/
 | Onboarding | ✅ 100% | 7-step flow with backend integration |
 
 ### TODO
-- **Email**: Wire SendGrid into notification flows
 - **Token Blocklist**: Migrate from in-memory set to Redis
+- **Scheduled Jobs**: Add Celery tasks for weekly summaries and follow-up reminders
 
 ## API Endpoints (Base: /api)
 - `/auth/*` - Authentication flows

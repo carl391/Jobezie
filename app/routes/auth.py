@@ -17,6 +17,7 @@ from flask_jwt_extended import (
 
 from app.extensions import db
 from app.models.user import User
+from app.services.email_service import EmailService
 from app.utils.validators import ValidationError, validate_email, validate_password
 
 auth_bp = Blueprint("auth", __name__)
@@ -97,6 +98,13 @@ def register():
 
     db.session.add(user)
     db.session.commit()
+
+    # Send welcome email
+    try:
+        EmailService.send_welcome_email(user)
+    except Exception as e:
+        # Log error but don't fail registration
+        print(f"Failed to send welcome email: {e}")
 
     # Generate tokens
     access_token = create_access_token(identity=str(user.id))
