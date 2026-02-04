@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Loader2,
   Mail,
@@ -43,6 +44,7 @@ export function RecruiterDetailsModal({
   recruiterId,
   onUpdate,
 }: RecruiterDetailsModalProps) {
+  const navigate = useNavigate();
   const [recruiter, setRecruiter] = useState<Recruiter | null>(null);
   const [notes, setNotes] = useState<RecruiterNote[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -120,6 +122,11 @@ export function RecruiterDetailsModal({
   // Use fit score from backend
   const getFitScore = () => {
     return recruiter?.fit_score || 0;
+  };
+
+  const handleCreateMessage = () => {
+    onClose();
+    navigate(`/messages?recruiterId=${recruiterId}`);
   };
 
   if (isLoading) {
@@ -372,7 +379,7 @@ export function RecruiterDetailsModal({
           <button onClick={onClose} className="btn btn-outline">
             Close
           </button>
-          <button className="btn btn-primary">
+          <button onClick={handleCreateMessage} className="btn btn-primary">
             <MessageSquare className="w-4 h-4 mr-2" />
             Create Message
           </button>
