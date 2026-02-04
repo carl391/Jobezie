@@ -48,6 +48,88 @@ def create_app(config_name=None):
     def health_check():
         return jsonify({"status": "healthy", "service": "jobezie-api"})
 
+    # API documentation endpoint
+    @app.route("/")
+    def api_docs():
+        return jsonify({
+            "service": "Jobezie API",
+            "version": "2.0.0",
+            "description": "AI-powered career assistant API",
+            "health": "/health",
+            "endpoints": {
+                "auth": {
+                    "base": "/api/auth",
+                    "routes": {
+                        "POST /register": "Create new user account",
+                        "POST /login": "Authenticate and get tokens",
+                        "POST /logout": "Invalidate current token",
+                        "POST /refresh": "Refresh access token",
+                        "POST /password-reset-request": "Request password reset",
+                        "POST /password-reset": "Reset password with token"
+                    }
+                },
+                "resumes": {
+                    "base": "/api/resumes",
+                    "routes": {
+                        "GET /": "List user's resumes",
+                        "POST /": "Create new resume",
+                        "GET /<id>": "Get resume details",
+                        "PUT /<id>": "Update resume",
+                        "DELETE /<id>": "Delete resume",
+                        "POST /<id>/analyze": "Get ATS score analysis",
+                        "POST /<id>/tailor": "Tailor resume for job description"
+                    }
+                },
+                "recruiters": {
+                    "base": "/api/recruiters",
+                    "routes": {
+                        "GET /": "List recruiters (Kanban board)",
+                        "POST /": "Add new recruiter",
+                        "GET /<id>": "Get recruiter details",
+                        "PUT /<id>": "Update recruiter",
+                        "DELETE /<id>": "Delete recruiter",
+                        "POST /<id>/notes": "Add note to recruiter",
+                        "PUT /<id>/stage": "Update pipeline stage"
+                    }
+                },
+                "messages": {
+                    "base": "/api/messages",
+                    "routes": {
+                        "GET /": "List messages",
+                        "POST /": "Create message",
+                        "GET /<id>": "Get message details",
+                        "POST /generate": "AI-generate outreach message"
+                    }
+                },
+                "activities": {
+                    "base": "/api/activities",
+                    "routes": {
+                        "GET /": "List activities timeline",
+                        "POST /": "Log new activity",
+                        "GET /pipeline": "Get pipeline overview"
+                    }
+                },
+                "dashboard": {
+                    "base": "/api/dashboard",
+                    "routes": {
+                        "GET /stats": "Get dashboard statistics",
+                        "GET /readiness": "Get career readiness score",
+                        "GET /follow-ups": "Get recommended follow-ups"
+                    }
+                },
+                "ai": {
+                    "base": "/api/ai",
+                    "routes": {
+                        "POST /generate-message": "Generate outreach message",
+                        "POST /optimize-resume": "Get resume optimization suggestions",
+                        "POST /career-coach": "Get career coaching advice"
+                    }
+                }
+            },
+            "authentication": "Bearer token (JWT) required for most endpoints",
+            "documentation": "https://github.com/carl391/Jobezie"
+        })
+
     return app
 
 
