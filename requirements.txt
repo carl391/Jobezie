@@ -28,6 +28,7 @@ Flask-Caching==2.1.0
 # API & Serialization
 marshmallow==3.20.1
 Flask-CORS==4.0.0
+Flask-Limiter==3.5.0
 
 # HTTP Client (for external APIs)
 requests==2.31.0

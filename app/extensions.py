@@ -8,6 +8,8 @@ Extensions are initialized without app context and bound later in the app factor
 from flask_caching import Cache
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 
@@ -26,6 +28,9 @@ cors = CORS()
 # Caching
 cache = Cache()
 
+# Rate Limiting
+limiter = Limiter(key_func=get_remote_address, default_limits=["100 per minute"])
+
 
 def init_extensions(app):
     """Initialize all Flask extensions with the app instance."""
@@ -34,6 +39,7 @@ def init_extensions(app):
     migrate.init_app(app, db)
     cors.init_app(app, resources={r"/api/*": {"origins": app.config.get("CORS_ORIGINS", "*")}})
     cache.init_app(app)
+    limiter.init_app(app)
 
     # Configure JWT callbacks
     _configure_jwt_callbacks(app)

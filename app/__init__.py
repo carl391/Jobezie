@@ -7,7 +7,7 @@ Creates and configures the Flask application instance.
 from flask import Flask, jsonify
 
 from app.config import config, get_config
-from app.extensions import db, init_extensions
+from app.extensions import db, init_extensions, limiter
 
 
 def create_app(config_name=None):
@@ -48,13 +48,26 @@ def create_app(config_name=None):
     def health_check():
         return jsonify({"status": "healthy", "service": "jobezie-api"})
 
-    # API documentation endpoint
+    # API documentation endpoint (rate limited, environment-aware)
     @app.route("/")
+    @limiter.limit("10 per minute")
     def api_docs():
+        # Minimal info in production
+        if not app.config.get("DEBUG", False):
+            return jsonify({
+                "service": "Jobezie API",
+                "version": "2.0.0",
+                "status": "online",
+                "health": "/health",
+                "documentation": "https://github.com/carl391/Jobezie"
+            })
+
+        # Full documentation in development only
         return jsonify({
             "service": "Jobezie API",
             "version": "2.0.0",
             "description": "AI-powered career assistant API",
+            "environment": "development",
             "health": "/health",
             "endpoints": {
                 "auth": {
@@ -127,6 +140,7 @@ def create_app(config_name=None):
                 }
             },
             "authentication": "Bearer token (JWT) required for most endpoints",
+            "rate_limits": "100 requests/minute per IP",
             "documentation": "https://github.com/carl391/Jobezie"
         })
 
