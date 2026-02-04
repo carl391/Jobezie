@@ -4,6 +4,7 @@ Resume Service
 Handles resume parsing, ATS scoring, and optimization.
 """
 
+import io
 import re
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
@@ -13,6 +14,19 @@ from werkzeug.datastructures import FileStorage
 from app.extensions import db
 from app.models.resume import Resume, ResumeVersion
 from app.services.scoring.ats import calculate_ats_score
+
+# Document parsing libraries
+try:
+    from docx import Document as DocxDocument
+    DOCX_AVAILABLE = True
+except ImportError:
+    DOCX_AVAILABLE = False
+
+try:
+    from PyPDF2 import PdfReader
+    PDF_AVAILABLE = True
+except ImportError:
+    PDF_AVAILABLE = False
 
 # Supported file types
 ALLOWED_EXTENSIONS = {"pdf", "docx", "doc", "txt"}
@@ -121,17 +135,59 @@ class ResumeService:
         """
         Extract text from file content.
 
-        Note: In production, this would use libraries like:
-        - PyPDF2 or pdfplumber for PDFs
-        - python-docx for DOCX files
+        Supports:
+        - TXT: Direct UTF-8 decoding
+        - DOCX: Uses python-docx library
+        - PDF: Uses PyPDF2 library
+        - DOC: Falls back to basic extraction
         """
         if file_type == "txt":
             return content.decode("utf-8", errors="ignore")
 
-        # Placeholder for PDF/DOCX parsing
-        # In production, integrate proper parsing libraries
+        if file_type == "docx" and DOCX_AVAILABLE:
+            try:
+                doc = DocxDocument(io.BytesIO(content))
+                text_parts = []
+                for paragraph in doc.paragraphs:
+                    if paragraph.text.strip():
+                        text_parts.append(paragraph.text)
+                # Also extract text from tables
+                for table in doc.tables:
+                    for row in table.rows:
+                        for cell in row.cells:
+                            if cell.text.strip():
+                                text_parts.append(cell.text)
+                return "\n".join(text_parts)
+            except Exception:
+                # Fall through to basic extraction
+                pass
+
+        if file_type == "pdf" and PDF_AVAILABLE:
+            try:
+                reader = PdfReader(io.BytesIO(content))
+                text_parts = []
+                for page in reader.pages:
+                    page_text = page.extract_text()
+                    if page_text:
+                        text_parts.append(page_text)
+                return "\n".join(text_parts)
+            except Exception:
+                # Fall through to basic extraction
+                pass
+
+        # Fallback: Try to extract any readable text from binary content
+        # Filter out NUL characters and non-printable bytes
         try:
-            return content.decode("utf-8", errors="ignore")
+            # Try UTF-8 decoding with replacement
+            text = content.decode("utf-8", errors="replace")
+            # Remove NUL characters and other problematic bytes
+            text = text.replace("\x00", "")
+            # Keep only printable characters, newlines, and common whitespace
+            text = "".join(
+                char for char in text
+                if char.isprintable() or char in "\n\r\t"
+            )
+            return text.strip()
         except Exception:
             return ""
 

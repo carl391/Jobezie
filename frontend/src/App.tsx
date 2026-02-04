@@ -7,6 +7,7 @@ import { Layout } from './components/Layout';
 // Pages
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
+import { Onboarding } from './pages/Onboarding';
 import { Dashboard } from './pages/Dashboard';
 import { Resumes } from './pages/Resumes';
 import { Recruiters } from './pages/Recruiters';
@@ -35,6 +36,16 @@ function App() {
             {/* Public routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+
+            {/* Onboarding route (protected but doesn't require onboarding completion) */}
+            <Route
+              path="/onboarding"
+              element={
+                <ProtectedRoute requireOnboarding={false}>
+                  <Onboarding />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Protected routes */}
             <Route

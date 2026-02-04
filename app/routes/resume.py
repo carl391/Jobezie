@@ -304,11 +304,24 @@ def get_analysis(resume_id):
     Returns:
         JSON with full ATS breakdown and component scores
     """
+    import json
+
     user_id = get_jwt_identity()
     resume = ResumeService.get_resume(resume_id, user_id)
 
     if not resume:
         return jsonify({"error": "Resume not found"}), 404
+
+    # Helper to ensure JSON fields are properly deserialized
+    def ensure_list(value):
+        if value is None:
+            return []
+        if isinstance(value, str):
+            try:
+                return json.loads(value)
+            except (json.JSONDecodeError, TypeError):
+                return []
+        return value if isinstance(value, list) else []
 
     return (
         jsonify(
@@ -318,45 +331,17 @@ def get_analysis(resume_id):
                 "ats_analysis": {
                     "total_score": resume.ats_total_score,
                     "components": {
-                        "compatibility": {
-                            "score": resume.ats_compatibility_score,
-                            "weight": 15,
-                            "description": "File format and parsing compatibility",
-                        },
-                        "keywords": {
-                            "score": resume.ats_keywords_score,
-                            "weight": 15,
-                            "description": "Industry and job-specific keywords",
-                        },
-                        "achievements": {
-                            "score": resume.ats_achievements_score,
-                            "weight": 25,
-                            "description": "Quantified achievements and impact statements",
-                        },
-                        "formatting": {
-                            "score": resume.ats_formatting_score,
-                            "weight": 15,
-                            "description": "Structure, headers, and readability",
-                        },
-                        "progression": {
-                            "score": resume.ats_progression_score,
-                            "weight": 15,
-                            "description": "Career growth and advancement",
-                        },
-                        "completeness": {
-                            "score": resume.ats_completeness_score,
-                            "weight": 10,
-                            "description": "Presence of all essential sections",
-                        },
-                        "fit": {
-                            "score": resume.ats_fit_score,
-                            "weight": 5,
-                            "description": "Alignment with target role",
-                        },
+                        "compatibility": resume.ats_compatibility_score,
+                        "keywords": resume.ats_keywords_score,
+                        "achievements": resume.ats_achievements_score,
+                        "formatting": resume.ats_formatting_score,
+                        "progression": resume.ats_progression_score,
+                        "completeness": resume.ats_completeness_score,
+                        "fit": resume.ats_fit_score,
                     },
-                    "recommendations": resume.ats_recommendations or [],
-                    "weak_sections": resume.weak_sections or [],
-                    "missing_keywords": resume.missing_keywords or [],
+                    "recommendations": ensure_list(resume.ats_recommendations),
+                    "weak_sections": ensure_list(resume.weak_sections),
+                    "missing_keywords": ensure_list(resume.missing_keywords),
                 },
             }
         ),

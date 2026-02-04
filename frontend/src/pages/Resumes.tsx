@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { resumeApi } from '../lib/api';
 import { FileText, Upload, Star, Trash2, Eye, BarChart2 } from 'lucide-react';
+import { ViewResumeModal } from '../components/resumes/ViewResumeModal';
+import { ATSScoreModal } from '../components/resumes/ATSScoreModal';
 import type { Resume } from '../types';
 
 export function Resumes() {
@@ -8,6 +10,8 @@ export function Resumes() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [viewResumeId, setViewResumeId] = useState<string | null>(null);
+  const [scoreResumeId, setScoreResumeId] = useState<string | null>(null);
 
   const fetchResumes = useCallback(async () => {
     try {
@@ -132,9 +136,9 @@ export function Resumes() {
                     <FileText className="w-5 h-5 text-primary-600" />
                   </div>
                   <div className="ml-3">
-                    <h3 className="font-medium text-gray-900">{resume.name}</h3>
+                    <h3 className="font-medium text-gray-900">{resume.title}</h3>
                     <p className="text-sm text-gray-500">
-                      {(resume.file_size / 1024).toFixed(1)} KB
+                      {resume.file_size ? `${(resume.file_size / 1024).toFixed(1)} KB` : 'N/A'}
                     </p>
                   </div>
                 </div>
@@ -145,26 +149,26 @@ export function Resumes() {
                 )}
               </div>
 
-              {resume.ats_score && (
+              {resume.ats_total_score !== undefined && (
                 <div className="mt-4 p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">ATS Score</span>
                     <span className={`text-lg font-bold ${
-                      resume.ats_score.overall_score >= 80 ? 'text-green-600' :
-                      resume.ats_score.overall_score >= 60 ? 'text-yellow-600' :
+                      resume.ats_total_score >= 80 ? 'text-green-600' :
+                      resume.ats_total_score >= 60 ? 'text-yellow-600' :
                       'text-red-600'
                     }`}>
-                      {resume.ats_score.overall_score}%
+                      {resume.ats_total_score}%
                     </span>
                   </div>
                   <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full ${
-                        resume.ats_score.overall_score >= 80 ? 'bg-green-500' :
-                        resume.ats_score.overall_score >= 60 ? 'bg-yellow-500' :
+                        resume.ats_total_score >= 80 ? 'bg-green-500' :
+                        resume.ats_total_score >= 60 ? 'bg-yellow-500' :
                         'bg-red-500'
                       }`}
-                      style={{ width: `${resume.ats_score.overall_score}%` }}
+                      style={{ width: `${resume.ats_total_score}%` }}
                     />
                   </div>
                 </div>
@@ -173,14 +177,14 @@ export function Resumes() {
               <div className="mt-4 flex items-center justify-between">
                 <div className="flex space-x-2">
                   <button
-                    onClick={() => {/* View resume */}}
+                    onClick={() => setViewResumeId(resume.id)}
                     className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg"
                     title="View"
                   >
                     <Eye className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => {/* Score resume */}}
+                    onClick={() => setScoreResumeId(resume.id)}
                     className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg"
                     title="Score"
                   >
@@ -213,6 +217,31 @@ export function Resumes() {
           <h3 className="text-lg font-medium text-gray-900 mb-2">No resumes yet</h3>
           <p className="text-gray-500 mb-4">Upload your first resume to get started</p>
         </div>
+      )}
+
+      {/* View Resume Modal */}
+      {viewResumeId && (
+        <ViewResumeModal
+          isOpen={!!viewResumeId}
+          onClose={() => setViewResumeId(null)}
+          resumeId={viewResumeId}
+        />
+      )}
+
+      {/* ATS Score Modal */}
+      {scoreResumeId && (
+        <ATSScoreModal
+          isOpen={!!scoreResumeId}
+          onClose={() => setScoreResumeId(null)}
+          resumeId={scoreResumeId}
+          resumeName={resumes.find(r => r.id === scoreResumeId)?.title || 'Resume'}
+          initialScore={resumes.find(r => r.id === scoreResumeId)?.ats_total_score}
+          onScoreUpdated={(newScore: number) => {
+            setResumes(prev => prev.map(r =>
+              r.id === scoreResumeId ? { ...r, ats_total_score: newScore } : r
+            ));
+          }}
+        />
       )}
     </div>
   );

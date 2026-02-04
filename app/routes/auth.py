@@ -515,6 +515,110 @@ def reset_password():
     )
 
 
+@auth_bp.route("/profile", methods=["PUT"])
+@jwt_required()
+def update_profile():
+    """
+    Update current user's profile and onboarding status.
+
+    Headers:
+        Authorization: Bearer <access_token>
+
+    Request Body (all optional):
+        first_name: User's first name
+        last_name: User's last name
+        phone: Phone number
+        location: Location
+        linkedin_url: LinkedIn profile URL
+        years_experience: Years of experience (integer)
+        career_stage: Career stage (entry_level, early_career, mid_level, senior, executive)
+        current_role: Current job title
+        target_roles: List of target roles
+        target_industries: List of target industries
+        onboarding_step: Current onboarding step (1-7)
+        onboarding_completed: Whether onboarding is complete
+
+    Returns:
+        200: Profile updated successfully
+        400: Validation error
+        404: User not found
+    """
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+
+    if not user:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "user_not_found",
+                    "message": "User not found",
+                }
+            ),
+            404,
+        )
+
+    data = request.get_json()
+
+    if not data:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "invalid_request",
+                    "message": "Request body is required",
+                }
+            ),
+            400,
+        )
+
+    # Update basic profile fields
+    if "first_name" in data:
+        user.first_name = data["first_name"].strip() if data["first_name"] else None
+    if "last_name" in data:
+        user.last_name = data["last_name"].strip() if data["last_name"] else None
+    if "phone" in data:
+        user.phone = data["phone"].strip() if data["phone"] else None
+    if "location" in data:
+        user.location = data["location"].strip() if data["location"] else None
+    if "linkedin_url" in data:
+        user.linkedin_url = data["linkedin_url"].strip() if data["linkedin_url"] else None
+
+    # Update career information
+    if "years_experience" in data:
+        user.years_experience = data["years_experience"]
+        # Auto-detect career stage if not provided
+        if "career_stage" not in data and data["years_experience"] is not None:
+            user.career_stage = User.detect_career_stage(data["years_experience"])
+    if "career_stage" in data:
+        user.career_stage = data["career_stage"]
+    if "current_role" in data:
+        user.current_role = data["current_role"].strip() if data["current_role"] else None
+    if "target_roles" in data:
+        user.target_roles = data["target_roles"] if isinstance(data["target_roles"], list) else []
+    if "target_industries" in data:
+        user.target_industries = data["target_industries"] if isinstance(data["target_industries"], list) else []
+
+    # Update onboarding status
+    if "onboarding_step" in data:
+        user.onboarding_step = data["onboarding_step"]
+    if "onboarding_completed" in data:
+        user.onboarding_completed = data["onboarding_completed"]
+
+    db.session.commit()
+
+    return (
+        jsonify(
+            {
+                "success": True,
+                "message": "Profile updated successfully",
+                "data": {"user": user.to_dict(include_private=True)},
+            }
+        ),
+        200,
+    )
+
+
 # Token blocklist checker for JWT
 def check_if_token_revoked(jwt_header, jwt_payload):
     """Check if token is in blocklist."""

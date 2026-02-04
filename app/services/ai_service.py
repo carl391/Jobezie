@@ -62,7 +62,7 @@ Help candidates prepare confident, structured responses that highlight their str
 
     MODEL_CONFIG = {
         "claude": {
-            "default_model": "claude-3-sonnet-20240229",
+            "default_model": "claude-sonnet-4-20250514",
             "max_tokens": 1024,
             "temperature": 0.7,
         },

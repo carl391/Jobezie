@@ -3,10 +3,11 @@ import { useAuth } from '../contexts/AuthContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  requireOnboarding?: boolean;
 }
 
-export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading } = useAuth();
+export function ProtectedRoute({ children, requireOnboarding = true }: ProtectedRouteProps) {
+  const { user, isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
@@ -19,6 +20,11 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // Redirect to onboarding if not completed (unless we're already on the onboarding page)
+  if (requireOnboarding && user && !user.onboarding_completed && location.pathname !== '/onboarding') {
+    return <Navigate to="/onboarding" replace />;
   }
 
   return <>{children}</>;

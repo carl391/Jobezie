@@ -142,6 +142,7 @@ class Resume(db.Model):
             "title": self.title,
             "file_name": self.file_name,
             "file_type": self.file_type,
+            "file_size": self.file_size,
             "word_count": self.word_count,
             "is_master": self.is_master,
             "is_tailored": self.is_tailored,

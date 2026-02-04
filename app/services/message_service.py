@@ -368,7 +368,7 @@ class MessageService:
             context["user"] = {
                 "first_name": user.first_name,
                 "last_name": user.last_name,
-                "title": user.job_title,
+                "title": user.current_role,
                 "industries": user.target_industries,
                 "target_roles": user.target_roles,
                 "location": user.location,
