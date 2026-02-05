@@ -260,6 +260,7 @@ export function Dashboard() {
             <p className="text-sm mt-1">Add recruiters to your pipeline to get personalized recommendations</p>
           </div>
         )}
+      </div>
     </div>
   );
 }
