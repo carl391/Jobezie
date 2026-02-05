@@ -103,6 +103,7 @@ export function Resumes() {
 
       {/* Upload area */}
       <div
+        data-tour="resume-upload"
         onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
@@ -132,7 +133,7 @@ export function Resumes() {
       {/* Resume list */}
       {resumes.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {resumes.map((resume) => (
+          {resumes.map((resume, index) => (
             <div key={resume.id} className="card hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between">
                 <div className="flex items-center">
@@ -153,30 +154,40 @@ export function Resumes() {
                 )}
               </div>
 
-              {resume.ats_total_score !== undefined && (
-                <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+              <div
+                className="mt-4 p-3 bg-gray-50 rounded-lg"
+                data-tour={index === 0 ? "resume-ats" : undefined}
+              >
+                {resume.ats_total_score !== undefined ? (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">ATS Score</span>
+                      <span className={`text-lg font-bold ${
+                        resume.ats_total_score >= 80 ? 'text-green-600' :
+                        resume.ats_total_score >= 60 ? 'text-yellow-600' :
+                        'text-red-600'
+                      }`}>
+                        {resume.ats_total_score}%
+                      </span>
+                    </div>
+                    <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${
+                          resume.ats_total_score >= 80 ? 'bg-green-500' :
+                          resume.ats_total_score >= 60 ? 'bg-yellow-500' :
+                          'bg-red-500'
+                        }`}
+                        style={{ width: `${resume.ats_total_score}%` }}
+                      />
+                    </div>
+                  </>
+                ) : (
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">ATS Score</span>
-                    <span className={`text-lg font-bold ${
-                      resume.ats_total_score >= 80 ? 'text-green-600' :
-                      resume.ats_total_score >= 60 ? 'text-yellow-600' :
-                      'text-red-600'
-                    }`}>
-                      {resume.ats_total_score}%
-                    </span>
+                    <span className="text-sm text-gray-400">Click to analyze</span>
                   </div>
-                  <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full ${
-                        resume.ats_total_score >= 80 ? 'bg-green-500' :
-                        resume.ats_total_score >= 60 ? 'bg-yellow-500' :
-                        'bg-red-500'
-                      }`}
-                      style={{ width: `${resume.ats_total_score}%` }}
-                    />
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
 
               <div className="mt-4 flex items-center justify-between">
                 <div className="flex space-x-1">
@@ -205,6 +216,7 @@ export function Resumes() {
                     onClick={() => setTailorResumeId(resume.id)}
                     className="p-2 text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded-lg"
                     title="Tailor for Job"
+                    data-tour={index === 0 ? "resume-optimize" : undefined}
                   >
                     <Target className="w-4 h-4" />
                   </button>
@@ -230,10 +242,10 @@ export function Resumes() {
           ))}
         </div>
       ) : (
-        <div className="card text-center py-12">
+        <div className="card text-center py-12" data-tour="resume-ats">
           <FileText className="w-16 h-16 mx-auto text-gray-300 mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">No resumes yet</h3>
-          <p className="text-gray-500 mb-4">Upload your first resume to get started</p>
+          <p className="text-gray-500 mb-4" data-tour="resume-optimize">Upload your first resume to get started</p>
         </div>
       )}
 

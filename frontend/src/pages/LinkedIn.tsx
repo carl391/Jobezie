@@ -157,9 +157,9 @@ export function LinkedIn() {
   };
 
   const tabs = [
-    { id: 'headline' as const, label: 'Headline Generator', icon: Briefcase },
-    { id: 'summary' as const, label: 'Summary Generator', icon: FileText },
-    { id: 'visibility' as const, label: 'Visibility Score', icon: Eye },
+    { id: 'headline' as const, label: 'Headline Generator', icon: Briefcase, tourId: 'linkedin-headline' },
+    { id: 'summary' as const, label: 'Summary Generator', icon: FileText, tourId: 'linkedin-summary' },
+    { id: 'visibility' as const, label: 'Visibility Score', icon: Eye, tourId: 'linkedin-visibility' },
   ];
 
   return (
@@ -182,6 +182,7 @@ export function LinkedIn() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
+              data-tour={tab.tourId}
               className={`flex items-center gap-2 px-4 py-3 border-b-2 font-medium text-sm transition-colors ${
                 activeTab === tab.id
                   ? 'border-primary-600 text-primary-600'
@@ -205,7 +206,7 @@ export function LinkedIn() {
 
       {/* Headline Generator Tab */}
       {activeTab === 'headline' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-tour="linkedin-headline">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="card">
             <h2 className="text-lg font-semibold mb-4">Generate Headlines</h2>
             <div className="space-y-4">
@@ -318,7 +319,7 @@ export function LinkedIn() {
 
       {/* Summary Generator Tab */}
       {activeTab === 'summary' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-tour="linkedin-summary">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="card">
             <h2 className="text-lg font-semibold mb-4">Generate Summary</h2>
             <div className="space-y-4">
@@ -435,7 +436,7 @@ export function LinkedIn() {
 
       {/* Visibility Score Tab */}
       {activeTab === 'visibility' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-tour="linkedin-visibility">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="card">
             <h2 className="text-lg font-semibold mb-4">Analyze Profile Visibility</h2>
             <div className="space-y-4">

@@ -216,43 +216,48 @@ export function Dashboard() {
       </div>
 
       {/* Follow-up recommendations */}
-      {dashboardData?.follow_up_recommendations &&
-        dashboardData.follow_up_recommendations.length > 0 && (
-          <div className="card" data-tour="follow-ups">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              Recommended Follow-ups
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {dashboardData.follow_up_recommendations.slice(0, 3).map((rec) => (
-                <div
-                  key={rec.recruiter_id}
-                  className="p-4 rounded-lg border border-gray-200 hover:border-primary-300 transition-colors"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-gray-900">{rec.recruiter_name}</span>
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full ${
-                        rec.priority === 'high'
-                          ? 'bg-red-100 text-red-700'
-                          : rec.priority === 'medium'
-                          ? 'bg-yellow-100 text-yellow-700'
-                          : 'bg-gray-100 text-gray-700'
-                      }`}
-                    >
-                      {rec.priority}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-600">{rec.company}</p>
-                  <p className="text-sm text-gray-500 mt-2">{rec.reason}</p>
-                  <Link
-                    to={`/messages?recruiter=${rec.recruiter_id}`}
-                    className="text-sm text-primary-600 hover:text-primary-700 mt-3 inline-block"
+      <div className="card" data-tour="follow-ups">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+          Recommended Follow-ups
+        </h2>
+        {dashboardData?.follow_up_recommendations &&
+          dashboardData.follow_up_recommendations.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {dashboardData.follow_up_recommendations.slice(0, 3).map((rec) => (
+              <div
+                key={rec.recruiter_id}
+                className="p-4 rounded-lg border border-gray-200 hover:border-primary-300 transition-colors"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-medium text-gray-900">{rec.recruiter_name}</span>
+                  <span
+                    className={`text-xs px-2 py-1 rounded-full ${
+                      rec.priority === 'high'
+                        ? 'bg-red-100 text-red-700'
+                        : rec.priority === 'medium'
+                        ? 'bg-yellow-100 text-yellow-700'
+                        : 'bg-gray-100 text-gray-700'
+                    }`}
                   >
-                    {rec.suggested_action}
-                  </Link>
+                    {rec.priority}
+                  </span>
                 </div>
-              ))}
-            </div>
+                <p className="text-sm text-gray-600">{rec.company}</p>
+                <p className="text-sm text-gray-500 mt-2">{rec.reason}</p>
+                <Link
+                  to={`/messages?recruiter=${rec.recruiter_id}`}
+                  className="text-sm text-primary-600 hover:text-primary-700 mt-3 inline-block"
+                >
+                  {rec.suggested_action}
+                </Link>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-500">
+            <Clock className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+            <p>No follow-ups recommended yet</p>
+            <p className="text-sm mt-1">Add recruiters to your pipeline to get personalized recommendations</p>
           </div>
         )}
     </div>

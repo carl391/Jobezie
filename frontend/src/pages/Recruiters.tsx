@@ -76,6 +76,7 @@ export function Recruiters() {
         <button
           onClick={() => setShowAddModal(true)}
           className="btn btn-primary flex items-center"
+          data-tour="recruiter-add"
         >
           <Plus className="w-4 h-4 mr-2" />
           Add Recruiter
@@ -112,7 +113,7 @@ export function Recruiters() {
       </div>
 
       {/* Pipeline stages overview */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
+      <div className="flex gap-2 overflow-x-auto pb-2" data-tour="recruiter-pipeline">
         {PIPELINE_STAGES.map((stage) => {
           const count = recruiters.filter((r) => r.status === stage.id).length;
           return (
@@ -134,7 +135,7 @@ export function Recruiters() {
       {/* Recruiter list */}
       {filteredRecruiters.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredRecruiters.map((recruiter) => (
+          {filteredRecruiters.map((recruiter, index) => (
             <div key={recruiter.id} className="card hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between">
                 <div>
@@ -150,7 +151,10 @@ export function Recruiters() {
                 </span>
               </div>
 
-              <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+              <div
+                className="mt-4 grid grid-cols-3 gap-2 text-center"
+                data-tour={index === 0 ? "recruiter-engagement" : undefined}
+              >
                 <div>
                   <p className="text-lg font-semibold text-gray-900">{recruiter.messages_sent}</p>
                   <p className="text-xs text-gray-500">Sent</p>
@@ -190,7 +194,7 @@ export function Recruiters() {
           ))}
         </div>
       ) : (
-        <div className="card text-center py-12">
+        <div className="card text-center py-12" data-tour="recruiter-engagement">
           <Users className="w-16 h-16 mx-auto text-gray-300 mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">No recruiters found</h3>
           <p className="text-gray-500 mb-4">

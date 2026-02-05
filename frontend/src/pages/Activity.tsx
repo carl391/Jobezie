@@ -233,6 +233,7 @@ export function Activity() {
         <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
           <button
             onClick={() => setActiveView('timeline')}
+            data-tour="activity-timeline"
             className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
               activeView === 'timeline'
                 ? 'bg-white text-gray-900 shadow-sm'
@@ -244,6 +245,7 @@ export function Activity() {
           </button>
           <button
             onClick={() => setActiveView('kanban')}
+            data-tour="activity-kanban"
             className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
               activeView === 'kanban'
                 ? 'bg-white text-gray-900 shadow-sm'

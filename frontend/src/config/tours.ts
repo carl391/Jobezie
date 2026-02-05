@@ -6,6 +6,7 @@ export interface TourStep {
   title: string;
   description: string;
   position?: 'top' | 'bottom' | 'left' | 'right';
+  image?: string; // Optional image URL to show in the tour step
 }
 
 export interface TourConfig {
@@ -13,6 +14,12 @@ export interface TourConfig {
   name: string;
   description: string;
   steps: TourStep[];
+}
+
+// Helper to create description with image
+export function createDescriptionWithImage(text: string, imageUrl?: string): string {
+  if (!imageUrl) return text;
+  return `${text}<img src="${imageUrl}" alt="Feature preview" style="width: 100%; max-width: 350px; height: auto; border-radius: 0.5rem; margin-top: 0.75rem; border: 1px solid #e5e7eb;" />`;
 }
 
 // Main platform tour - shown after onboarding
@@ -210,9 +217,9 @@ export const MESSAGES_TOUR: TourConfig = {
     },
     {
       id: 'ai-generate',
-      element: '[data-tour="message-ai"]',
+      element: '[data-tour="message-compose"]',
       title: 'AI Message Generation',
-      description: 'Let AI draft personalized messages based on the recruiter and your background.',
+      description: 'Click Compose to open the message editor, where you can use the "AI Generate" button to draft personalized messages based on the recruiter and your background.',
       position: 'bottom',
     },
     {
@@ -278,29 +285,33 @@ export const INTERVIEW_PREP_TOUR: TourConfig = {
       id: 'mode-tabs',
       element: '[data-tour="interview-modes"]',
       title: 'Preparation Modes',
-      description: 'Choose between Practice mode for mock questions, Review for analyzing past interviews, and Tips for interview strategies.',
+      description: 'Choose between Practice mode for mock questions and Tips for interview strategies. Each mode helps you prepare differently for your interviews.',
       position: 'bottom',
+      // Add image: '/images/tours/interview-modes.png' when screenshot is available
     },
     {
       id: 'question-settings',
       element: '[data-tour="interview-settings"]',
       title: 'Question Settings',
-      description: 'Customize your practice by selecting question type (behavioral, technical, etc.) and difficulty level.',
+      description: 'Customize your practice by selecting question type (behavioral, technical, situational, leadership, or culture fit) and difficulty level (easy, medium, hard).',
       position: 'bottom',
+      // Add image: '/images/tours/interview-settings.png' when screenshot is available
     },
     {
       id: 'generate-question',
       element: '[data-tour="interview-generate"]',
       title: 'Generate Questions',
-      description: 'Click to get AI-generated interview questions tailored to your target role and experience level.',
+      description: 'Click this button to get AI-generated interview questions tailored to your target role and experience level. Each question comes with key points to cover.',
       position: 'bottom',
+      // Add image: '/images/tours/interview-generate.png' when screenshot is available
     },
     {
       id: 'answer-practice',
       element: '[data-tour="interview-answer"]',
       title: 'Practice Your Answer',
-      description: 'Write or speak your answer, then compare it with the sample answer and get feedback.',
+      description: 'Type your answer in the text area, then click "Get Feedback" to receive AI-powered evaluation. You can also view a sample answer for reference.',
       position: 'top',
+      // Add image: '/images/tours/interview-answer.png' when screenshot is available
     },
   ],
 };
@@ -314,29 +325,33 @@ export const LINKEDIN_TOUR: TourConfig = {
       id: 'tabs',
       element: '[data-tour="linkedin-tabs"]',
       title: 'LinkedIn Tools',
-      description: 'Access three powerful tools: Headline Generator, Summary Writer, and Visibility Analyzer.',
+      description: 'Access three powerful optimization tools: Headline Generator creates attention-grabbing headlines, Summary Generator crafts your About section, and Visibility Score analyzes your profile.',
       position: 'bottom',
+      // Add image: '/images/tours/linkedin-tabs.png' when screenshot is available
     },
     {
       id: 'headline',
       element: '[data-tour="linkedin-headline"]',
       title: 'Headline Generator',
-      description: 'Create attention-grabbing headlines that include keywords recruiters search for.',
+      description: 'Enter your current role, target role, and key skills. The AI will generate multiple headline options with scores showing how effective each one is for recruiter searches.',
       position: 'bottom',
+      // Add image: '/images/tours/linkedin-headline.png' when screenshot is available
     },
     {
       id: 'summary',
       element: '[data-tour="linkedin-summary"]',
       title: 'Summary Generator',
-      description: 'Generate professional summaries with a strong hook, experience highlights, and call-to-action.',
+      description: 'Provide your experience details and career goals. The AI creates a professional summary with a compelling hook, experience highlights, skills showcase, and a clear call-to-action.',
       position: 'bottom',
+      // Add image: '/images/tours/linkedin-summary.png' when screenshot is available
     },
     {
       id: 'visibility',
       element: '[data-tour="linkedin-visibility"]',
       title: 'Visibility Score',
-      description: 'Analyze your profile\'s visibility and get recommendations to improve your search ranking.',
+      description: 'Paste your current LinkedIn profile details to get a visibility score. See a breakdown of what\'s working and specific recommendations to improve your search ranking.',
       position: 'bottom',
+      // Add image: '/images/tours/linkedin-visibility.png' when screenshot is available
     },
   ],
 };
@@ -350,29 +365,33 @@ export const LABOR_MARKET_TOUR: TourConfig = {
       id: 'overview',
       element: '[data-tour="market-overview"]',
       title: 'Market Overview',
-      description: 'See the current state of the job market including employment rates, job openings, and salary trends.',
+      description: 'Get a snapshot of the current job market: total job openings, average salary growth, percentage of remote positions, and overall market sentiment (bullish, neutral, or bearish).',
       position: 'bottom',
+      // Add image: '/images/tours/market-overview.png' when screenshot is available
     },
     {
       id: 'shortage',
       element: '[data-tour="market-shortage"]',
       title: 'Skill Shortage Score',
-      description: 'Find out how in-demand your skills are and where the biggest opportunities exist.',
+      description: 'Enter your target role and location to see how in-demand you are. A higher shortage score means more opportunities and leverage in negotiations.',
       position: 'bottom',
+      // Add image: '/images/tours/market-shortage.png' when screenshot is available
     },
     {
       id: 'salary',
       element: '[data-tour="market-salary"]',
       title: 'Salary Benchmarks',
-      description: 'Compare salaries for your target roles by experience level and location.',
+      description: 'Research salary ranges for any role by experience level. See minimum, median, maximum, and percentile breakdowns (25th, 50th, 75th, 90th) to know your worth.',
       position: 'bottom',
+      // Add image: '/images/tours/market-salary.png' when screenshot is available
     },
     {
       id: 'opportunity',
       element: '[data-tour="market-opportunity"]',
       title: 'Opportunity Analysis',
-      description: 'Get personalized recommendations based on market demand and your skill profile.',
+      description: 'Click "Analyze My Opportunity" to get a personalized score based on your skills and target roles. See which skills are in-demand and which gaps to fill.',
       position: 'bottom',
+      // Add image: '/images/tours/market-opportunity.png' when screenshot is available
     },
   ],
 };

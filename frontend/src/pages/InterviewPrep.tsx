@@ -375,7 +375,7 @@ export function InterviewPrep() {
                 )}
               </>
             ) : (
-              <div className="card">
+              <div className="card" data-tour="interview-answer">
                 <div className="text-center py-12 text-gray-500">
                   <MessageSquare className="w-16 h-16 mx-auto mb-4 opacity-50" />
                   <h3 className="text-lg font-medium text-gray-900 mb-2">Ready to Practice?</h3>
