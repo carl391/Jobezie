@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { dashboardApi, activityApi } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
+import { useTour } from '../contexts/TourContext';
 import {
   TrendingUp,
   FileText,
@@ -15,10 +16,12 @@ import type { DashboardData, Activity } from '../types';
 
 export function Dashboard() {
   const { user } = useAuth();
+  const { startTour, shouldShowTour, markTourSeen } = useTour();
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const tourStarted = useRef(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -39,6 +42,18 @@ export function Dashboard() {
 
     fetchData();
   }, []);
+
+  // Auto-start tour for new users after onboarding
+  useEffect(() => {
+    if (!isLoading && !tourStarted.current && user?.onboarding_completed && shouldShowTour()) {
+      tourStarted.current = true;
+      // Small delay to ensure all elements are rendered
+      const timer = setTimeout(() => {
+        startTour('main');
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, user, shouldShowTour, startTour, markTourSeen]);
 
   if (isLoading) {
     return (
@@ -65,10 +80,10 @@ export function Dashboard() {
   return (
     <div className="space-y-6">
       {/* Welcome section */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between" data-tour="dashboard-header">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            Welcome back, {user?.name?.split(' ')[0]}!
+            Welcome back, {user?.full_name?.split(' ')[0]}!
           </h1>
           <p className="text-gray-600 mt-1">Here's what's happening with your job search</p>
         </div>
@@ -76,14 +91,16 @@ export function Dashboard() {
 
       {/* Stats grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Career Readiness"
-          value={`${Math.round(readinessScore)}%`}
-          icon={TrendingUp}
-          trend={readinessScore > 70 ? 'Good' : readinessScore > 50 ? 'Fair' : 'Needs work'}
-          trendUp={readinessScore > 70}
-          color="primary"
-        />
+        <div data-tour="career-readiness">
+          <StatCard
+            title="Career Readiness"
+            value={`${Math.round(readinessScore)}%`}
+            icon={TrendingUp}
+            trend={readinessScore > 70 ? 'Good' : readinessScore > 50 ? 'Fair' : 'Needs work'}
+            trendUp={readinessScore > 70}
+            color="primary"
+          />
+        </div>
         <StatCard
           title="Active Recruiters"
           value={pipelineSummary?.total?.toString() || '0'}
@@ -111,7 +128,7 @@ export function Dashboard() {
       {/* Main content grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Pipeline summary */}
-        <div className="lg:col-span-2 card">
+        <div className="lg:col-span-2 card" data-tour="pipeline-overview">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">Pipeline Overview</h2>
             <Link
@@ -160,7 +177,7 @@ export function Dashboard() {
         </div>
 
         {/* Recent activity */}
-        <div className="card">
+        <div className="card" data-tour="recent-activity">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
             <Link
@@ -201,7 +218,7 @@ export function Dashboard() {
       {/* Follow-up recommendations */}
       {dashboardData?.follow_up_recommendations &&
         dashboardData.follow_up_recommendations.length > 0 && (
-          <div className="card">
+          <div className="card" data-tour="follow-ups">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">
               Recommended Follow-ups
             </h2>

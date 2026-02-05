@@ -784,3 +784,104 @@ def update_profile():
         ),
         200,
     )
+
+
+@auth_bp.route("/tour/status", methods=["GET"])
+@jwt_required()
+def get_tour_status():
+    """
+    Get tour completion status for current user.
+
+    Headers:
+        Authorization: Bearer <access_token>
+
+    Returns:
+        200: Tour status
+        404: User not found
+    """
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+
+    if not user:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "user_not_found",
+                    "message": "User not found",
+                }
+            ),
+            404,
+        )
+
+    return (
+        jsonify(
+            {
+                "success": True,
+                "tour_completed": user.tour_completed,
+                "completed_tours": user.completed_tours or [],
+            }
+        ),
+        200,
+    )
+
+
+@auth_bp.route("/tour/complete", methods=["POST"])
+@jwt_required()
+def complete_tour():
+    """
+    Mark a tour as completed for current user.
+
+    Headers:
+        Authorization: Bearer <access_token>
+
+    Request Body:
+        tour_id: ID of the tour to mark as completed (default: "main")
+
+    Returns:
+        200: Tour marked as completed
+        404: User not found
+    """
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+
+    if not user:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "user_not_found",
+                    "message": "User not found",
+                }
+            ),
+            404,
+        )
+
+    data = request.get_json() or {}
+    tour_id = data.get("tour_id", "main")
+
+    # Initialize completed_tours if None
+    if user.completed_tours is None:
+        user.completed_tours = []
+
+    # Add tour to completed list if not already there
+    if tour_id not in user.completed_tours:
+        user.completed_tours = user.completed_tours + [tour_id]
+
+    # Mark main tour as completed if it's the main tour
+    if tour_id == "main":
+        user.tour_completed = True
+
+    db.session.commit()
+
+    return (
+        jsonify(
+            {
+                "success": True,
+                "message": "Tour marked as completed",
+                "tour_completed": user.tour_completed,
+                "completed_tours": user.completed_tours,
+            }
+        ),
+        200,
+    )

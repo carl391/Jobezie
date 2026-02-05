@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useTour } from '../contexts/TourContext';
 import {
   LayoutDashboard,
   FileText,
@@ -16,6 +17,8 @@ import {
   Linkedin,
   BarChart3,
   MessageCircle,
+  BookOpen,
+  Compass,
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -24,27 +27,33 @@ interface LayoutProps {
 }
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Resumes', href: '/resumes', icon: FileText },
-  { name: 'Recruiters', href: '/recruiters', icon: Users },
-  { name: 'Messages', href: '/messages', icon: MessageSquare },
-  { name: 'Activity', href: '/activity', icon: Activity },
-  { name: 'AI Coach', href: '/ai-coach', icon: Sparkles },
-  { name: 'Interview Prep', href: '/interview-prep', icon: MessageCircle },
-  { name: 'LinkedIn', href: '/linkedin', icon: Linkedin },
-  { name: 'Labor Market', href: '/labor-market', icon: BarChart3 },
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, tourId: 'nav-dashboard' },
+  { name: 'Resumes', href: '/resumes', icon: FileText, tourId: 'nav-resumes' },
+  { name: 'Recruiters', href: '/recruiters', icon: Users, tourId: 'nav-recruiters' },
+  { name: 'Messages', href: '/messages', icon: MessageSquare, tourId: 'nav-messages' },
+  { name: 'Activity', href: '/activity', icon: Activity, tourId: 'nav-activity' },
+  { name: 'AI Coach', href: '/ai-coach', icon: Sparkles, tourId: 'nav-ai-coach' },
+  { name: 'Interview Prep', href: '/interview-prep', icon: MessageCircle, tourId: 'nav-interview' },
+  { name: 'LinkedIn', href: '/linkedin', icon: Linkedin, tourId: 'nav-linkedin' },
+  { name: 'Labor Market', href: '/labor-market', icon: BarChart3, tourId: 'nav-labor-market' },
 ];
 
 export function Layout({ children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { user, logout } = useAuth();
+  const { startTour } = useTour();
   const location = useLocation();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
     await logout();
     navigate('/login');
+  };
+
+  const handleStartTour = () => {
+    setUserMenuOpen(false);
+    startTour('main');
   };
 
   return (
@@ -113,6 +122,7 @@ export function Layout({ children }: LayoutProps) {
                 <Link
                   key={item.name}
                   to={item.href}
+                  data-tour={item.tourId}
                   className={clsx(
                     'flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors',
                     isActive
@@ -182,6 +192,22 @@ export function Layout({ children }: LayoutProps) {
                     onClick={() => setUserMenuOpen(false)}
                   />
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                    <Link
+                      to="/learn"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      <BookOpen className="w-4 h-4 mr-2" />
+                      Features Guide
+                    </Link>
+                    <button
+                      onClick={handleStartTour}
+                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      <Compass className="w-4 h-4 mr-2" />
+                      Take Tour
+                    </button>
+                    <div className="border-t border-gray-100 my-1" />
                     <Link
                       to="/settings"
                       onClick={() => setUserMenuOpen(false)}

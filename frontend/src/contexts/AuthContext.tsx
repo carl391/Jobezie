@@ -55,6 +55,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     localStorage.setItem('access_token', access_token);
     localStorage.setItem('refresh_token', refresh_token);
+
+    // Clear tour-related localStorage keys for new users so they get the tour
+    localStorage.removeItem('jobezie_tour_seen');
+    localStorage.removeItem('jobezie_completed_tours');
+
     setUser(userData);
   };
 
@@ -66,6 +71,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
+      // Clear tour-related localStorage so next user gets a fresh tour experience
+      localStorage.removeItem('jobezie_tour_seen');
+      localStorage.removeItem('jobezie_completed_tours');
       setUser(null);
     }
   };

@@ -16,6 +16,9 @@ export interface User {
   // Onboarding
   onboarding_completed: boolean;
   onboarding_step?: number;
+  // Tour tracking
+  tour_completed?: boolean;
+  completed_tours?: string[];
 }
 
 // Onboarding types

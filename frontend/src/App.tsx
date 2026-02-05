@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './contexts/AuthContext';
+import { TourProvider } from './contexts/TourContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Layout } from './components/Layout';
 
@@ -18,6 +19,7 @@ import { Settings } from './pages/Settings';
 import { LinkedIn } from './pages/LinkedIn';
 import { LaborMarket } from './pages/LaborMarket';
 import { InterviewPrep } from './pages/InterviewPrep';
+import { Learn } from './pages/Learn';
 
 import './index.css';
 
@@ -34,8 +36,9 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <BrowserRouter>
-          <Routes>
+        <TourProvider>
+          <BrowserRouter>
+            <Routes>
             {/* Public routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -151,6 +154,16 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/learn"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Learn />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
             {/* Redirect root to dashboard */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
@@ -170,8 +183,9 @@ function App() {
                 </div>
               }
             />
-          </Routes>
-        </BrowserRouter>
+            </Routes>
+          </BrowserRouter>
+        </TourProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

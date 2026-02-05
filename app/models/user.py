@@ -161,6 +161,10 @@ class User(db.Model):
     onboarding_completed = db.Column(db.Boolean, default=False)
     onboarding_step = db.Column(db.Integer, default=1)
 
+    # Tour tracking
+    tour_completed = db.Column(db.Boolean, default=False)
+    completed_tours = db.Column(JSONType(), default=list)
+
     # Account Status
     is_active = db.Column(db.Boolean, default=True)
     last_login_at = db.Column(db.DateTime, nullable=True)
@@ -271,6 +275,8 @@ class User(db.Model):
             "soft_skills": self.soft_skills,
             "subscription_tier": self.subscription_tier,
             "onboarding_completed": self.onboarding_completed,
+            "tour_completed": self.tour_completed,
+            "completed_tours": self.completed_tours or [],
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 

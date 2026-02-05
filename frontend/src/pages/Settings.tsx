@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
-  Settings as SettingsIcon,
   User,
   Lock,
   CreditCard,
@@ -17,11 +17,15 @@ import {
   Sparkles,
   Zap,
   ExternalLink,
+  HelpCircle,
+  Compass,
+  BookOpen,
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/Tabs';
 import { Badge } from '../components/ui/Badge';
 import { authApi, subscriptionApi } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
+import { useTour } from '../contexts/TourContext';
 
 // Profile form schema
 const profileSchema = z.object({
@@ -92,6 +96,7 @@ const SUBSCRIPTION_TIERS = [
 
 export function Settings() {
   const { user, refreshUser } = useAuth();
+  const { startTour, hasCompletedTour } = useTour();
   const [activeTab, setActiveTab] = useState('profile');
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -260,6 +265,10 @@ export function Settings() {
           <TabsTrigger value="subscription">
             <CreditCard className="w-4 h-4 mr-2" />
             Subscription
+          </TabsTrigger>
+          <TabsTrigger value="help">
+            <HelpCircle className="w-4 h-4 mr-2" />
+            Help
           </TabsTrigger>
         </TabsList>
 
@@ -625,6 +634,115 @@ export function Settings() {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Help Tab */}
+        <TabsContent value="help">
+          <div className="space-y-6">
+            {/* Getting Started */}
+            <div className="card">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Getting Started</h2>
+              <p className="text-gray-600 mb-6">
+                Learn how to use Jobezie to supercharge your job search with our interactive tour and features guide.
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 rounded-lg border border-gray-200 hover:border-primary-300 transition-colors">
+                  <div className="flex items-center mb-3">
+                    <div className="w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center mr-3">
+                      <Compass className="w-5 h-5 text-primary-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-gray-900">Platform Tour</h3>
+                      <p className="text-xs text-gray-500">
+                        {hasCompletedTour('main') ? 'Completed' : '2 min walkthrough'}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Take an interactive tour of Jobezie's key features and learn how to navigate the platform.
+                  </p>
+                  <button
+                    onClick={() => startTour('main')}
+                    className="btn btn-primary w-full flex items-center justify-center gap-2"
+                  >
+                    <Compass className="w-4 h-4" />
+                    {hasCompletedTour('main') ? 'Retake Tour' : 'Start Tour'}
+                  </button>
+                </div>
+
+                <Link
+                  to="/learn"
+                  className="p-4 rounded-lg border border-gray-200 hover:border-primary-300 transition-colors block"
+                >
+                  <div className="flex items-center mb-3">
+                    <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center mr-3">
+                      <BookOpen className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-gray-900">Features Guide</h3>
+                      <p className="text-xs text-gray-500">Documentation</p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Browse detailed documentation for all Jobezie features with tips and best practices.
+                  </p>
+                  <div className="btn btn-outline w-full flex items-center justify-center gap-2">
+                    <BookOpen className="w-4 h-4" />
+                    View Features Guide
+                  </div>
+                </Link>
+              </div>
+            </div>
+
+            {/* Quick Tours */}
+            <div className="card">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Feature Tours</h2>
+              <p className="text-gray-600 mb-4">
+                Take quick tours of specific features to learn how they work.
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {[
+                  { id: 'dashboard', name: 'Dashboard', description: 'Career readiness and pipeline' },
+                  { id: 'resumes', name: 'Resumes', description: 'ATS scoring and optimization' },
+                  { id: 'recruiters', name: 'Recruiters', description: 'CRM and pipeline stages' },
+                  { id: 'messages', name: 'Messages', description: 'AI-powered messaging' },
+                  { id: 'activity', name: 'Activity', description: 'Timeline and Kanban' },
+                  { id: 'ai-coach', name: 'AI Coach', description: 'Career coaching chat' },
+                ].map((tour) => (
+                  <button
+                    key={tour.id}
+                    onClick={() => startTour(tour.id)}
+                    className="p-3 text-left rounded-lg border border-gray-200 hover:border-primary-300 hover:bg-primary-50 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-gray-900">{tour.name}</span>
+                      {hasCompletedTour(tour.id) && (
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">{tour.description}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Support */}
+            <div className="card">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Need More Help?</h2>
+              <p className="text-gray-600">
+                Can't find what you're looking for?{' '}
+                <a
+                  href="mailto:support@jobezie.com"
+                  className="text-primary-600 hover:text-primary-700 font-medium"
+                >
+                  Contact our support team
+                </a>
+                {' '}and we'll be happy to assist you.
+              </p>
             </div>
           </div>
         </TabsContent>
