@@ -176,7 +176,7 @@ export function LinkedIn() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-gray-200" data-tour="linkedin-tabs">
         <div className="flex gap-4 -mb-px">
           {tabs.map((tab) => (
             <button
@@ -205,7 +205,7 @@ export function LinkedIn() {
 
       {/* Headline Generator Tab */}
       {activeTab === 'headline' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-tour="linkedin-headline">
           <div className="card">
             <h2 className="text-lg font-semibold mb-4">Generate Headlines</h2>
             <div className="space-y-4">
@@ -318,7 +318,7 @@ export function LinkedIn() {
 
       {/* Summary Generator Tab */}
       {activeTab === 'summary' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-tour="linkedin-summary">
           <div className="card">
             <h2 className="text-lg font-semibold mb-4">Generate Summary</h2>
             <div className="space-y-4">
@@ -435,7 +435,7 @@ export function LinkedIn() {
 
       {/* Visibility Score Tab */}
       {activeTab === 'visibility' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-tour="linkedin-visibility">
           <div className="card">
             <h2 className="text-lg font-semibold mb-4">Analyze Profile Visibility</h2>
             <div className="space-y-4">

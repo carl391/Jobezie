@@ -163,7 +163,7 @@ export function InterviewPrep() {
       </div>
 
       {/* Mode Tabs */}
-      <div className="flex gap-2">
+      <div className="flex gap-2" data-tour="interview-modes">
         {modes.map((mode) => (
           <button
             key={mode.id}
@@ -192,7 +192,7 @@ export function InterviewPrep() {
       {activeMode === 'practice' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Settings Panel */}
-          <div className="card lg:col-span-1">
+          <div className="card lg:col-span-1" data-tour="interview-settings">
             <h2 className="text-lg font-semibold mb-4">Practice Settings</h2>
             <div className="space-y-4">
               <div>
@@ -251,6 +251,7 @@ export function InterviewPrep() {
                 onClick={handleGenerateQuestion}
                 disabled={!practiceForm.target_role || isLoading}
                 className="btn btn-primary w-full"
+                data-tour="interview-generate"
               >
                 {isLoading && !currentQuestion ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -299,7 +300,7 @@ export function InterviewPrep() {
                 </div>
 
                 {/* Answer Input */}
-                <div className="card">
+                <div className="card" data-tour="interview-answer">
                   <h3 className="font-semibold mb-3">Your Answer</h3>
                   <textarea
                     className="input min-h-[150px]"

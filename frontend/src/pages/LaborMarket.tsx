@@ -196,7 +196,7 @@ export function LaborMarket() {
       )}
 
       {/* Market Overview */}
-      <div className="card">
+      <div className="card" data-tour="market-overview">
         <h2 className="text-lg font-semibold mb-4">Market Overview</h2>
         {overviewLoading ? (
           <div className="flex items-center justify-center py-8">
@@ -236,7 +236,7 @@ export function LaborMarket() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Labor Shortage Analysis */}
-        <div className="card">
+        <div className="card" data-tour="market-shortage">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-primary-600" />
             Labor Shortage Score
@@ -329,7 +329,7 @@ export function LaborMarket() {
         </div>
 
         {/* Salary Benchmark */}
-        <div className="card">
+        <div className="card" data-tour="market-salary">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <DollarSign className="w-5 h-5 text-green-600" />
             Salary Benchmark
@@ -423,7 +423,7 @@ export function LaborMarket() {
       </div>
 
       {/* Opportunity Analysis */}
-      <div className="card">
+      <div className="card" data-tour="market-opportunity">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold flex items-center gap-2">
             <Target className="w-5 h-5 text-orange-600" />

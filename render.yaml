@@ -41,7 +41,7 @@ services:
       - key: FRONTEND_URL
         value: https://app.jobezie.com
       - key: CORS_ORIGINS
-        value: https://app.jobezie.com,https://jobezie.com
+        value: https://jobezie-frontend.onrender.com,https://app.jobezie.com,https://jobezie.com
 
   # Background Worker (for scheduled tasks)
   - type: worker

@@ -126,19 +126,26 @@ export function TourProvider({ children }: { children: ReactNode }) {
       showProgress: true,
       steps: driverSteps,
       animate: true,
+      allowClose: true,
+      overlayClickNext: false,
       overlayColor: 'rgba(0, 0, 0, 0.5)',
       stagePadding: 8,
       stageRadius: 8,
       popoverClass: 'jobezie-tour-popover',
-      nextBtnText: 'Next',
-      prevBtnText: 'Back',
-      doneBtnText: 'Done',
+      nextBtnText: 'Next →',
+      prevBtnText: '← Back',
+      doneBtnText: 'Finish ✓',
+      progressText: '{{current}} of {{total}}',
+      onCloseClick: () => {
+        // User clicked the X button to close
+        markTourComplete(tourId);
+        driverObj.destroy();
+      },
       onDestroyStarted: () => {
-        // User clicked skip or completed the tour
+        // User completed the tour or clicked close
         markTourComplete(tourId);
         setIsTourActive(false);
         setCurrentTourId(null);
-        setDriverInstance(null);
       },
       onDestroyed: () => {
         setIsTourActive(false);

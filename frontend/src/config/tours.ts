@@ -77,6 +77,27 @@ export const MAIN_TOUR: TourConfig = {
       description: 'Get personalized career advice anytime. Ask about interview prep, salary negotiation, career strategy, or anything else!',
       position: 'right',
     },
+    {
+      id: 'nav-interview',
+      element: '[data-tour="nav-interview"]',
+      title: 'Interview Prep',
+      description: 'Practice mock interviews with AI-generated questions tailored to your role. Get feedback and sample answers.',
+      position: 'right',
+    },
+    {
+      id: 'nav-linkedin',
+      element: '[data-tour="nav-linkedin"]',
+      title: 'LinkedIn Tools',
+      description: 'Optimize your LinkedIn profile with AI-generated headlines, summaries, and visibility analysis.',
+      position: 'right',
+    },
+    {
+      id: 'nav-labor-market',
+      element: '[data-tour="nav-labor-market"]',
+      title: 'Labor Market Insights',
+      description: 'Explore job market trends, salary benchmarks, and skill shortage data to inform your job search strategy.',
+      position: 'right',
+    },
   ],
 };
 
@@ -248,6 +269,114 @@ export const AI_COACH_TOUR: TourConfig = {
   ],
 };
 
+export const INTERVIEW_PREP_TOUR: TourConfig = {
+  id: 'interview-prep',
+  name: 'Interview Prep Tour',
+  description: 'Learn about Interview Preparation',
+  steps: [
+    {
+      id: 'mode-tabs',
+      element: '[data-tour="interview-modes"]',
+      title: 'Preparation Modes',
+      description: 'Choose between Practice mode for mock questions, Review for analyzing past interviews, and Tips for interview strategies.',
+      position: 'bottom',
+    },
+    {
+      id: 'question-settings',
+      element: '[data-tour="interview-settings"]',
+      title: 'Question Settings',
+      description: 'Customize your practice by selecting question type (behavioral, technical, etc.) and difficulty level.',
+      position: 'bottom',
+    },
+    {
+      id: 'generate-question',
+      element: '[data-tour="interview-generate"]',
+      title: 'Generate Questions',
+      description: 'Click to get AI-generated interview questions tailored to your target role and experience level.',
+      position: 'bottom',
+    },
+    {
+      id: 'answer-practice',
+      element: '[data-tour="interview-answer"]',
+      title: 'Practice Your Answer',
+      description: 'Write or speak your answer, then compare it with the sample answer and get feedback.',
+      position: 'top',
+    },
+  ],
+};
+
+export const LINKEDIN_TOUR: TourConfig = {
+  id: 'linkedin',
+  name: 'LinkedIn Tools Tour',
+  description: 'Learn about LinkedIn Optimization',
+  steps: [
+    {
+      id: 'tabs',
+      element: '[data-tour="linkedin-tabs"]',
+      title: 'LinkedIn Tools',
+      description: 'Access three powerful tools: Headline Generator, Summary Writer, and Visibility Analyzer.',
+      position: 'bottom',
+    },
+    {
+      id: 'headline',
+      element: '[data-tour="linkedin-headline"]',
+      title: 'Headline Generator',
+      description: 'Create attention-grabbing headlines that include keywords recruiters search for.',
+      position: 'bottom',
+    },
+    {
+      id: 'summary',
+      element: '[data-tour="linkedin-summary"]',
+      title: 'Summary Generator',
+      description: 'Generate professional summaries with a strong hook, experience highlights, and call-to-action.',
+      position: 'bottom',
+    },
+    {
+      id: 'visibility',
+      element: '[data-tour="linkedin-visibility"]',
+      title: 'Visibility Score',
+      description: 'Analyze your profile\'s visibility and get recommendations to improve your search ranking.',
+      position: 'bottom',
+    },
+  ],
+};
+
+export const LABOR_MARKET_TOUR: TourConfig = {
+  id: 'labor-market',
+  name: 'Labor Market Tour',
+  description: 'Learn about Labor Market Insights',
+  steps: [
+    {
+      id: 'overview',
+      element: '[data-tour="market-overview"]',
+      title: 'Market Overview',
+      description: 'See the current state of the job market including employment rates, job openings, and salary trends.',
+      position: 'bottom',
+    },
+    {
+      id: 'shortage',
+      element: '[data-tour="market-shortage"]',
+      title: 'Skill Shortage Score',
+      description: 'Find out how in-demand your skills are and where the biggest opportunities exist.',
+      position: 'bottom',
+    },
+    {
+      id: 'salary',
+      element: '[data-tour="market-salary"]',
+      title: 'Salary Benchmarks',
+      description: 'Compare salaries for your target roles by experience level and location.',
+      position: 'bottom',
+    },
+    {
+      id: 'opportunity',
+      element: '[data-tour="market-opportunity"]',
+      title: 'Opportunity Analysis',
+      description: 'Get personalized recommendations based on market demand and your skill profile.',
+      position: 'bottom',
+    },
+  ],
+};
+
 // All tours indexed by ID
 export const TOURS: Record<string, TourConfig> = {
   main: MAIN_TOUR,
@@ -257,6 +386,9 @@ export const TOURS: Record<string, TourConfig> = {
   messages: MESSAGES_TOUR,
   activity: ACTIVITY_TOUR,
   'ai-coach': AI_COACH_TOUR,
+  'interview-prep': INTERVIEW_PREP_TOUR,
+  linkedin: LINKEDIN_TOUR,
+  'labor-market': LABOR_MARKET_TOUR,
 };
 
 // Feature categories for the Learn page
@@ -474,6 +606,7 @@ export const FEATURE_CATEGORIES: FeatureCategory[] = [
         id: 'interview-prep',
         name: 'Interview Preparation',
         description: 'Practice with AI-powered mock interviews. Get feedback on your answers and improve your performance.',
+        tourId: 'interview-prep',
         tips: [
           'Practice common behavioral questions',
           'Use the STAR method for stories',
@@ -484,10 +617,22 @@ export const FEATURE_CATEGORIES: FeatureCategory[] = [
         id: 'linkedin-tools',
         name: 'LinkedIn Optimization',
         description: 'Improve your LinkedIn profile visibility with headline and summary suggestions based on your target roles.',
+        tourId: 'linkedin',
         tips: [
           'Update your headline with keywords',
           'Customize summary for target roles',
           'Add relevant skills and endorsements',
+        ],
+      },
+      {
+        id: 'labor-market',
+        name: 'Labor Market Insights',
+        description: 'Understand job market trends, skill shortages, salary benchmarks, and opportunities in your field.',
+        tourId: 'labor-market',
+        tips: [
+          'Check shortage scores for your target roles',
+          'Use salary data for negotiation',
+          'Identify skill gaps to work on',
         ],
       },
     ],

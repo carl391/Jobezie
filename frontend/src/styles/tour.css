@@ -8,6 +8,9 @@
   border: 1px solid var(--color-gray-200);
   padding: 0;
   max-width: 320px;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Popover arrow */
@@ -80,14 +83,19 @@
 
 /* Close button (Skip) */
 .driver-popover.jobezie-tour-popover .driver-popover-close-btn {
+  font-family: inherit;
   font-size: 0.875rem;
+  font-weight: 500;
   color: var(--color-gray-500);
   background: none;
   border: none;
   cursor: pointer;
-  padding: 0.375rem 0.75rem;
+  padding: 0.5rem 1rem;
   border-radius: 0.375rem;
   transition: all 0.2s;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 .driver-popover.jobezie-tour-popover .driver-popover-close-btn:hover {
@@ -97,15 +105,19 @@
 
 /* Previous button */
 .driver-popover.jobezie-tour-popover .driver-popover-prev-btn {
+  font-family: inherit;
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--color-gray-700);
   background-color: white;
   border: 1px solid var(--color-gray-300);
   border-radius: 0.375rem;
-  padding: 0.375rem 0.75rem;
+  padding: 0.5rem 1rem;
   cursor: pointer;
   transition: all 0.2s;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 .driver-popover.jobezie-tour-popover .driver-popover-prev-btn:hover {
@@ -113,19 +125,25 @@
 }
 
 /* Next button */
-.driver-popover.jobezie-tour-popover .driver-popover-next-btn {
+.driver-popover.jobezie-tour-popover .driver-popover-next-btn,
+.driver-popover.jobezie-tour-popover .driver-popover-done-btn {
+  font-family: inherit;
   font-size: 0.875rem;
   font-weight: 500;
   color: white;
   background-color: var(--color-primary-600);
   border: none;
   border-radius: 0.375rem;
-  padding: 0.375rem 0.75rem;
+  padding: 0.5rem 1rem;
   cursor: pointer;
   transition: all 0.2s;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
-.driver-popover.jobezie-tour-popover .driver-popover-next-btn:hover {
+.driver-popover.jobezie-tour-popover .driver-popover-next-btn:hover,
+.driver-popover.jobezie-tour-popover .driver-popover-done-btn:hover {
   background-color: var(--color-primary-700);
 }
 
