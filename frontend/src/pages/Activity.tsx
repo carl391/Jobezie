@@ -69,6 +69,10 @@ export function Activity() {
     interviews: 0,
   });
 
+  // Drag-and-drop state
+  const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
+  const [dragOverStage, setDragOverStage] = useState<string | null>(null);
+
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -114,6 +118,54 @@ export function Activity() {
     } catch (error) {
       console.error('Failed to move pipeline item:', error);
     }
+  };
+
+  // Drag-and-drop handlers
+  const handleDragStart = (e: React.DragEvent, itemId: string) => {
+    setDraggedItemId(itemId);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', itemId);
+    // Add a slight delay before adding the dragging class
+    const target = e.target as HTMLElement;
+    setTimeout(() => {
+      target.style.opacity = '0.5';
+    }, 0);
+  };
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    setDraggedItemId(null);
+    setDragOverStage(null);
+    const target = e.target as HTMLElement;
+    target.style.opacity = '1';
+  };
+
+  const handleDragOver = (e: React.DragEvent, stageId: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverStage(stageId);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    // Only clear if we're leaving the column, not entering a child element
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+      setDragOverStage(null);
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetStage: string) => {
+    e.preventDefault();
+    setDragOverStage(null);
+
+    const itemId = e.dataTransfer.getData('text/plain');
+    if (!itemId) return;
+
+    const item = pipelineItems.find((i) => i.id === itemId);
+    if (!item || item.stage === targetStage) return;
+
+    await handleMoveItem(itemId, targetStage);
   };
 
   const getRecruiterById = (recruiterId?: string) => {
@@ -347,13 +399,25 @@ export function Activity() {
       {/* Kanban View */}
       {activeView === 'kanban' && (
         <div className="overflow-x-auto pb-4">
+          <p className="text-sm text-gray-500 mb-3">
+            Drag and drop cards between columns to update their status
+          </p>
           <div className="flex gap-4 min-w-max">
             {PIPELINE_STAGES.map((stage) => {
               const items = getItemsForStage(stage.id);
+              const isDropTarget = dragOverStage === stage.id && draggedItemId !== null;
+              const draggedItem = pipelineItems.find((i) => i.id === draggedItemId);
+              const canDrop = draggedItem && draggedItem.stage !== stage.id;
+
               return (
                 <div
                   key={stage.id}
-                  className={`w-72 flex-shrink-0 rounded-xl ${stage.color} p-3`}
+                  className={`w-72 flex-shrink-0 rounded-xl ${stage.color} p-3 transition-all ${
+                    isDropTarget && canDrop ? 'ring-2 ring-primary-500 ring-offset-2' : ''
+                  }`}
+                  onDragOver={(e) => handleDragOver(e, stage.id)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, stage.id)}
                 >
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="font-medium text-gray-900">{stage.label}</h3>
@@ -362,18 +426,24 @@ export function Activity() {
                     </span>
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-2 min-h-[100px]">
                     {items.length > 0 ? (
                       items.map((item) => {
                         const recruiter = item.recruiter || getRecruiterById(item.recruiter?.id);
+                        const isDragging = draggedItemId === item.id;
                         return (
                           <div
                             key={item.id}
-                            className="bg-white rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow cursor-move"
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, item.id)}
+                            onDragEnd={handleDragEnd}
+                            className={`bg-white rounded-lg p-3 shadow-sm hover:shadow-md transition-all cursor-grab active:cursor-grabbing ${
+                              isDragging ? 'opacity-50 scale-95' : ''
+                            }`}
                           >
                             <div className="flex items-start justify-between mb-2">
                               <div className="flex items-center gap-2">
-                                <GripVertical className="w-4 h-4 text-gray-300" />
+                                <GripVertical className="w-4 h-4 text-gray-300 flex-shrink-0" />
                                 <div>
                                   <p className="font-medium text-gray-900 text-sm">
                                     {recruiter?.name || 'Unknown'}
@@ -400,29 +470,21 @@ export function Activity() {
                                 </span>
                               )}
                             </div>
-
-                            {/* Stage move buttons */}
-                            <div className="mt-2 pt-2 border-t border-gray-100 flex gap-1">
-                              {PIPELINE_STAGES.map((s) => {
-                                if (s.id === stage.id) return null;
-                                return (
-                                  <button
-                                    key={s.id}
-                                    onClick={() => handleMoveItem(item.id, s.id)}
-                                    className="flex-1 text-xs px-2 py-1 rounded bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors truncate"
-                                    title={`Move to ${s.label}`}
-                                  >
-                                    {s.label}
-                                  </button>
-                                );
-                              })}
-                            </div>
                           </div>
                         );
                       })
                     ) : (
-                      <div className="text-center py-8 text-gray-400 text-sm">
-                        No items in this stage
+                      <div className={`text-center py-8 text-gray-400 text-sm rounded-lg border-2 border-dashed ${
+                        isDropTarget && canDrop ? 'border-primary-400 bg-primary-50' : 'border-transparent'
+                      }`}>
+                        {isDropTarget && canDrop ? 'Drop here' : 'No items in this stage'}
+                      </div>
+                    )}
+
+                    {/* Drop zone indicator when dragging over a column with items */}
+                    {isDropTarget && canDrop && items.length > 0 && (
+                      <div className="h-16 rounded-lg border-2 border-dashed border-primary-400 bg-primary-50 flex items-center justify-center text-sm text-primary-600">
+                        Drop here
                       </div>
                     )}
                   </div>

@@ -13,6 +13,9 @@ import {
   Menu,
   X,
   ChevronDown,
+  Linkedin,
+  BarChart3,
+  MessageCircle,
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -27,6 +30,9 @@ const navigation = [
   { name: 'Messages', href: '/messages', icon: MessageSquare },
   { name: 'Activity', href: '/activity', icon: Activity },
   { name: 'AI Coach', href: '/ai-coach', icon: Sparkles },
+  { name: 'Interview Prep', href: '/interview-prep', icon: MessageCircle },
+  { name: 'LinkedIn', href: '/linkedin', icon: Linkedin },
+  { name: 'Labor Market', href: '/labor-market', icon: BarChart3 },
 ];
 
 export function Layout({ children }: LayoutProps) {

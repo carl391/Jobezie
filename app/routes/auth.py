@@ -4,6 +4,7 @@ Authentication Routes
 Handles user registration, login, token refresh, logout, and password management.
 """
 
+import secrets
 from datetime import datetime
 
 from flask import Blueprint, jsonify, request
@@ -15,15 +16,12 @@ from flask_jwt_extended import (
     jwt_required,
 )
 
-from app.extensions import db
+from app.extensions import db, token_blocklist
 from app.models.user import User
 from app.services.email_service import EmailService
 from app.utils.validators import ValidationError, validate_email, validate_password
 
 auth_bp = Blueprint("auth", __name__)
-
-# In-memory token blocklist (replace with Redis in production)
-_token_blocklist = set()
 
 
 @auth_bp.route("/register", methods=["POST"])
@@ -92,9 +90,10 @@ def register():
             409,
         )
 
-    # Create user
+    # Create user with verification token
     user = User(email=email, first_name=first_name, last_name=last_name)
     user.set_password(password)
+    user.verification_token = secrets.token_urlsafe(32)
 
     db.session.add(user)
     db.session.commit()
@@ -105,6 +104,13 @@ def register():
     except Exception as e:
         # Log error but don't fail registration
         print(f"Failed to send welcome email: {e}")
+
+    # Send verification email
+    try:
+        EmailService.send_verification_email(user, user.verification_token)
+    except Exception as e:
+        # Log error but don't fail registration
+        print(f"Failed to send verification email: {e}")
 
     # Generate tokens
     access_token = create_access_token(identity=str(user.id))
@@ -123,6 +129,159 @@ def register():
             }
         ),
         201,
+    )
+
+
+@auth_bp.route("/verify-email", methods=["POST"])
+def verify_email():
+    """
+    Verify user's email address using verification token.
+
+    Request Body:
+        token: Email verification token (required)
+
+    Returns:
+        200: Email verified successfully
+        400: Invalid or missing token
+        404: Token not found or already used
+    """
+    data = request.get_json()
+
+    if not data:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "invalid_request",
+                    "message": "Request body is required",
+                }
+            ),
+            400,
+        )
+
+    token = data.get("token", "").strip()
+
+    if not token:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "validation_error",
+                    "message": "Verification token is required",
+                }
+            ),
+            400,
+        )
+
+    # Find user by verification token
+    user = User.query.filter_by(verification_token=token).first()
+
+    if not user:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "invalid_token",
+                    "message": "Invalid or expired verification token",
+                }
+            ),
+            404,
+        )
+
+    if user.email_verified:
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "message": "Email already verified",
+                }
+            ),
+            200,
+        )
+
+    # Verify the email
+    user.email_verified = True
+    user.verification_token = None  # Clear the token after use
+    db.session.commit()
+
+    return (
+        jsonify(
+            {
+                "success": True,
+                "message": "Email verified successfully",
+            }
+        ),
+        200,
+    )
+
+
+@auth_bp.route("/resend-verification", methods=["POST"])
+@jwt_required()
+def resend_verification():
+    """
+    Resend email verification to current user.
+
+    Headers:
+        Authorization: Bearer <access_token>
+
+    Returns:
+        200: Verification email sent
+        400: Email already verified
+    """
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+
+    if not user:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "user_not_found",
+                    "message": "User not found",
+                }
+            ),
+            404,
+        )
+
+    if user.email_verified:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "already_verified",
+                    "message": "Email is already verified",
+                }
+            ),
+            400,
+        )
+
+    # Generate new verification token
+    user.verification_token = secrets.token_urlsafe(32)
+    db.session.commit()
+
+    # Send verification email
+    try:
+        EmailService.send_verification_email(user, user.verification_token)
+    except Exception as e:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "email_error",
+                    "message": "Failed to send verification email",
+                }
+            ),
+            500,
+        )
+
+    return (
+        jsonify(
+            {
+                "success": True,
+                "message": "Verification email sent",
+            }
+        ),
+        200,
     )
 
 
@@ -267,7 +426,7 @@ def logout():
         200: Logout successful
     """
     jti = get_jwt()["jti"]
-    _token_blocklist.add(jti)
+    token_blocklist.add(jti)
 
     return jsonify({"success": True, "message": "Logged out successfully"}), 200
 
@@ -625,10 +784,3 @@ def update_profile():
         ),
         200,
     )
-
-
-# Token blocklist checker for JWT
-def check_if_token_revoked(jwt_header, jwt_payload):
-    """Check if token is in blocklist."""
-    jti = jwt_payload["jti"]
-    return jti in _token_blocklist

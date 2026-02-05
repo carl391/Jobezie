@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { resumeApi } from '../lib/api';
-import { FileText, Upload, Star, Trash2, Eye, BarChart2 } from 'lucide-react';
+import { FileText, Upload, Star, Trash2, Eye, BarChart2, Lightbulb, Target } from 'lucide-react';
 import { ViewResumeModal } from '../components/resumes/ViewResumeModal';
 import { ATSScoreModal } from '../components/resumes/ATSScoreModal';
+import { ResumeAnalysisModal } from '../components/resumes/ResumeAnalysisModal';
+import { ResumeTailorModal } from '../components/resumes/ResumeTailorModal';
 import type { Resume } from '../types';
 
 export function Resumes() {
@@ -12,6 +14,8 @@ export function Resumes() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [viewResumeId, setViewResumeId] = useState<string | null>(null);
   const [scoreResumeId, setScoreResumeId] = useState<string | null>(null);
+  const [analysisResumeId, setAnalysisResumeId] = useState<string | null>(null);
+  const [tailorResumeId, setTailorResumeId] = useState<string | null>(null);
 
   const fetchResumes = useCallback(async () => {
     try {
@@ -175,7 +179,7 @@ export function Resumes() {
               )}
 
               <div className="mt-4 flex items-center justify-between">
-                <div className="flex space-x-2">
+                <div className="flex space-x-1">
                   <button
                     onClick={() => setViewResumeId(resume.id)}
                     className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg"
@@ -186,9 +190,23 @@ export function Resumes() {
                   <button
                     onClick={() => setScoreResumeId(resume.id)}
                     className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg"
-                    title="Score"
+                    title="ATS Score"
                   >
                     <BarChart2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setAnalysisResumeId(resume.id)}
+                    className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+                    title="Analysis & Suggestions"
+                  >
+                    <Lightbulb className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setTailorResumeId(resume.id)}
+                    className="p-2 text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded-lg"
+                    title="Tailor for Job"
+                  >
+                    <Target className="w-4 h-4" />
                   </button>
                   {!resume.is_master && (
                     <button
@@ -241,6 +259,27 @@ export function Resumes() {
               r.id === scoreResumeId ? { ...r, ats_total_score: newScore } : r
             ));
           }}
+        />
+      )}
+
+      {/* Analysis Modal */}
+      {analysisResumeId && (
+        <ResumeAnalysisModal
+          isOpen={!!analysisResumeId}
+          onClose={() => setAnalysisResumeId(null)}
+          resumeId={analysisResumeId}
+          resumeName={resumes.find(r => r.id === analysisResumeId)?.title || 'Resume'}
+        />
+      )}
+
+      {/* Tailor Modal */}
+      {tailorResumeId && (
+        <ResumeTailorModal
+          isOpen={!!tailorResumeId}
+          onClose={() => setTailorResumeId(null)}
+          resumeId={tailorResumeId}
+          resumeName={resumes.find(r => r.id === tailorResumeId)?.title || 'Resume'}
+          onTailored={fetchResumes}
         />
       )}
     </div>

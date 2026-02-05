@@ -15,6 +15,9 @@ import { Messages } from './pages/Messages';
 import { Activity } from './pages/Activity';
 import { AICoach } from './pages/AICoach';
 import { Settings } from './pages/Settings';
+import { LinkedIn } from './pages/LinkedIn';
+import { LaborMarket } from './pages/LaborMarket';
+import { InterviewPrep } from './pages/InterviewPrep';
 
 import './index.css';
 
@@ -114,6 +117,36 @@ function App() {
                 <ProtectedRoute>
                   <Layout>
                     <Settings />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/linkedin"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <LinkedIn />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/labor-market"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <LaborMarket />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/interview-prep"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <InterviewPrep />
                   </Layout>
                 </ProtectedRoute>
               }

@@ -1,0 +1,158 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: jobezie-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-jobezie}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-jobezie_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-jobezie}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-jobezie}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: jobezie-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: jobezie-backend
+    restart: unless-stopped
+    environment:
+      FLASK_ENV: ${FLASK_ENV:-development}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-jobezie}:${POSTGRES_PASSWORD:-jobezie_dev}@postgres:5432/${POSTGRES_DB:-jobezie}
+      REDIS_URL: redis://redis:6379/0
+      CACHE_REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-production}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-jwt-secret-change-in-production}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:3000}
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Celery Worker
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: jobezie-celery-worker
+    restart: unless-stopped
+    command: celery -A celery_app worker --loglevel=info
+    environment:
+      FLASK_ENV: ${FLASK_ENV:-development}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-jobezie}:${POSTGRES_PASSWORD:-jobezie_dev}@postgres:5432/${POSTGRES_DB:-jobezie}
+      REDIS_URL: redis://redis:6379/0
+      CACHE_REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-production}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A celery_app inspect ping -d celery@$$HOSTNAME || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Celery Beat Scheduler
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: jobezie-celery-beat
+    restart: unless-stopped
+    command: celery -A celery_app beat --loglevel=info
+    environment:
+      FLASK_ENV: ${FLASK_ENV:-development}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-jobezie}:${POSTGRES_PASSWORD:-jobezie_dev}@postgres:5432/${POSTGRES_DB:-jobezie}
+      REDIS_URL: redis://redis:6379/0
+      CACHE_REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-production}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      celery-worker:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "test -f celerybeat-schedule || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:5000/api}
+    container_name: jobezie-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  default:
+    name: jobezie-network

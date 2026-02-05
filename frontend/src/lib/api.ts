@@ -199,4 +199,74 @@ export const subscriptionApi = {
   reactivate: () => api.post('/subscription/reactivate'),
 };
 
+// LinkedIn API
+export const linkedinApi = {
+  analyzeProfile: (data: {
+    headline?: string;
+    summary?: string;
+    experience?: Array<{ title: string; company: string; description: string }>;
+    skills?: string[];
+    education?: Array<{ school: string; degree: string }>;
+    photo?: boolean;
+    location?: string;
+    industry?: string;
+  }) => api.post('/linkedin/analyze', data),
+
+  generateHeadline: (data: {
+    current_role?: string;
+    target_role?: string;
+    industry?: string;
+    key_skills?: string[];
+    achievements?: string[];
+  }) => api.post('/linkedin/headline/generate', data),
+
+  generateSummary: (data: {
+    current_role?: string;
+    years_experience?: number;
+    industry?: string;
+    key_skills?: string[];
+    achievements?: string[];
+    career_goals?: string;
+  }) => api.post('/linkedin/summary/generate', data),
+
+  optimizeExperience: (data: {
+    title: string;
+    company: string;
+    description: string;
+    target_keywords?: string[];
+  }) => api.post('/linkedin/experience/optimize', data),
+
+  getVisibility: (data: {
+    headline?: string;
+    summary?: string;
+    experience?: Array<{ title: string; company: string; description: string }>;
+    skills?: string[];
+    photo?: boolean;
+    location?: string;
+    industry?: string;
+  }) => api.post('/linkedin/visibility', data),
+
+  getKeywords: (industry: string) => api.get(`/linkedin/keywords/${industry}`),
+};
+
+// Labor Market API
+export const laborMarketApi = {
+  getOverview: () => api.get('/labor-market/overview'),
+
+  getShortage: (params: { role: string; industry?: string; location?: string }) =>
+    api.get('/labor-market/shortage', { params }),
+
+  getSalary: (params: { role: string; experience?: string; location?: string }) =>
+    api.get('/labor-market/salary', { params }),
+
+  getOpportunity: (data: {
+    target_role?: string;
+    target_industry?: string;
+    skills?: string[];
+  }) => api.post('/labor-market/opportunity', data),
+
+  getTrends: (params: { role?: string; industry?: string }) =>
+    api.get('/labor-market/trends', { params }),
+};
+
 export default api;

@@ -1,0 +1,63 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.env
+.venv
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Virtual environments
+.venv
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Documentation
+docs/_build/
+*.md
+!README.md
+
+# Frontend (handled by frontend/.dockerignore)
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.docker/
+
+# Misc
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# Local development
+*.db
+*.sqlite3
+migrations/versions/*.pyc
