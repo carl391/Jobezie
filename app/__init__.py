@@ -53,7 +53,14 @@ def create_app(config_name=None):
     # Health check endpoint
     @app.route("/health")
     def health_check():
-        return jsonify({"status": "healthy", "service": "jobezie-api"})
+        status = {"status": "healthy", "service": "jobezie-api"}
+        try:
+            db.session.execute(db.text("SELECT 1"))
+            status["database"] = "connected"
+        except Exception:
+            status["status"] = "degraded"
+            status["database"] = "disconnected"
+        return jsonify(status), 200 if status["status"] == "healthy" else 503
 
     # API documentation endpoint (rate limited, environment-aware)
     @app.route("/")

@@ -50,7 +50,7 @@ services:
     region: oregon
     plan: starter
     buildCommand: pip install -r requirements.txt
-    startCommand: python -m celery -A app.celery worker --loglevel=info
+    startCommand: python -m celery -A celery_app worker --loglevel=info
     autoDeploy: true
     envVars:
       - key: FLASK_ENV
@@ -65,6 +65,13 @@ services:
           name: jobezie-cache
           property: connectionString
 
+  # Redis Cache
+  - type: redis
+    name: jobezie-cache
+    plan: starter
+    region: oregon
+    maxmemoryPolicy: allkeys-lru
+
 databases:
   - name: jobezie-db
     databaseName: jobezie
@@ -72,11 +79,3 @@ databases:
     plan: starter
     region: oregon
     postgresMajorVersion: 15
-
-# Redis Cache
-services:
-  - type: redis
-    name: jobezie-cache
-    plan: starter
-    region: oregon
-    maxmemoryPolicy: allkeys-lru

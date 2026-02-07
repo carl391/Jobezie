@@ -13,6 +13,10 @@ import {
   AlertCircle,
   Zap,
   BarChart3,
+  CheckCircle2,
+  Circle,
+  Rocket,
+  X,
 } from 'lucide-react';
 import type { DashboardData, Activity, SkillsMapData } from '../types';
 
@@ -32,6 +36,9 @@ export function Dashboard() {
   const [highDemandRoles, setHighDemandRoles] = useState<HighDemandRole[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showChecklist, setShowChecklist] = useState(() => {
+    return localStorage.getItem('jobezie_hide_checklist') !== 'true';
+  });
   const tourStarted = useRef(false);
 
   useEffect(() => {
@@ -108,6 +115,17 @@ export function Dashboard() {
           <p className="text-gray-600 mt-1">Here's what's happening with your job search</p>
         </div>
       </div>
+
+      {/* Getting Started checklist for new users */}
+      {showChecklist && dashboardData && (
+        <GettingStartedChecklist
+          dashboardData={dashboardData}
+          onDismiss={() => {
+            setShowChecklist(false);
+            localStorage.setItem('jobezie_hide_checklist', 'true');
+          }}
+        />
+      )}
 
       {/* Stats grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -372,6 +390,87 @@ export function Dashboard() {
             <p className="text-sm mt-1">Add recruiters to your pipeline to get personalized recommendations</p>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+interface ChecklistItem {
+  id: string;
+  label: string;
+  description: string;
+  href: string;
+  completed: boolean;
+}
+
+function GettingStartedChecklist({ dashboardData, onDismiss }: { dashboardData: DashboardData; onDismiss: () => void }) {
+  const hasResume = (dashboardData?.usage_stats?.resumes_tailored_this_month || 0) > 0
+    || (dashboardData?.career_readiness?.overall_score || 0) > 10;
+  const hasRecruiter = (dashboardData?.pipeline_summary?.total || 0) > 0;
+  const hasMessage = (dashboardData?.usage_stats?.messages_sent_this_week || 0) > 0;
+  const hasProfile = (dashboardData?.career_readiness?.overall_score || 0) > 30;
+
+  const items: ChecklistItem[] = [
+    { id: 'resume', label: 'Upload your resume', description: 'Get your ATS score and AI-powered suggestions', href: '/resumes', completed: hasResume },
+    { id: 'recruiter', label: 'Add a recruiter', description: 'Start building your recruiter pipeline', href: '/recruiters', completed: hasRecruiter },
+    { id: 'message', label: 'Send your first message', description: 'Reach out with an AI-optimized message', href: '/messages', completed: hasMessage },
+    { id: 'profile', label: 'Complete your profile', description: 'Set target role and skills for better matches', href: '/settings', completed: hasProfile },
+  ];
+
+  const completedCount = items.filter(i => i.completed).length;
+  const progressPct = Math.round((completedCount / items.length) * 100);
+
+  if (completedCount === items.length) return null;
+
+  return (
+    <div className="card border-primary-200 bg-gradient-to-br from-white to-primary-50/30">
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-purple-500 flex items-center justify-center">
+            <Rocket className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Getting Started</h2>
+            <p className="text-sm text-gray-500">{completedCount} of {items.length} completed</p>
+          </div>
+        </div>
+        <button onClick={onDismiss} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400">
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Progress bar */}
+      <div className="h-2 bg-gray-100 rounded-full overflow-hidden mb-5">
+        <div
+          className="h-full bg-gradient-to-r from-primary-500 to-purple-500 rounded-full transition-all duration-500"
+          style={{ width: `${progressPct}%` }}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {items.map((item) => (
+          <Link
+            key={item.id}
+            to={item.href}
+            className={`flex items-start gap-3 p-3 rounded-xl border transition-all ${
+              item.completed
+                ? 'bg-green-50/50 border-green-200'
+                : 'bg-white border-gray-200 hover:border-primary-300 hover:shadow-sm'
+            }`}
+          >
+            {item.completed ? (
+              <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+            ) : (
+              <Circle className="w-5 h-5 text-gray-300 mt-0.5 flex-shrink-0" />
+            )}
+            <div>
+              <p className={`text-sm font-medium ${item.completed ? 'text-green-700 line-through' : 'text-gray-900'}`}>
+                {item.label}
+              </p>
+              <p className="text-xs text-gray-500 mt-0.5">{item.description}</p>
+            </div>
+          </Link>
+        ))}
       </div>
     </div>
   );

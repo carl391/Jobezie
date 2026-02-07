@@ -16,6 +16,8 @@ import {
   BarChart3,
   BookOpen,
 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { aiApi } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -332,7 +334,13 @@ export function AICoach() {
                         : 'bg-gray-100 text-gray-900 rounded-2xl rounded-tl-md'
                     } px-4 py-3`}
                   >
-                    <div className="whitespace-pre-wrap text-sm">{message.content}</div>
+                    {message.role === 'assistant' ? (
+                      <div className="text-sm prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:my-2">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+                      </div>
+                    ) : (
+                      <div className="whitespace-pre-wrap text-sm">{message.content}</div>
+                    )}
                     <p
                       className={`text-xs mt-1 ${
                         message.role === 'user' ? 'text-primary-200' : 'text-gray-400'

@@ -93,6 +93,15 @@ const SUBSCRIPTION_TIERS = [
     icon: <Crown className="w-5 h-5" />,
     color: 'bg-purple-100 text-purple-700',
   },
+  {
+    id: 'career_keeper',
+    name: 'Career Keeper',
+    price: 9,
+    description: 'Stay career-ready while employed',
+    features: ['5 recruiter contacts', '1 annual resume refresh', 'Salary monitoring', 'Skills gap alerts', 'Market trend updates'],
+    icon: <Sparkles className="w-5 h-5" />,
+    color: 'bg-emerald-100 text-emerald-700',
+  },
 ];
 
 interface SelectedSkill {

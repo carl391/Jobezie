@@ -39,7 +39,7 @@ def send_weekly_summaries(self):
             # Get active users (logged in within last 30 days)
             active_cutoff = datetime.utcnow() - timedelta(days=30)
             active_users = User.query.filter(
-                User.last_login >= active_cutoff,
+                User.last_login_at >= active_cutoff,
                 User.email_verified == True,  # noqa: E712
             ).all()
 
@@ -59,8 +59,8 @@ def send_weekly_summaries(self):
 
                     responses = Message.query.filter(
                         Message.user_id == user.id,
-                        Message.created_at >= start_date,
-                        Message.response_received == True,  # noqa: E712
+                        Message.responded_at >= start_date,
+                        Message.responded_at.isnot(None),
                     ).count()
 
                     recruiters_added = Recruiter.query.filter(
@@ -136,12 +136,12 @@ def check_follow_up_reminders(self):
                         # Find recruiters needing follow-up
                         recruiters = Recruiter.query.filter(
                             Recruiter.user_id == user.id,
-                            Recruiter.pipeline_stage == stage,
-                            Recruiter.last_contact < cutoff_date,
+                            Recruiter.status == stage,
+                            Recruiter.last_contact_date < cutoff_date,
                         ).all()
 
                         for recruiter in recruiters:
-                            days_since = (datetime.utcnow() - recruiter.last_contact).days
+                            days_since = (datetime.utcnow() - recruiter.last_contact_date).days
 
                             EmailService.send_follow_up_reminder_email(
                                 user, recruiter, days_since
