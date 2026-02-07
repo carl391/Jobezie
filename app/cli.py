@@ -47,6 +47,12 @@ def seed_market_data(onet_path, skip_bls):
     """
     click.echo("Starting labor market data seed...")
 
+    # Skip if data already seeded (idempotent for production builds)
+    existing = Occupation.query.count()
+    if existing > 0:
+        click.echo(f"O*NET data already seeded ({existing} occupations). Skipping.")
+        return
+
     # Check if O*NET files exist
     onet_occupation_file = os.path.join(onet_path, "Occupation Data.txt")
 

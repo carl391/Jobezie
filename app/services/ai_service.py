@@ -327,6 +327,81 @@ Help candidates prepare confident, structured responses that highlight their str
                 "prep_materials": None,
             }
 
+    @staticmethod
+    async def evaluate_answer(
+        job_title: str,
+        interview_type: str = "behavioral",
+        question: str = "",
+        user_answer: str = "",
+        provider: Optional[str] = None,
+    ) -> Dict:
+        """
+        Evaluate a user's interview answer.
+
+        Args:
+            job_title: Role being interviewed for
+            interview_type: Type of interview
+            question: The interview question
+            user_answer: The user's answer to evaluate
+
+        Returns:
+            Dictionary with evaluation feedback
+        """
+        provider = provider or AIService.get_provider()
+
+        if provider == "none":
+            return {
+                "success": False,
+                "error": "No AI provider configured",
+                "evaluation": None,
+            }
+
+        prompt = f"""Evaluate this interview answer for a {job_title} position.
+
+INTERVIEW TYPE: {interview_type}
+
+QUESTION: {question}
+
+CANDIDATE'S ANSWER: {user_answer}
+
+Please provide:
+1. **Score** (1-10): How well the answer addresses the question
+2. **Strengths**: What the candidate did well
+3. **Areas for Improvement**: Specific suggestions to strengthen the answer
+4. **Example Enhancement**: A brief example of how to improve one key part
+5. **STAR Method Check**: Whether the answer follows the STAR method (Situation, Task, Action, Result) and how to better structure it if not
+
+Keep feedback constructive and actionable."""
+
+        try:
+            if provider == "claude":
+                response = await AIService._call_claude(
+                    system_prompt=AIService.SYSTEM_PROMPTS["interview_prep"],
+                    user_prompt=prompt,
+                    max_tokens=1536,
+                )
+            else:
+                response = await AIService._call_openai(
+                    system_prompt=AIService.SYSTEM_PROMPTS["interview_prep"],
+                    user_prompt=prompt,
+                    max_tokens=1536,
+                )
+
+            return {
+                "success": True,
+                "evaluation": response["content"],
+                "provider": provider,
+                "model": response["model"],
+            }
+
+        except Exception as e:
+            current_app.logger.error(f"AI evaluate answer error: {str(e)}")
+            return {
+                "success": False,
+                "error": str(e),
+                "evaluation": None,
+            }
+
     # Private helper methods
 
     @staticmethod
@@ -653,5 +728,16 @@ def interview_prep_sync(*args, **kwargs):
     loop = asyncio.new_event_loop()
     try:
         return loop.run_until_complete(AIService.interview_prep(*args, **kwargs))
+    finally:
+        loop.close()
+
+
+def evaluate_answer_sync(*args, **kwargs):
+    """Synchronous wrapper for evaluate_answer."""
+    import asyncio
+
+    loop = asyncio.new_event_loop()
+    try:
+        return loop.run_until_complete(AIService.evaluate_answer(*args, **kwargs))
     finally:
         loop.close()

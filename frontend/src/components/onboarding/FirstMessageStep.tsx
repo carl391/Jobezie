@@ -46,9 +46,9 @@ export function FirstMessageStep({ onNext, onBack, onSkip, recruiter }: FirstMes
     } catch (err) {
       console.error('Error generating message:', err);
       // Generate a fallback template message
-      const fallbackMessage = `Hi ${recruiter.name?.split(' ')[0] || 'there'},
+      const fallbackMessage = `Hi ${recruiter.full_name?.split(' ')[0] || 'there'},
 
-I came across your profile and was impressed by your work in recruiting at ${recruiter.company_name || 'your company'}.
+I came across your profile and was impressed by your work in recruiting at ${recruiter.company || 'your company'}.
 
 I'm currently exploring new opportunities and would love to connect. I believe my background could be a good fit for roles you might be recruiting for.
 
@@ -135,7 +135,7 @@ Best regards`;
         Your first outreach message
       </h2>
       <p className="text-gray-600 mb-2">
-        To: {recruiter.name} at {recruiter.company_name}
+        To: {recruiter.full_name} at {recruiter.company}
       </p>
       <p className="text-sm text-gray-500 mb-6">
         AI-generated and personalized for better response rates

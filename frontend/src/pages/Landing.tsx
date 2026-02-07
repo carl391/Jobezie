@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   FileText,
@@ -115,6 +116,17 @@ const STATS = [
 ];
 
 export function Landing() {
+  // Handle hash scroll for anchor links (e.g. /#features, /#pricing)
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash) {
+      const el = document.querySelector(hash);
+      if (el) {
+        setTimeout(() => el.scrollIntoView({ behavior: 'smooth' }), 100);
+      }
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-white">
       {/* Navigation */}

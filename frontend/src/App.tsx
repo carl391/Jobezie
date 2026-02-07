@@ -25,6 +25,8 @@ const Learn = lazy(() => import('./pages/Learn').then(m => ({ default: m.Learn }
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword').then(m => ({ default: m.ForgotPassword })));
 const ResetPassword = lazy(() => import('./pages/ResetPassword').then(m => ({ default: m.ResetPassword })));
 const Landing = lazy(() => import('./pages/Landing').then(m => ({ default: m.Landing })));
+const SubscriptionSuccess = lazy(() => import('./pages/SubscriptionSuccess').then(m => ({ default: m.SubscriptionSuccess })));
+const SubscriptionCancel = lazy(() => import('./pages/SubscriptionCancel').then(m => ({ default: m.SubscriptionCancel })));
 
 import './index.css';
 
@@ -181,6 +183,24 @@ function App() {
                   <Layout>
                     <Learn />
                   </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Subscription redirect pages */}
+            <Route
+              path="/subscription/success"
+              element={
+                <ProtectedRoute requireOnboarding={false}>
+                  <SubscriptionSuccess />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/subscription/cancel"
+              element={
+                <ProtectedRoute requireOnboarding={false}>
+                  <SubscriptionCancel />
                 </ProtectedRoute>
               }
             />

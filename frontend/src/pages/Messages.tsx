@@ -138,8 +138,8 @@ export function Messages() {
     return (
       m.body.toLowerCase().includes(searchLower) ||
       m.subject?.toLowerCase().includes(searchLower) ||
-      recruiter?.name.toLowerCase().includes(searchLower) ||
-      recruiter?.company_name?.toLowerCase().includes(searchLower)
+      recruiter?.full_name?.toLowerCase().includes(searchLower) ||
+      recruiter?.company?.toLowerCase().includes(searchLower)
     );
   });
 

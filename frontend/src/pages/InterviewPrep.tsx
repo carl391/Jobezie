@@ -82,16 +82,9 @@ export function InterviewPrep() {
 
     try {
       const response = await aiApi.interviewPrep({
-        action: 'generate_question',
-        target_role: practiceForm.target_role,
+        job_title: practiceForm.target_role,
         company: practiceForm.company || undefined,
-        question_type: practiceForm.question_type,
-        difficulty: practiceForm.difficulty,
-        user_context: {
-          current_role: user?.current_role,
-          years_experience: user?.years_experience,
-          skills: user?.technical_skills,
-        },
+        interview_type: practiceForm.question_type,
       });
       setCurrentQuestion(response.data.data);
     } catch (err) {
@@ -110,11 +103,11 @@ export function InterviewPrep() {
 
     try {
       const response = await aiApi.interviewPrep({
-        action: 'evaluate_answer',
+        action: 'evaluate',
+        job_title: practiceForm.target_role,
+        interview_type: currentQuestion.question_type,
         question: currentQuestion.question,
-        question_type: currentQuestion.question_type,
         user_answer: userAnswer,
-        target_role: practiceForm.target_role,
       });
       setFeedback(response.data.data);
     } catch (err) {

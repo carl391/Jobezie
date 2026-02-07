@@ -765,6 +765,8 @@ def update_profile():
         user.target_roles = data["target_roles"] if isinstance(data["target_roles"], list) else []
     if "target_industries" in data:
         user.target_industries = data["target_industries"] if isinstance(data["target_industries"], list) else []
+    if "technical_skills" in data:
+        user.technical_skills = data["technical_skills"] if isinstance(data["technical_skills"], list) else []
 
     # Update onboarding status
     if "onboarding_step" in data:

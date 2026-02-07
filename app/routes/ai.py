@@ -11,6 +11,7 @@ from app.extensions import db
 from app.services.ai_service import (
     AIService,
     career_coaching_sync,
+    evaluate_answer_sync,
     generate_message_sync,
     interview_prep_sync,
     optimize_resume_sync,
@@ -407,7 +408,36 @@ def interview_prep():
     user_id = get_jwt_identity()
     data = request.get_json() or {}
 
-    # Validate and sanitize text fields
+    action = data.get("action", "generate")
+
+    if action == "evaluate":
+        # Evaluate a user's answer to an interview question
+        eval_schema = {
+            'job_title': {'required': True, 'max_length': 200},
+            'interview_type': {'required': False, 'max_length': 50},
+            'question': {'required': True, 'max_length': 2000},
+            'user_answer': {'required': True, 'max_length': 5000},
+        }
+        validated, errors = validate_text_fields(data, eval_schema)
+        if errors:
+            return jsonify({'success': False, 'errors': errors}), 400
+
+        result = evaluate_answer_sync(
+            job_title=validated["job_title"],
+            interview_type=validated.get("interview_type") or "behavioral",
+            question=validated["question"],
+            user_answer=validated["user_answer"],
+        )
+
+        if not result["success"]:
+            return jsonify({"error": result.get("error", "Failed to evaluate answer")}), 500
+
+        return jsonify({
+            "evaluation": result["evaluation"],
+            "provider": result["provider"],
+        }), 200
+
+    # Default: generate interview prep materials
     schema = {
         'job_title': {'required': True, 'max_length': 200},
         'company': {'required': False, 'max_length': 200},

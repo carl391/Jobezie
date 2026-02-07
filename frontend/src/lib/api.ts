@@ -164,7 +164,7 @@ export const messageApi = {
 
 // Activity API
 export const activityApi = {
-  list: (params?: { limit?: number; activity_type?: string }) =>
+  list: (params?: { limit?: number; activity_type?: string; recruiter_id?: string }) =>
     api.get('/activities', { params }),
   log: (data: Record<string, unknown>) => api.post('/activities', data),
   getRecent: (limit?: number) => api.get('/activities/recent', { params: { limit } }),

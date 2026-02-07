@@ -137,6 +137,7 @@ export function Settings() {
     current_period_end?: string;
   } | null>(null);
   const [isLoadingSubscription, setIsLoadingSubscription] = useState(false);
+  const [upgradingTier, setUpgradingTier] = useState<string | null>(null);
 
   // Profile form
   const {
@@ -149,9 +150,9 @@ export function Settings() {
     defaultValues: {
       first_name: user?.first_name || '',
       last_name: user?.last_name || '',
-      phone: '',
-      location: '',
-      linkedin_url: '',
+      phone: user?.phone || '',
+      location: user?.location || '',
+      linkedin_url: user?.linkedin_url || '',
       current_role: user?.current_role || '',
       years_experience: user?.years_experience || 0,
       career_stage: user?.career_stage || '',
@@ -180,9 +181,9 @@ export function Settings() {
       resetProfile({
         first_name: user.first_name || '',
         last_name: user.last_name || '',
-        phone: '',
-        location: '',
-        linkedin_url: '',
+        phone: user.phone || '',
+        location: user.location || '',
+        linkedin_url: user.linkedin_url || '',
         current_role: user.current_role || '',
         years_experience: user.years_experience || 0,
         career_stage: user.career_stage || '',
@@ -276,17 +277,20 @@ export function Settings() {
   const handleUpgrade = async (tierId: string) => {
     try {
       setError(null);
+      setUpgradingTier(tierId);
       const response = await subscriptionApi.createCheckout(tierId);
       const checkoutUrl = response.data.data?.checkout_url || response.data.checkout_url;
       if (checkoutUrl) {
         window.location.href = checkoutUrl;
       } else {
         setError('Unable to create checkout session. Please try again.');
+        setUpgradingTier(null);
       }
     } catch (err: unknown) {
       const apiError = err as { response?: { data?: { message?: string } } };
       console.error('Error creating checkout:', err);
       setError(apiError.response?.data?.message || 'Failed to start upgrade process.');
+      setUpgradingTier(null);
     }
   };
 
@@ -722,9 +726,13 @@ export function Settings() {
                     {tier.id !== currentTier && tier.price > (SUBSCRIPTION_TIERS.find(t => t.id === currentTier)?.price || 0) && (
                       <button
                         onClick={() => handleUpgrade(tier.id)}
-                        className="btn btn-primary w-full"
+                        disabled={upgradingTier !== null}
+                        className="btn btn-primary w-full flex items-center justify-center gap-2"
                       >
-                        Upgrade to {tier.name}
+                        {upgradingTier === tier.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : null}
+                        {upgradingTier === tier.id ? 'Redirecting...' : `Upgrade to ${tier.name}`}
                       </button>
                     )}
 

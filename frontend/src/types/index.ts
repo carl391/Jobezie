@@ -15,6 +15,8 @@ export interface User {
   target_industries?: string[];
   technical_skills?: string[];
   location?: string;
+  phone?: string;
+  linkedin_url?: string;
   // Onboarding
   onboarding_completed: boolean;
   onboarding_step?: number;

@@ -89,12 +89,12 @@ export function MessageCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <h3 className="font-medium text-gray-900 truncate">
-                {recruiter?.name || 'Unknown Recruiter'}
+                {recruiter?.full_name || 'Unknown Recruiter'}
               </h3>
               <StatusBadge status={message.status} size="sm" />
             </div>
-            {recruiter?.company_name && (
-              <p className="text-sm text-gray-500">{recruiter.company_name}</p>
+            {recruiter?.company && (
+              <p className="text-sm text-gray-500">{recruiter.company}</p>
             )}
             <span className="inline-block text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded mt-1">
               {MESSAGE_TYPE_LABELS[message.message_type] || message.message_type}

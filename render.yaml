@@ -8,7 +8,7 @@ services:
     env: python
     region: oregon
     plan: starter
-    buildCommand: pip install -r requirements.txt && flask db upgrade
+    buildCommand: pip install -r requirements.txt && flask db upgrade && flask seed-market-data --skip-bls
     startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 4 --threads 2 --timeout 120 'app:create_app()'
     healthCheckPath: /health
     autoDeploy: true

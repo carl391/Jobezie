@@ -238,7 +238,7 @@ export function ComposeMessageModal({
                   <option value="">Select a recruiter...</option>
                   {recruiters.map((recruiter) => (
                     <option key={recruiter.id} value={recruiter.id}>
-                      {recruiter.name} {recruiter.company_name ? `- ${recruiter.company_name}` : ''}
+                      {recruiter.full_name} {recruiter.company ? `- ${recruiter.company}` : ''}
                     </option>
                   ))}
                 </select>
