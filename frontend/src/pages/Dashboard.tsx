@@ -18,7 +18,14 @@ import {
   Rocket,
   X,
 } from 'lucide-react';
+import { DashboardSkeleton } from '../components/ui/Skeleton';
 import type { DashboardData, Activity, SkillsMapData } from '../types';
+
+// Helper to compute pipeline total from flat stage dict
+function pipelineTotal(summary: Record<string, number> | undefined): number {
+  if (!summary) return 0;
+  return Object.values(summary).reduce((a, b) => a + b, 0);
+}
 
 interface HighDemandRole {
   role: string;
@@ -83,11 +90,7 @@ export function Dashboard() {
   }, [isLoading, user, shouldShowTour, startTour, markTourSeen]);
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   if (error) {
@@ -103,6 +106,11 @@ export function Dashboard() {
 
   const readinessScore = dashboardData?.career_readiness?.overall_score || 0;
   const pipelineSummary = dashboardData?.pipeline_summary;
+  const totalRecruiters = pipelineTotal(pipelineSummary);
+  const responseRate = dashboardData?.stats?.response_rate || 0;
+  const messagesSentThisWeek = dashboardData?.stats?.messages_this_week || 0;
+  const resumeCount = dashboardData?.stats?.resumes || 0;
+  const isFreshUser = readinessScore === 0 && totalRecruiters === 0;
 
   return (
     <div className="space-y-6">
@@ -112,7 +120,11 @@ export function Dashboard() {
           <h1 className="text-2xl font-bold text-gray-900">
             Welcome back, {user?.full_name?.split(' ')[0]}!
           </h1>
-          <p className="text-gray-600 mt-1">Here's what's happening with your job search</p>
+          <p className="text-gray-600 mt-1">
+            {isFreshUser
+              ? "Let's set up your job search. Follow the steps below to get started!"
+              : "Here's what's happening with your job search"}
+          </p>
         </div>
       </div>
 
@@ -133,6 +145,7 @@ export function Dashboard() {
           <StatCard
             title="Career Readiness"
             value={`${Math.round(readinessScore)}%`}
+            emptyLabel={readinessScore === 0 ? "Let's get started" : undefined}
             icon={TrendingUp}
             trend={readinessScore > 70 ? 'Good' : readinessScore > 50 ? 'Fair' : 'Needs work'}
             trendUp={readinessScore > 70}
@@ -141,24 +154,27 @@ export function Dashboard() {
         </div>
         <StatCard
           title="Active Recruiters"
-          value={pipelineSummary?.total?.toString() || '0'}
+          value={totalRecruiters.toString()}
+          emptyLabel={totalRecruiters === 0 ? 'Add recruiters' : undefined}
           icon={Users}
-          trend={`${pipelineSummary?.response_rate || 0}% response rate`}
-          trendUp={(pipelineSummary?.response_rate || 0) > 20}
+          trend={`${responseRate}% response rate`}
+          trendUp={responseRate > 20}
           color="green"
         />
         <StatCard
           title="Messages Sent"
-          value={dashboardData?.usage_stats?.messages_sent_this_week?.toString() || '0'}
+          value={messagesSentThisWeek.toString()}
+          emptyLabel={messagesSentThisWeek === 0 ? 'Send first message' : undefined}
           icon={MessageSquare}
           trend="This week"
           color="blue"
         />
         <StatCard
           title="Resumes"
-          value={dashboardData?.usage_stats?.resumes_tailored_this_month?.toString() || '0'}
+          value={resumeCount.toString()}
+          emptyLabel={resumeCount === 0 ? 'Upload resume' : undefined}
           icon={FileText}
-          trend="Tailored this month"
+          trend="Uploaded"
           color="purple"
         />
       </div>
@@ -177,9 +193,9 @@ export function Dashboard() {
             </Link>
           </div>
 
-          {pipelineSummary?.by_stage && Object.keys(pipelineSummary.by_stage).length > 0 ? (
+          {pipelineSummary && totalRecruiters > 0 ? (
             <div className="space-y-3">
-              {Object.entries(pipelineSummary.by_stage).map(([stage, count]) => (
+              {Object.entries(pipelineSummary).filter(([, count]) => count > 0).map(([stage, count]) => (
                 <div key={stage} className="flex items-center">
                   <span className="w-32 text-sm text-gray-600 capitalize">
                     {stage.replace('_', ' ')}
@@ -189,13 +205,13 @@ export function Dashboard() {
                       <div
                         className="h-full bg-primary-500 rounded-full"
                         style={{
-                          width: `${Math.min(100, ((count as number) / (pipelineSummary.total || 1)) * 100)}%`,
+                          width: `${Math.min(100, (count / (totalRecruiters || 1)) * 100)}%`,
                         }}
                       />
                     </div>
                   </div>
                   <span className="w-8 text-sm font-medium text-gray-900 text-right">
-                    {count as number}
+                    {count}
                   </span>
                 </div>
               ))}
@@ -339,7 +355,7 @@ export function Dashboard() {
           ) : (
             <div className="text-center py-8 text-gray-500">
               <Zap className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-              <p>Loading market data...</p>
+              <p>Set your target role in Settings to see market insights</p>
             </div>
           )}
         </div>
@@ -350,35 +366,39 @@ export function Dashboard() {
         <h2 className="text-lg font-semibold text-gray-900 mb-4">
           Recommended Follow-ups
         </h2>
-        {dashboardData?.follow_up_recommendations &&
-          dashboardData.follow_up_recommendations.length > 0 ? (
+        {dashboardData?.follow_up_needed &&
+          dashboardData.follow_up_needed.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {dashboardData.follow_up_recommendations.slice(0, 3).map((rec) => (
+            {dashboardData.follow_up_needed.slice(0, 3).map((rec) => (
               <div
-                key={rec.recruiter_id}
+                key={rec.id}
                 className="p-4 rounded-lg border border-gray-200 hover:border-primary-300 transition-colors"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium text-gray-900">{rec.recruiter_name}</span>
+                  <span className="font-medium text-gray-900">{rec.full_name}</span>
                   <span
                     className={`text-xs px-2 py-1 rounded-full ${
-                      rec.priority === 'high'
+                      rec.days_since_contact > 14
                         ? 'bg-red-100 text-red-700'
-                        : rec.priority === 'medium'
+                        : rec.days_since_contact > 7
                         ? 'bg-yellow-100 text-yellow-700'
                         : 'bg-gray-100 text-gray-700'
                     }`}
                   >
-                    {rec.priority}
+                    {rec.days_since_contact}d ago
                   </span>
                 </div>
                 <p className="text-sm text-gray-600">{rec.company}</p>
-                <p className="text-sm text-gray-500 mt-2">{rec.reason}</p>
+                <p className="text-sm text-gray-500 mt-2">
+                  {rec.follow_up_count === 0
+                    ? 'No follow-up sent yet'
+                    : `${rec.follow_up_count} follow-up${rec.follow_up_count > 1 ? 's' : ''} sent`}
+                </p>
                 <Link
-                  to={`/messages?recruiter=${rec.recruiter_id}`}
+                  to={`/messages?recruiterId=${rec.id}`}
                   className="text-sm text-primary-600 hover:text-primary-700 mt-3 inline-block"
                 >
-                  {rec.suggested_action}
+                  Send follow-up
                 </Link>
               </div>
             ))}
@@ -404,10 +424,9 @@ interface ChecklistItem {
 }
 
 function GettingStartedChecklist({ dashboardData, onDismiss }: { dashboardData: DashboardData; onDismiss: () => void }) {
-  const hasResume = (dashboardData?.usage_stats?.resumes_tailored_this_month || 0) > 0
-    || (dashboardData?.career_readiness?.overall_score || 0) > 10;
-  const hasRecruiter = (dashboardData?.pipeline_summary?.total || 0) > 0;
-  const hasMessage = (dashboardData?.usage_stats?.messages_sent_this_week || 0) > 0;
+  const hasResume = (dashboardData?.stats?.resumes || 0) > 0;
+  const hasRecruiter = pipelineTotal(dashboardData?.pipeline_summary) > 0;
+  const hasMessage = (dashboardData?.stats?.messages_this_week || 0) > 0;
   const hasProfile = (dashboardData?.career_readiness?.overall_score || 0) > 30;
 
   const items: ChecklistItem[] = [
@@ -479,19 +498,22 @@ function GettingStartedChecklist({ dashboardData, onDismiss }: { dashboardData: 
 interface StatCardProps {
   title: string;
   value: string;
+  emptyLabel?: string;
   icon: React.ElementType;
   trend?: string;
   trendUp?: boolean;
   color: 'primary' | 'green' | 'blue' | 'purple';
 }
 
-function StatCard({ title, value, icon: Icon, trend, trendUp, color }: StatCardProps) {
+function StatCard({ title, value, emptyLabel, icon: Icon, trend, trendUp, color }: StatCardProps) {
   const colorClasses = {
     primary: 'bg-primary-50 text-primary-600',
     green: 'bg-green-50 text-green-600',
     blue: 'bg-blue-50 text-blue-600',
     purple: 'bg-purple-50 text-purple-600',
   };
+
+  const showEmpty = emptyLabel && (value === '0' || value === '0%');
 
   return (
     <div className="card">
@@ -501,9 +523,13 @@ function StatCard({ title, value, icon: Icon, trend, trendUp, color }: StatCardP
         </div>
       </div>
       <div className="mt-4">
-        <p className="text-2xl font-bold text-gray-900">{value}</p>
+        {showEmpty ? (
+          <p className="text-sm font-medium text-gray-400 italic">{emptyLabel}</p>
+        ) : (
+          <p className="text-2xl font-bold text-gray-900">{value}</p>
+        )}
         <p className="text-sm text-gray-600 mt-1">{title}</p>
-        {trend && (
+        {trend && !showEmpty && (
           <p
             className={`text-xs mt-2 ${
               trendUp === undefined

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import {
   Loader2,
   Mail,
@@ -91,7 +92,9 @@ export function RecruiterDetailsModal({
       const note = response.data.data?.note || response.data.note;
       setNotes([note, ...notes]);
       setNewNote('');
+      toast.success('Note added');
     } catch (err) {
+      toast.error('Failed to add note');
       console.error('Error adding note:', err);
     } finally {
       setIsAddingNote(false);
@@ -107,7 +110,9 @@ export function RecruiterDetailsModal({
       const updated = response.data.data?.recruiter || response.data.recruiter;
       setRecruiter(updated);
       onUpdate?.(updated);
+      toast.success(`Stage updated to ${newStage}`);
     } catch (err) {
+      toast.error('Failed to update stage');
       console.error('Error updating stage:', err);
     } finally {
       setIsChangingStage(false);

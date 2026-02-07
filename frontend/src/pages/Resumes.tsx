@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { toast } from 'sonner';
 import { resumeApi } from '../lib/api';
 import { FileText, Upload, Star, Trash2, Eye, BarChart2, Lightbulb, Target } from 'lucide-react';
 import { ViewResumeModal } from '../components/resumes/ViewResumeModal';
@@ -49,8 +50,10 @@ export function Resumes() {
 
     try {
       await resumeApi.upload(formData);
+      toast.success('Resume uploaded successfully');
       fetchResumes();
     } catch (error) {
+      toast.error('Failed to upload resume');
       setUploadError('Failed to upload resume');
       console.error(error);
     }
@@ -67,8 +70,10 @@ export function Resumes() {
   const handleSetMaster = async (id: string) => {
     try {
       await resumeApi.setMaster(id);
+      toast.success('Master resume updated');
       fetchResumes();
     } catch (error) {
+      toast.error('Failed to set master resume');
       console.error('Failed to set master resume:', error);
     }
   };
@@ -78,8 +83,10 @@ export function Resumes() {
 
     try {
       await resumeApi.delete(id);
+      toast.success('Resume deleted');
       fetchResumes();
     } catch (error) {
+      toast.error('Failed to delete resume');
       console.error('Failed to delete resume:', error);
     }
   };

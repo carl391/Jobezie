@@ -454,6 +454,7 @@ class StripeService:
                     "id": SubscriptionTier.BASIC.value,
                     "name": "Basic",
                     "price": 0,
+                    "price_dollars": 0,
                     "price_display": "Free",
                     "features": [
                         "5 recruiters",
@@ -466,6 +467,7 @@ class StripeService:
                     "id": SubscriptionTier.PRO.value,
                     "name": "Pro",
                     "price": cls.TIER_PRICES[SubscriptionTier.PRO.value],
+                    "price_dollars": cls.TIER_PRICES[SubscriptionTier.PRO.value] / 100,
                     "price_display": "$19/month",
                     "features": [
                         "50 recruiters",
@@ -480,6 +482,7 @@ class StripeService:
                     "id": SubscriptionTier.EXPERT.value,
                     "name": "Expert",
                     "price": cls.TIER_PRICES[SubscriptionTier.EXPERT.value],
+                    "price_dollars": cls.TIER_PRICES[SubscriptionTier.EXPERT.value] / 100,
                     "price_display": "$39/month",
                     "features": [
                         "Unlimited recruiters",
@@ -494,6 +497,7 @@ class StripeService:
                     "id": SubscriptionTier.CAREER_KEEPER.value,
                     "name": "Career Keeper",
                     "price": cls.TIER_PRICES[SubscriptionTier.CAREER_KEEPER.value],
+                    "price_dollars": cls.TIER_PRICES[SubscriptionTier.CAREER_KEEPER.value] / 100,
                     "price_display": "$9/month",
                     "features": [
                         "Maintain your network",

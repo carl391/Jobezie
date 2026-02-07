@@ -212,6 +212,7 @@ def _register_blueprints(app):
     from app.routes.labor_market import labor_market_bp
     from app.routes.linkedin import linkedin_bp
     from app.routes.message import message_bp
+    from app.routes.notification import notification_bp
     from app.routes.recruiter import recruiter_bp
     from app.routes.resume import resume_bp
     from app.routes.subscription import subscription_bp
@@ -233,6 +234,7 @@ def _register_blueprints(app):
 
     # Phase 4 routes
     app.register_blueprint(subscription_bp)  # url_prefix in blueprint
+    app.register_blueprint(notification_bp)  # url_prefix in blueprint
 
 
 def _register_error_handlers(app):
@@ -338,6 +340,7 @@ def _register_shell_context(app):
     def make_shell_context():
         from app.models.activity import Activity, PipelineItem
         from app.models.message import Message
+        from app.models.notification import Notification
         from app.models.recruiter import Recruiter, RecruiterNote
         from app.models.resume import Resume, ResumeVersion
         from app.models.user import User
@@ -352,4 +355,5 @@ def _register_shell_context(app):
             "Message": Message,
             "Activity": Activity,
             "PipelineItem": PipelineItem,
+            "Notification": Notification,
         }

@@ -250,6 +250,16 @@ export const linkedinApi = {
   getKeywords: (industry: string) => api.get(`/linkedin/keywords/${industry}`),
 };
 
+// Notification API
+export const notificationApi = {
+  list: (params?: { limit?: number; offset?: number; unread_only?: boolean }) =>
+    api.get('/notifications', { params }),
+  getUnreadCount: () => api.get('/notifications/unread-count'),
+  markRead: (id: string) => api.put(`/notifications/${id}/read`),
+  markAllRead: () => api.put('/notifications/read-all'),
+  generate: () => api.post('/notifications/generate'),
+};
+
 // Labor Market API
 export const laborMarketApi = {
   getOverview: () => api.get('/labor-market/overview'),

@@ -63,7 +63,7 @@ def create_recruiter():
     }
     validated, errors = validate_text_fields(data, schema)
     if errors:
-        return jsonify({'success': False, 'errors': errors}), 400
+        return jsonify({'success': False, 'data': {'errors': errors}}), 400
 
     try:
         recruiter = RecruiterService.create_recruiter(
@@ -92,8 +92,11 @@ def create_recruiter():
         return (
             jsonify(
                 {
-                    "message": "Recruiter added successfully",
-                    "recruiter": recruiter.to_dict(),
+                    "success": True,
+                    "data": {
+                        "message": "Recruiter added successfully",
+                        "recruiter": recruiter.to_dict(),
+                    },
                 }
             ),
             201,
@@ -101,7 +104,7 @@ def create_recruiter():
 
     except Exception as e:
         current_app.logger.error(f"Create recruiter error: {str(e)}")
-        return jsonify({"error": "Failed to create recruiter"}), 500
+        return jsonify({"success": False, "data": {"error": "Failed to create recruiter"}}), 500
 
 
 @recruiter_bp.route("", methods=["GET"])
@@ -143,11 +146,14 @@ def get_recruiters():
     return (
         jsonify(
             {
-                "recruiters": [r.to_dict() for r in recruiters],
-                "total": total,
-                "limit": limit,
-                "offset": offset,
-                "has_more": (offset + len(recruiters)) < total,
+                "success": True,
+                "data": {
+                    "recruiters": [r.to_dict() for r in recruiters],
+                    "total": total,
+                    "limit": limit,
+                    "offset": offset,
+                    "has_more": (offset + len(recruiters)) < total,
+                },
             }
         ),
         200,
@@ -166,7 +172,7 @@ def get_stats():
     user_id = get_jwt_identity()
     stats = RecruiterService.get_pipeline_stats(user_id)
 
-    return jsonify(stats), 200
+    return jsonify({"success": True, "data": stats}), 200
 
 
 @recruiter_bp.route("/stages", methods=["GET"])
@@ -180,7 +186,7 @@ def get_stages():
     """
     stages = [{"value": s.value, "label": s.value.replace("_", " ").title()} for s in PipelineStage]
 
-    return jsonify({"stages": stages}), 200
+    return jsonify({"success": True, "data": {"stages": stages}}), 200
 
 
 @recruiter_bp.route("/recommendations", methods=["GET"])
@@ -203,8 +209,11 @@ def get_recommendations():
     return (
         jsonify(
             {
-                "recommendations": recommendations,
-                "count": len(recommendations),
+                "success": True,
+                "data": {
+                    "recommendations": recommendations,
+                    "count": len(recommendations),
+                },
             }
         ),
         200,
@@ -224,12 +233,15 @@ def get_recruiter(recruiter_id):
     recruiter = RecruiterService.get_recruiter(recruiter_id, user_id)
 
     if not recruiter:
-        return jsonify({"error": "Recruiter not found"}), 404
+        return jsonify({"success": False, "data": {"error": "Recruiter not found"}}), 404
 
     return (
         jsonify(
             {
-                "recruiter": recruiter.to_dict(include_engagement=True),
+                "success": True,
+                "data": {
+                    "recruiter": recruiter.to_dict(include_engagement=True),
+                },
             }
         ),
         200,
@@ -259,15 +271,18 @@ def update_recruiter(recruiter_id):
         return (
             jsonify(
                 {
-                    "message": "Recruiter updated",
-                    "recruiter": recruiter.to_dict(),
+                    "success": True,
+                    "data": {
+                        "message": "Recruiter updated",
+                        "recruiter": recruiter.to_dict(),
+                    },
                 }
             ),
             200,
         )
 
     except ValueError as e:
-        return jsonify({"error": str(e)}), 404
+        return jsonify({"success": False, "data": {"error": str(e)}}), 404
 
 
 @recruiter_bp.route("/<recruiter_id>", methods=["DELETE"])
@@ -283,9 +298,9 @@ def delete_recruiter(recruiter_id):
 
     try:
         RecruiterService.delete_recruiter(recruiter_id, user_id)
-        return jsonify({"message": "Recruiter deleted"}), 200
+        return jsonify({"success": True, "data": {"message": "Recruiter deleted"}}), 200
     except ValueError as e:
-        return jsonify({"error": str(e)}), 404
+        return jsonify({"success": False, "data": {"error": str(e)}}), 404
 
 
 @recruiter_bp.route("/<recruiter_id>/stage", methods=["PUT"])
@@ -305,7 +320,7 @@ def update_stage(recruiter_id):
 
     stage = data.get("stage")
     if not stage:
-        return jsonify({"error": "stage is required"}), 400
+        return jsonify({"success": False, "data": {"error": "stage is required"}}), 400
 
     try:
         recruiter = RecruiterService.update_pipeline_stage(
@@ -317,15 +332,18 @@ def update_stage(recruiter_id):
         return (
             jsonify(
                 {
-                    "message": f"Recruiter moved to {stage}",
-                    "recruiter": recruiter.to_dict(),
+                    "success": True,
+                    "data": {
+                        "message": f"Recruiter moved to {stage}",
+                        "recruiter": recruiter.to_dict(),
+                    },
                 }
             ),
             200,
         )
 
     except ValueError as e:
-        return jsonify({"error": str(e)}), 400
+        return jsonify({"success": False, "data": {"error": str(e)}}), 400
 
 
 @recruiter_bp.route("/<recruiter_id>/message-sent", methods=["POST"])
@@ -353,16 +371,19 @@ def record_message_sent(recruiter_id):
         return (
             jsonify(
                 {
-                    "message": "Message recorded",
-                    "engagement_score": recruiter.engagement_score,
-                    "messages_sent": recruiter.messages_sent,
+                    "success": True,
+                    "data": {
+                        "message": "Message recorded",
+                        "engagement_score": recruiter.engagement_score,
+                        "messages_sent": recruiter.messages_sent,
+                    },
                 }
             ),
             200,
         )
 
     except ValueError as e:
-        return jsonify({"error": str(e)}), 404
+        return jsonify({"success": False, "data": {"error": str(e)}}), 404
 
 
 @recruiter_bp.route("/<recruiter_id>/message-opened", methods=["POST"])
@@ -385,16 +406,19 @@ def record_message_opened(recruiter_id):
         return (
             jsonify(
                 {
-                    "message": "Open recorded",
-                    "engagement_score": recruiter.engagement_score,
-                    "messages_opened": recruiter.messages_opened,
+                    "success": True,
+                    "data": {
+                        "message": "Open recorded",
+                        "engagement_score": recruiter.engagement_score,
+                        "messages_opened": recruiter.messages_opened,
+                    },
                 }
             ),
             200,
         )
 
     except ValueError as e:
-        return jsonify({"error": str(e)}), 404
+        return jsonify({"success": False, "data": {"error": str(e)}}), 404
 
 
 @recruiter_bp.route("/<recruiter_id>/response", methods=["POST"])
@@ -422,15 +446,18 @@ def record_response(recruiter_id):
         return (
             jsonify(
                 {
-                    "message": "Response recorded",
-                    "recruiter": recruiter.to_dict(include_engagement=True),
+                    "success": True,
+                    "data": {
+                        "message": "Response recorded",
+                        "recruiter": recruiter.to_dict(include_engagement=True),
+                    },
                 }
             ),
             200,
         )
 
     except ValueError as e:
-        return jsonify({"error": str(e)}), 404
+        return jsonify({"success": False, "data": {"error": str(e)}}), 404
 
 
 @recruiter_bp.route("/<recruiter_id>/fit-score", methods=["POST"])
@@ -464,15 +491,18 @@ def calculate_fit(recruiter_id):
         return (
             jsonify(
                 {
-                    "fit_score": result["total_score"],
-                    "components": result["components"],
+                    "success": True,
+                    "data": {
+                        "fit_score": result["total_score"],
+                        "components": result["components"],
+                    },
                 }
             ),
             200,
         )
 
     except ValueError as e:
-        return jsonify({"error": str(e)}), 404
+        return jsonify({"success": False, "data": {"error": str(e)}}), 404
 
 
 @recruiter_bp.route("/<recruiter_id>/notes", methods=["GET"])
@@ -491,13 +521,16 @@ def get_notes(recruiter_id):
         return (
             jsonify(
                 {
-                    "notes": [n.to_dict() for n in notes],
+                    "success": True,
+                    "data": {
+                        "notes": [n.to_dict() for n in notes],
+                    },
                 }
             ),
             200,
         )
     except ValueError as e:
-        return jsonify({"error": str(e)}), 404
+        return jsonify({"success": False, "data": {"error": str(e)}}), 404
 
 
 @recruiter_bp.route("/<recruiter_id>/notes", methods=["POST"])
@@ -523,7 +556,7 @@ def add_note(recruiter_id):
     }
     validated, errors = validate_text_fields(data, schema)
     if errors:
-        return jsonify({'success': False, 'errors': errors}), 400
+        return jsonify({'success': False, 'data': {'errors': errors}}), 400
 
     try:
         note = RecruiterService.add_note(
@@ -536,15 +569,18 @@ def add_note(recruiter_id):
         return (
             jsonify(
                 {
-                    "message": "Note added",
-                    "note": note.to_dict(),
+                    "success": True,
+                    "data": {
+                        "message": "Note added",
+                        "note": note.to_dict(),
+                    },
                 }
             ),
             201,
         )
 
     except ValueError as e:
-        return jsonify({"error": str(e)}), 404
+        return jsonify({"success": False, "data": {"error": str(e)}}), 404
 
 
 @recruiter_bp.route("/<recruiter_id>/next-action", methods=["PUT"])
@@ -565,14 +601,14 @@ def set_next_action(recruiter_id):
 
     action = data.get("action")
     if not action:
-        return jsonify({"error": "action is required"}), 400
+        return jsonify({"success": False, "data": {"error": "action is required"}}), 400
 
     due_date = None
     if data.get("due_date"):
         try:
             due_date = datetime.fromisoformat(data["due_date"].replace("Z", "+00:00"))
         except ValueError:
-            return jsonify({"error": "Invalid due_date format"}), 400
+            return jsonify({"success": False, "data": {"error": "Invalid due_date format"}}), 400
 
     try:
         recruiter = RecruiterService.set_next_action(
@@ -585,12 +621,15 @@ def set_next_action(recruiter_id):
         return (
             jsonify(
                 {
-                    "message": "Next action set",
-                    "recruiter": recruiter.to_dict(),
+                    "success": True,
+                    "data": {
+                        "message": "Next action set",
+                        "recruiter": recruiter.to_dict(),
+                    },
                 }
             ),
             200,
         )
 
     except ValueError as e:
-        return jsonify({"error": str(e)}), 404
+        return jsonify({"success": False, "data": {"error": str(e)}}), 404

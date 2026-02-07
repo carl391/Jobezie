@@ -49,7 +49,7 @@ def create_message():
     }
     validated, errors = validate_text_fields(data, schema)
     if errors:
-        return jsonify({'success': False, 'errors': errors}), 400
+        return jsonify({'success': False, 'data': {'errors': errors}}), 400
 
     try:
         message, quality_result = MessageService.create_message(
@@ -74,14 +74,17 @@ def create_message():
         return (
             jsonify(
                 {
-                    "message": message.to_dict(),
-                    "quality_analysis": {
-                        "score": quality_result["total_score"],
-                        "components": quality_result["components"],
-                        "feedback": quality_result["feedback"],
-                        "suggestions": quality_result["suggestions"],
-                        "word_count": quality_result["word_count"],
-                        "is_within_word_limit": quality_result["word_count"] <= 150,
+                    "success": True,
+                    "data": {
+                        "message": message.to_dict(),
+                        "quality_analysis": {
+                            "score": quality_result["total_score"],
+                            "components": quality_result["components"],
+                            "feedback": quality_result["feedback"],
+                            "suggestions": quality_result["suggestions"],
+                            "word_count": quality_result["word_count"],
+                            "is_within_word_limit": quality_result["word_count"] <= 150,
+                        },
                     },
                 }
             ),
@@ -90,7 +93,7 @@ def create_message():
 
     except Exception as e:
         current_app.logger.error(f"Create message error: {str(e)}")
-        return jsonify({"error": "Failed to create message"}), 500
+        return jsonify({"success": False, "data": {"error": "Failed to create message"}}), 500
 
 
 @message_bp.route("", methods=["GET"])
@@ -129,11 +132,14 @@ def get_messages():
     return (
         jsonify(
             {
-                "messages": [m.to_dict() for m in messages],
-                "total": total,
-                "limit": limit,
-                "offset": offset,
-                "has_more": (offset + len(messages)) < total,
+                "success": True,
+                "data": {
+                    "messages": [m.to_dict() for m in messages],
+                    "total": total,
+                    "limit": limit,
+                    "offset": offset,
+                    "has_more": (offset + len(messages)) < total,
+                },
             }
         ),
         200,
@@ -152,7 +158,7 @@ def get_stats():
     user_id = get_jwt_identity()
     stats = MessageService.get_message_stats(user_id)
 
-    return jsonify(stats), 200
+    return jsonify({"success": True, "data": stats}), 200
 
 
 @message_bp.route("/tips/<message_type>", methods=["GET"])
@@ -165,7 +171,7 @@ def get_tips(message_type):
         JSON with structure, word limit, tone, and research insights
     """
     tips = MessageService.get_quality_tips(message_type)
-    return jsonify(tips), 200
+    return jsonify({"success": True, "data": tips}), 200
 
 
 @message_bp.route("/validate", methods=["POST"])
@@ -188,7 +194,7 @@ def validate_message():
 
     result = MessageService.validate_message(body, message_type)
 
-    return jsonify(result), 200
+    return jsonify({"success": True, "data": result}), 200
 
 
 @message_bp.route("/context", methods=["POST"])
@@ -210,7 +216,7 @@ def get_generation_context():
 
     recruiter_id = data.get("recruiter_id")
     if not recruiter_id:
-        return jsonify({"error": "recruiter_id is required"}), 400
+        return jsonify({"success": False, "data": {"error": "recruiter_id is required"}}), 400
 
     context = MessageService.get_generation_context(
         user_id=user_id,
@@ -219,7 +225,7 @@ def get_generation_context():
         resume_id=data.get("resume_id"),
     )
 
-    return jsonify(context), 200
+    return jsonify({"success": True, "data": context}), 200
 
 
 @message_bp.route("/<message_id>", methods=["GET"])
@@ -235,12 +241,15 @@ def get_message(message_id):
     message = MessageService.get_message(message_id, user_id)
 
     if not message:
-        return jsonify({"error": "Message not found"}), 404
+        return jsonify({"success": False, "data": {"error": "Message not found"}}), 404
 
     return (
         jsonify(
             {
-                "message": message.to_dict(include_generation=True),
+                "success": True,
+                "data": {
+                    "message": message.to_dict(include_generation=True),
+                },
             }
         ),
         200,
@@ -276,13 +285,16 @@ def update_message(message_id):
         return (
             jsonify(
                 {
-                    "message": message.to_dict(),
-                    "quality_analysis": {
-                        "score": quality_result["total_score"],
-                        "components": quality_result["components"],
-                        "feedback": quality_result["feedback"],
-                        "suggestions": quality_result["suggestions"],
-                        "word_count": quality_result["word_count"],
+                    "success": True,
+                    "data": {
+                        "message": message.to_dict(),
+                        "quality_analysis": {
+                            "score": quality_result["total_score"],
+                            "components": quality_result["components"],
+                            "feedback": quality_result["feedback"],
+                            "suggestions": quality_result["suggestions"],
+                            "word_count": quality_result["word_count"],
+                        },
                     },
                 }
             ),
@@ -290,7 +302,7 @@ def update_message(message_id):
         )
 
     except ValueError as e:
-        return jsonify({"error": str(e)}), 400
+        return jsonify({"success": False, "data": {"error": str(e)}}), 400
 
 
 @message_bp.route("/<message_id>", methods=["DELETE"])
@@ -306,9 +318,9 @@ def delete_message(message_id):
 
     try:
         MessageService.delete_message(message_id, user_id)
-        return jsonify({"message": "Message deleted"}), 200
+        return jsonify({"success": True, "message": "Message deleted", "data": {}}), 200
     except ValueError as e:
-        return jsonify({"error": str(e)}), 400
+        return jsonify({"success": False, "data": {"error": str(e)}}), 400
 
 
 @message_bp.route("/<message_id>/send", methods=["POST"])
@@ -327,14 +339,15 @@ def mark_sent(message_id):
         return (
             jsonify(
                 {
+                    "success": True,
                     "message": "Message marked as sent",
-                    "data": message.to_dict(),
+                    "data": {"message": message.to_dict()},
                 }
             ),
             200,
         )
     except ValueError as e:
-        return jsonify({"error": str(e)}), 404
+        return jsonify({"success": False, "data": {"error": str(e)}}), 404
 
 
 @message_bp.route("/<message_id>/opened", methods=["POST"])
@@ -353,14 +366,15 @@ def mark_opened(message_id):
         return (
             jsonify(
                 {
+                    "success": True,
                     "message": "Message marked as opened",
-                    "data": message.to_dict(),
+                    "data": {"message": message.to_dict()},
                 }
             ),
             200,
         )
     except ValueError as e:
-        return jsonify({"error": str(e)}), 404
+        return jsonify({"success": False, "data": {"error": str(e)}}), 404
 
 
 @message_bp.route("/<message_id>/responded", methods=["POST"])
@@ -379,14 +393,15 @@ def mark_responded(message_id):
         return (
             jsonify(
                 {
+                    "success": True,
                     "message": "Response recorded",
-                    "data": message.to_dict(),
+                    "data": {"message": message.to_dict()},
                 }
             ),
             200,
         )
     except ValueError as e:
-        return jsonify({"error": str(e)}), 404
+        return jsonify({"success": False, "data": {"error": str(e)}}), 404
 
 
 @message_bp.route("/<message_id>/score", methods=["GET"])
@@ -402,21 +417,24 @@ def get_quality_score(message_id):
     message = MessageService.get_message(message_id, user_id)
 
     if not message:
-        return jsonify({"error": "Message not found"}), 404
+        return jsonify({"success": False, "data": {"error": "Message not found"}}), 404
 
     return (
         jsonify(
             {
-                "message_id": str(message.id),
-                "quality_breakdown": message.quality_breakdown,
-                "word_count": message.word_count,
-                "is_within_word_limit": message.is_within_word_limit,
-                "has_personalization": message.has_personalization,
-                "has_metrics": message.has_metrics,
-                "has_cta": message.has_cta,
-                "personalization_elements": message.personalization_elements,
-                "feedback": message.quality_feedback,
-                "suggestions": message.quality_suggestions,
+                "success": True,
+                "data": {
+                    "message_id": str(message.id),
+                    "quality_breakdown": message.quality_breakdown,
+                    "word_count": message.word_count,
+                    "is_within_word_limit": message.is_within_word_limit,
+                    "has_personalization": message.has_personalization,
+                    "has_metrics": message.has_metrics,
+                    "has_cta": message.has_cta,
+                    "personalization_elements": message.personalization_elements,
+                    "feedback": message.quality_feedback,
+                    "suggestions": message.quality_suggestions,
+                },
             }
         ),
         200,

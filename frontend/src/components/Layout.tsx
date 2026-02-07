@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTour } from '../contexts/TourContext';
 import { CommandPalette } from './ui/CommandPalette';
+import { NotificationBell } from './ui/NotificationBell';
 import { PageTransition } from './ui/PageTransition';
 import {
   LayoutDashboard,
@@ -196,8 +197,11 @@ export function Layout({ children }: LayoutProps) {
 
             <div className="flex-1" />
 
+            {/* Notification bell */}
+            <NotificationBell />
+
             {/* User menu */}
-            <div className="relative">
+            <div className="relative ml-2">
               <button
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
                 className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"

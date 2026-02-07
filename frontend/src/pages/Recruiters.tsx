@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { toast } from 'sonner';
 import { recruiterApi } from '../lib/api';
 import { Users, Plus, Search, Filter } from 'lucide-react';
 import { AddRecruiterModal } from '../components/recruiters/AddRecruiterModal';
@@ -41,12 +42,14 @@ export function Recruiters() {
 
   const handleRecruiterAdded = (newRecruiter: Recruiter) => {
     setRecruiters((prev) => [newRecruiter, ...prev]);
+    toast.success('Recruiter added successfully');
   };
 
   const handleRecruiterUpdated = (updatedRecruiter: Recruiter) => {
     setRecruiters((prev) =>
       prev.map((r) => (r.id === updatedRecruiter.id ? updatedRecruiter : r))
     );
+    toast.success('Recruiter updated');
   };
 
   const filteredRecruiters = recruiters.filter((r) =>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -100,8 +101,10 @@ export function AddRecruiterModal({ isOpen, onClose, onSuccess }: AddRecruiterMo
       reset();
       onSuccess(recruiter);
       onClose();
+      toast.success('Recruiter added successfully');
     } catch (err) {
       console.error('Error creating recruiter:', err);
+      toast.error('Failed to add recruiter');
       setError('Failed to add recruiter. Please try again.');
     } finally {
       setIsSubmitting(false);

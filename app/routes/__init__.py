@@ -9,6 +9,7 @@ from app.routes.activity import activity_bp
 from app.routes.ai import ai_bp
 from app.routes.auth import auth_bp
 from app.routes.message import message_bp
+from app.routes.notification import notification_bp
 from app.routes.recruiter import recruiter_bp
 from app.routes.resume import resume_bp
 
@@ -19,4 +20,5 @@ __all__ = [
     "message_bp",
     "activity_bp",
     "ai_bp",
+    "notification_bp",
 ]

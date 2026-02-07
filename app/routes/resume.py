@@ -29,11 +29,11 @@ def upload_resume():
     user_id = get_jwt_identity()
 
     if "file" not in request.files:
-        return jsonify({"error": "No file provided"}), 400
+        return jsonify({"success": False, "data": {"error": "No file provided"}}), 400
 
     file = request.files["file"]
     if not file.filename:
-        return jsonify({"error": "No file selected"}), 400
+        return jsonify({"success": False, "data": {"error": "No file selected"}}), 400
 
     title = request.form.get("title")
     is_master = request.form.get("is_master", "false").lower() == "true"
@@ -48,20 +48,20 @@ def upload_resume():
 
         return (
             jsonify(
-                {
+                {"success": True, "data": {
                     "message": "Resume uploaded successfully",
                     "resume": resume.to_dict(),
                     "ats_analysis": ats_result,
-                }
+                }}
             ),
             201,
         )
 
     except ValueError as e:
-        return jsonify({"error": str(e)}), 400
+        return jsonify({"success": False, "data": {"error": str(e)}}), 400
     except Exception as e:
         current_app.logger.error(f"Resume upload error: {str(e)}")
-        return jsonify({"error": "Failed to process resume"}), 500
+        return jsonify({"success": False, "data": {"error": "Failed to process resume"}}), 500
 
 
 @resume_bp.route("", methods=["GET"])
@@ -83,10 +83,10 @@ def get_resumes():
 
     return (
         jsonify(
-            {
+            {"success": True, "data": {
                 "resumes": [r.to_dict() for r in resumes],
                 "count": len(resumes),
-            }
+            }}
         ),
         200,
     )
@@ -105,13 +105,13 @@ def get_master_resume():
     resume = ResumeService.get_master_resume(user_id)
 
     if not resume:
-        return jsonify({"resume": None, "message": "No master resume set"}), 200
+        return jsonify({"success": True, "data": {"resume": None, "message": "No master resume set"}}), 200
 
     return (
         jsonify(
-            {
+            {"success": True, "data": {
                 "resume": resume.to_dict(include_analysis=True),
-            }
+            }}
         ),
         200,
     )
@@ -130,13 +130,13 @@ def get_resume(resume_id):
     resume = ResumeService.get_resume(resume_id, user_id)
 
     if not resume:
-        return jsonify({"error": "Resume not found"}), 404
+        return jsonify({"success": False, "data": {"error": "Resume not found"}}), 404
 
     return (
         jsonify(
-            {
+            {"success": True, "data": {
                 "resume": resume.to_dict(include_analysis=True),
-            }
+            }}
         ),
         200,
     )
@@ -155,9 +155,9 @@ def delete_resume(resume_id):
 
     try:
         ResumeService.delete_resume(resume_id, user_id)
-        return jsonify({"message": "Resume deleted successfully"}), 200
+        return jsonify({"success": True, "data": {"message": "Resume deleted successfully"}}), 200
     except ValueError as e:
-        return jsonify({"error": str(e)}), 404
+        return jsonify({"success": False, "data": {"error": str(e)}}), 404
 
 
 @resume_bp.route("/<resume_id>/master", methods=["PUT"])
@@ -175,15 +175,15 @@ def set_master(resume_id):
         resume = ResumeService.set_master_resume(resume_id, user_id)
         return (
             jsonify(
-                {
+                {"success": True, "data": {
                     "message": "Master resume updated",
                     "resume": resume.to_dict(),
-                }
+                }}
             ),
             200,
         )
     except ValueError as e:
-        return jsonify({"error": str(e)}), 404
+        return jsonify({"success": False, "data": {"error": str(e)}}), 404
 
 
 @resume_bp.route("/<resume_id>/score", methods=["POST"])
@@ -206,7 +206,7 @@ def score_for_job(resume_id):
     target_role = data.get("target_role")
 
     if not job_keywords:
-        return jsonify({"error": "job_keywords is required"}), 400
+        return jsonify({"success": False, "data": {"error": "job_keywords is required"}}), 400
 
     try:
         result = ResumeService.score_for_job(
@@ -218,19 +218,19 @@ def score_for_job(resume_id):
 
         return (
             jsonify(
-                {
+                {"success": True, "data": {
                     "score": result["total_score"],
                     "components": result["components"],
                     "recommendations": result["recommendations"],
                     "missing_keywords": result["missing_keywords"],
                     "weak_sections": result["weak_sections"],
-                }
+                }}
             ),
             200,
         )
 
     except ValueError as e:
-        return jsonify({"error": str(e)}), 404
+        return jsonify({"success": False, "data": {"error": str(e)}}), 404
 
 
 @resume_bp.route("/<resume_id>/tailor", methods=["POST"])
@@ -253,7 +253,7 @@ def create_tailored_version(resume_id):
 
     target_job_title = data.get("target_job_title")
     if not target_job_title:
-        return jsonify({"error": "target_job_title is required"}), 400
+        return jsonify({"success": False, "data": {"error": "target_job_title is required"}}), 400
 
     target_company = data.get("target_company")
     optimized_text = data.get("optimized_text")
@@ -275,16 +275,16 @@ def create_tailored_version(resume_id):
 
         return (
             jsonify(
-                {
+                {"success": True, "data": {
                     "message": "Tailored resume created",
                     "resume": tailored.to_dict(include_analysis=True),
-                }
+                }}
             ),
             201,
         )
 
     except ValueError as e:
-        return jsonify({"error": str(e)}), 404
+        return jsonify({"success": False, "data": {"error": str(e)}}), 404
 
 
 @resume_bp.route("/<resume_id>/suggestions", methods=["GET"])
@@ -300,9 +300,9 @@ def get_suggestions(resume_id):
 
     try:
         suggestions = ResumeService.get_optimization_suggestions(resume_id, user_id)
-        return jsonify(suggestions), 200
+        return jsonify({"success": True, "data": suggestions}), 200
     except ValueError as e:
-        return jsonify({"error": str(e)}), 404
+        return jsonify({"success": False, "data": {"error": str(e)}}), 404
 
 
 @resume_bp.route("/<resume_id>/analysis", methods=["GET"])
@@ -320,7 +320,7 @@ def get_analysis(resume_id):
     resume = ResumeService.get_resume(resume_id, user_id)
 
     if not resume:
-        return jsonify({"error": "Resume not found"}), 404
+        return jsonify({"success": False, "data": {"error": "Resume not found"}}), 404
 
     # Helper to ensure JSON fields are properly deserialized
     def ensure_list(value):
@@ -335,7 +335,7 @@ def get_analysis(resume_id):
 
     return (
         jsonify(
-            {
+            {"success": True, "data": {
                 "resume_id": str(resume.id),
                 "title": resume.title,
                 "ats_analysis": {
@@ -353,7 +353,7 @@ def get_analysis(resume_id):
                     "weak_sections": ensure_list(resume.weak_sections),
                     "missing_keywords": ensure_list(resume.missing_keywords),
                 },
-            }
+            }}
         ),
         200,
     )

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -224,9 +225,11 @@ export function Settings() {
       });
       await refreshUser();
       setProfileSuccess(true);
+      toast.success('Profile updated successfully');
       setTimeout(() => setProfileSuccess(false), 3000);
     } catch (err) {
       console.error('Error updating profile:', err);
+      toast.error('Failed to update profile');
       setError('Failed to update profile. Please try again.');
     } finally {
       setIsUpdatingProfile(false);
@@ -245,10 +248,12 @@ export function Settings() {
       });
       resetPassword();
       setPasswordSuccess(true);
+      toast.success('Password changed successfully');
       setTimeout(() => setPasswordSuccess(false), 3000);
     } catch (err: unknown) {
       const apiError = err as { response?: { data?: { message?: string } } };
       console.error('Error changing password:', err);
+      toast.error('Failed to change password');
       setError(apiError.response?.data?.message || 'Failed to change password. Please try again.');
     } finally {
       setIsChangingPassword(false);

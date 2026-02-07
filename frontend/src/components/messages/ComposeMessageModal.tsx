@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -164,6 +165,7 @@ export function ComposeMessageModal({
       }
     } catch (err) {
       console.error('Error generating message:', err);
+      toast.error('Failed to generate message');
       setError('Failed to generate message. Please try again.');
     } finally {
       setIsGenerating(false);
@@ -191,8 +193,10 @@ export function ComposeMessageModal({
       reset();
       onSuccess(message);
       onClose();
+      toast.success(editMessage ? 'Message updated' : 'Message created');
     } catch (err) {
       console.error('Error saving message:', err);
+      toast.error('Failed to save message');
       setError('Failed to save message. Please try again.');
     } finally {
       setIsSubmitting(false);

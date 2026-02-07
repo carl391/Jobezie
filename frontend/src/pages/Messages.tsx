@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { toast } from 'sonner';
 import {
   MessageSquare,
   Plus,
@@ -105,7 +106,9 @@ export function Messages() {
       await messageApi.delete(messageId);
       setMessages((prev) => prev.filter((m) => m.id !== messageId));
       fetchStats();
+      toast.success('Message deleted');
     } catch (error) {
+      toast.error('Failed to delete message');
       console.error('Failed to delete message:', error);
     }
   };
@@ -118,7 +121,9 @@ export function Messages() {
         prev.map((m) => (m.id === messageId ? updatedMessage : m))
       );
       fetchStats();
+      toast.success('Message marked as sent');
     } catch (error) {
+      toast.error('Failed to mark message as sent');
       console.error('Failed to mark message as sent:', error);
     }
   };

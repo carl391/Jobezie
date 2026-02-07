@@ -4,10 +4,13 @@ Labor Market Routes
 Provides labor market intelligence endpoints.
 """
 
+import json
+import logging
+
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
-from app.extensions import db
+from app.extensions import db, token_blocklist
 from app.models.user import User
 from app.services.labor_market_service import (
     LaborMarketService,
@@ -15,7 +18,34 @@ from app.services.labor_market_service import (
 )
 from app.utils.decorators import feature_limit
 
+logger = logging.getLogger(__name__)
+
 labor_market_bp = Blueprint("labor_market", __name__, url_prefix="/api/labor-market")
+
+
+# --- Redis cache helpers ---
+
+def _cache_get(key: str):
+    """Get a value from Redis cache, returns None on miss or error."""
+    try:
+        client = token_blocklist._redis_client
+        if client:
+            val = client.get(key)
+            if val:
+                return json.loads(val)
+    except Exception:
+        pass
+    return None
+
+
+def _cache_set(key: str, data, ttl: int = 60):
+    """Set a value in Redis cache with TTL (seconds)."""
+    try:
+        client = token_blocklist._redis_client
+        if client:
+            client.setex(key, ttl, json.dumps(data))
+    except Exception:
+        pass
 
 
 @labor_market_bp.route("/overview", methods=["GET"])
@@ -27,7 +57,12 @@ def get_market_overview():
     Returns:
         200: Market overview with key indicators
     """
+    cached = _cache_get("market:overview")
+    if cached:
+        return jsonify({"success": True, "data": cached}), 200
+
     overview = get_market_overview_sync()
+    _cache_set("market:overview", overview, ttl=600)
 
     return jsonify({"success": True, "data": overview}), 200
 
@@ -64,11 +99,17 @@ def get_shortage_score():
     industry = request.args.get("industry")
     location = request.args.get("location")
 
+    cache_key = f"shortage:{role}:{industry or ''}:{location or ''}"
+    cached = _cache_get(cache_key)
+    if cached:
+        return jsonify({"success": True, "data": cached}), 200
+
     shortage = LaborMarketService.calculate_shortage_score(
         role=role,
         industry=industry,
         location=location,
     )
+    _cache_set(cache_key, shortage, ttl=60)
 
     return jsonify({"success": True, "data": shortage}), 200
 
@@ -317,6 +358,11 @@ def search_occupations():
     if len(query) < 2:
         return jsonify({"success": True, "data": []}), 200
 
+    cache_key = f"onet:search:occ:{query.lower()}:{limit}"
+    cached = _cache_get(cache_key)
+    if cached:
+        return jsonify({"success": True, "data": cached}), 200
+
     occupations = (
         Occupation.query.filter(Occupation.title.ilike(f"%{query}%"))
         .order_by(Occupation.bright_outlook.desc(), Occupation.title)
@@ -332,6 +378,8 @@ def search_occupations():
         item["shortage_score"] = shortage["total_score"]
         item["demand_level"] = shortage["interpretation"]
         results.append(item)
+
+    _cache_set(cache_key, results, ttl=300)
 
     return jsonify({"success": True, "data": results}), 200
 
@@ -359,6 +407,11 @@ def search_skills():
     if len(query) < 2:
         return jsonify({"success": True, "data": []}), 200
 
+    cache_key = f"onet:search:skill:{query.lower()}:{category or 'all'}:{limit}"
+    cached = _cache_get(cache_key)
+    if cached:
+        return jsonify({"success": True, "data": cached}), 200
+
     q = Skill.query.filter(Skill.name.ilike(f"%{query}%"))
 
     if category and category in ("skills", "abilities", "knowledge"):
@@ -367,6 +420,7 @@ def search_skills():
     skills = q.order_by(Skill.category, Skill.name).limit(limit).all()
 
     results = [s.to_dict() for s in skills]
+    _cache_set(cache_key, results, ttl=300)
 
     return jsonify({"success": True, "data": results}), 200
 

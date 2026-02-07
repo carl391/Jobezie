@@ -37,13 +37,13 @@ def log_activity():
 
     activity_type = data.get("activity_type")
     if not activity_type:
-        return jsonify({"error": "activity_type is required"}), 400
+        return jsonify({"success": False, "data": {"error": "activity_type is required"}}), 400
 
     # Validate activity type
     valid_types = [t.value for t in ActivityType]
     if activity_type not in valid_types:
         return (
-            jsonify({"error": f'Invalid activity_type. Must be one of: {", ".join(valid_types)}'}),
+            jsonify({"success": False, "data": {"error": f'Invalid activity_type. Must be one of: {", ".join(valid_types)}'}}),
             400,
         )
 
@@ -60,8 +60,11 @@ def log_activity():
     return (
         jsonify(
             {
-                "message": "Activity logged",
-                "activity": activity.to_dict(),
+                "success": True,
+                "data": {
+                    "message": "Activity logged",
+                    "activity": activity.to_dict(),
+                },
             }
         ),
         201,
@@ -122,11 +125,14 @@ def get_activities():
     return (
         jsonify(
             {
-                "activities": [a.to_dict() for a in activities],
-                "total": total,
-                "limit": limit,
-                "offset": offset,
-                "has_more": (offset + len(activities)) < total,
+                "success": True,
+                "data": {
+                    "activities": [a.to_dict() for a in activities],
+                    "total": total,
+                    "limit": limit,
+                    "offset": offset,
+                    "has_more": (offset + len(activities)) < total,
+                },
             }
         ),
         200,
@@ -153,7 +159,10 @@ def get_recent():
     return (
         jsonify(
             {
-                "activities": [a.to_dict() for a in activities],
+                "success": True,
+                "data": {
+                    "activities": [a.to_dict() for a in activities],
+                },
             }
         ),
         200,
@@ -177,7 +186,7 @@ def get_counts():
 
     counts = ActivityService.get_activity_counts(user_id, days)
 
-    return jsonify(counts), 200
+    return jsonify({"success": True, "data": counts}), 200
 
 
 @activity_bp.route("/timeline", methods=["GET"])
@@ -206,7 +215,10 @@ def get_timeline():
     return (
         jsonify(
             {
-                "timeline": timeline,
+                "success": True,
+                "data": {
+                    "timeline": timeline,
+                },
             }
         ),
         200,
@@ -225,7 +237,7 @@ def get_weekly_summary():
     user_id = get_jwt_identity()
     summary = ActivityService.get_weekly_summary(user_id)
 
-    return jsonify(summary), 200
+    return jsonify({"success": True, "data": summary}), 200
 
 
 @activity_bp.route("/types", methods=["GET"])
@@ -239,7 +251,7 @@ def get_types():
     """
     types = [{"value": t.value, "label": t.value.replace("_", " ").title()} for t in ActivityType]
 
-    return jsonify({"types": types}), 200
+    return jsonify({"success": True, "data": {"types": types}}), 200
 
 
 # Pipeline / Kanban Endpoints
@@ -260,8 +272,11 @@ def get_pipeline():
     return (
         jsonify(
             {
-                "pipeline": pipeline,
-                "stages": [s.value for s in PipelineStage],
+                "success": True,
+                "data": {
+                    "pipeline": pipeline,
+                    "stages": [s.value for s in PipelineStage],
+                },
             }
         ),
         200,
@@ -280,7 +295,7 @@ def get_pipeline_stats():
     user_id = get_jwt_identity()
     stats = ActivityService.get_pipeline_stats(user_id)
 
-    return jsonify(stats), 200
+    return jsonify({"success": True, "data": stats}), 200
 
 
 @activity_bp.route("/pipeline/stages", methods=["GET"])
@@ -294,7 +309,7 @@ def get_stages():
     """
     stages = [{"value": s.value, "label": s.value.replace("_", " ").title()} for s in PipelineStage]
 
-    return jsonify({"stages": stages}), 200
+    return jsonify({"success": True, "data": {"stages": stages}}), 200
 
 
 @activity_bp.route("/pipeline/<item_id>/move", methods=["PUT"])
@@ -315,7 +330,7 @@ def move_item(item_id):
 
     stage = data.get("stage")
     if not stage:
-        return jsonify({"error": "stage is required"}), 400
+        return jsonify({"success": False, "data": {"error": "stage is required"}}), 400
 
     try:
         item = ActivityService.move_pipeline_item(
@@ -328,15 +343,18 @@ def move_item(item_id):
         return (
             jsonify(
                 {
-                    "message": f"Moved to {stage}",
-                    "item": item.to_dict(),
+                    "success": True,
+                    "data": {
+                        "message": f"Moved to {stage}",
+                        "item": item.to_dict(),
+                    },
                 }
             ),
             200,
         )
 
     except ValueError as e:
-        return jsonify({"error": str(e)}), 400
+        return jsonify({"success": False, "data": {"error": str(e)}}), 400
 
 
 @activity_bp.route("/pipeline/refresh", methods=["POST"])
@@ -358,9 +376,12 @@ def refresh_pipeline():
     return (
         jsonify(
             {
-                "message": "Pipeline refreshed",
-                "days_in_stage_updated": days_updated,
-                "priority_scores_updated": priorities_updated,
+                "success": True,
+                "data": {
+                    "message": "Pipeline refreshed",
+                    "days_in_stage_updated": days_updated,
+                    "priority_scores_updated": priorities_updated,
+                },
             }
         ),
         200,

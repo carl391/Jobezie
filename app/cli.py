@@ -78,18 +78,40 @@ def seed_market_data(onet_path, skip_bls):
 
 
 def _seed_onet_occupations(filepath):
-    """Load O*NET occupation data."""
+    """Load O*NET occupation data with Job Zone cross-reference."""
     click.echo(f"Loading O*NET occupations from {filepath}...")
     count = 0
+
+    # Load Job Zones for cross-reference
+    job_zones = {}
+    onet_dir = os.path.dirname(filepath)
+    jz_path = os.path.join(onet_dir, "db_30_1_text", "Job Zones.txt")
+    if not os.path.exists(jz_path):
+        jz_path = os.path.join(onet_dir, "Job Zones.txt")
+
+    if os.path.exists(jz_path):
+        click.echo(f"  Loading Job Zones from {jz_path}...")
+        with open(jz_path, "r", encoding="utf-8") as jzf:
+            jz_reader = csv.DictReader(jzf, delimiter="\t")
+            for jz_row in jz_reader:
+                code = jz_row.get("O*NET-SOC Code", "")
+                zone = jz_row.get("Job Zone", "")
+                if code and zone:
+                    job_zones[code] = int(zone)
+        click.echo(f"  Found {len(job_zones)} Job Zone assignments")
+    else:
+        click.echo("  Warning: Job Zones.txt not found, skipping job_zone")
 
     try:
         with open(filepath, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f, delimiter="\t")
             for row in reader:
+                code = row.get("O*NET-SOC Code", row.get("Code", ""))
                 occ = Occupation(
-                    id=row.get("O*NET-SOC Code", row.get("Code", "")),
+                    id=code,
                     title=row.get("Title", ""),
                     description=row.get("Description", ""),
+                    job_zone=job_zones.get(code),
                 )
                 db.session.merge(occ)
                 count += 1
@@ -99,7 +121,7 @@ def _seed_onet_occupations(filepath):
                     click.echo(f"  Loaded {count} occupations...")
 
         db.session.commit()
-        click.echo(f"Loaded {count} O*NET occupations")
+        click.echo(f"Loaded {count} O*NET occupations ({len(job_zones)} with job zones)")
 
     except Exception as e:
         click.echo(f"Error loading occupations: {e}")
@@ -107,10 +129,19 @@ def _seed_onet_occupations(filepath):
 
 
 def _seed_onet_elements(filepath: str, category: str):
-    """Load O*NET element data (skills, abilities, or knowledge)."""
+    """
+    Load O*NET element data (skills, abilities, or knowledge).
+
+    Handles dual-scale format: each (occupation, skill) pair has two rows:
+    - Scale ID "IM" = Importance (1-5 scale, normalized to 0-100)
+    - Scale ID "LV" = Level (0-7 scale, normalized to 0-100)
+    """
     click.echo(f"Loading O*NET {category} from {filepath}...")
     elements_loaded = set()
-    mappings_count = 0
+
+    # Collect both IM and LV values per (occupation, skill) pair
+    # Key: (occ_code, element_id) -> {"importance": float, "level": float}
+    pair_data: dict[tuple[str, str], dict[str, float]] = {}
 
     try:
         with open(filepath, "r", encoding="utf-8") as f:
@@ -119,6 +150,8 @@ def _seed_onet_elements(filepath: str, category: str):
                 element_id = row.get("Element ID", "")
                 element_name = row.get("Element Name", "")
                 occ_code = row.get("O*NET-SOC Code", "")
+                scale_id = row.get("Scale ID", "")
+                raw_value = float(row.get("Data Value", 0)) if row.get("Data Value") else 0
 
                 # Create skill/ability/knowledge if not exists
                 if element_id and element_id not in elements_loaded:
@@ -130,22 +163,53 @@ def _seed_onet_elements(filepath: str, category: str):
                     db.session.merge(skill)
                     elements_loaded.add(element_id)
 
-                # Create occupation-element mapping
+                # Collect scale values per pair
                 if occ_code and element_id:
-                    importance = float(row.get("Data Value", 0)) if row.get("Data Value") else 0
-                    occ_skill = OccupationSkill(
-                        occupation_id=occ_code,
-                        skill_id=element_id,
-                        importance=importance,
-                    )
-                    db.session.merge(occ_skill)
-                    mappings_count += 1
+                    key = (occ_code, element_id)
+                    if key not in pair_data:
+                        pair_data[key] = {}
 
-                if mappings_count % 500 == 0:
-                    db.session.commit()
+                    if scale_id == "IM":
+                        # Importance: 1-5 scale -> normalize to 0-100
+                        pair_data[key]["importance"] = round((raw_value - 1) / 4 * 100, 1)
+                    elif scale_id == "LV":
+                        # Level: 0-7 scale -> normalize to 0-100
+                        pair_data[key]["level"] = round(raw_value / 7 * 100, 1)
 
+        # Commit skills first
         db.session.commit()
-        click.echo(f"Loaded {len(elements_loaded)} {category}, {mappings_count} occupation mappings")
+        click.echo(f"  Found {len(elements_loaded)} unique {category}, {len(pair_data)} occupation mappings")
+
+        # Clear existing mappings for this category to avoid merge overhead
+        skill_ids = list(elements_loaded)
+        if skill_ids:
+            OccupationSkill.query.filter(OccupationSkill.skill_id.in_(skill_ids)).delete(
+                synchronize_session=False
+            )
+            db.session.commit()
+
+        # Batch insert mappings
+        batch = []
+        for (occ_code, element_id), values in pair_data.items():
+            batch.append(
+                OccupationSkill(
+                    occupation_id=occ_code,
+                    skill_id=element_id,
+                    importance=values.get("importance", 0),
+                    level=values.get("level", 0),
+                )
+            )
+
+            if len(batch) >= 1000:
+                db.session.bulk_save_objects(batch)
+                db.session.commit()
+                batch = []
+
+        if batch:
+            db.session.bulk_save_objects(batch)
+            db.session.commit()
+
+        click.echo(f"Loaded {len(elements_loaded)} {category}, {len(pair_data)} occupation mappings")
 
     except FileNotFoundError:
         click.echo(f"Warning: {filepath} not found, skipping {category}")

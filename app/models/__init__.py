@@ -14,6 +14,7 @@ from app.models.labor_market import (
     Skill,
 )
 from app.models.message import Message, MessageStatus, MessageType
+from app.models.notification import Notification, NotificationType
 from app.models.recruiter import Recruiter, RecruiterNote, RecruiterStatus
 from app.models.resume import Resume, ResumeVersion
 from app.models.user import GUID, CareerStage, JSONType, SubscriptionTier, User
@@ -36,6 +37,9 @@ __all__ = [
     "Message",
     "MessageType",
     "MessageStatus",
+    # Notification
+    "Notification",
+    "NotificationType",
     # Activity
     "Activity",
     "ActivityType",

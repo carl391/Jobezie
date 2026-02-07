@@ -191,13 +191,34 @@ export interface PipelineItem {
   is_urgent: boolean;
 }
 
-// Dashboard types
+// Dashboard types — matches backend GET /api/dashboard response
 export interface DashboardData {
+  user: {
+    id: string;
+    email: string;
+    full_name: string;
+    subscription_tier: string;
+    onboarding_completed: boolean;
+  };
+  stats: {
+    resumes: number;
+    recruiters: number;
+    active_recruiters: number;
+    messages: number;
+    messages_this_week: number;
+    response_rate: number;
+  };
+  master_resume: Resume | null;
   career_readiness: CareerReadiness;
-  pipeline_summary: PipelineSummary;
+  pipeline_summary: Record<string, number>;
   recent_activities: Activity[];
-  usage_stats: UsageStats;
-  follow_up_recommendations: FollowUpRecommendation[];
+  follow_up_needed: FollowUpNeeded[];
+  usage: {
+    recruiters: { used: number; limit: number };
+    messages: { used: number; limit: number };
+    research: { used: number; limit: number };
+    tailored_resumes: { used: number; limit: number };
+  };
 }
 
 export interface CareerReadiness {
@@ -208,31 +229,12 @@ export interface CareerReadiness {
   application_activity: number;
 }
 
-export interface PipelineSummary {
-  total: number;
-  by_stage: Record<string, number>;
-  response_rate: number;
-  avg_days_to_response: number;
-}
-
-export interface UsageStats {
-  messages_sent_this_week: number;
-  resumes_tailored_this_month: number;
-  ai_coaching_sessions: number;
-  tier_limits: {
-    messages: { used: number; limit: number };
-    resumes: { used: number; limit: number };
-    coaching: { used: number; limit: number };
-  };
-}
-
-export interface FollowUpRecommendation {
-  recruiter_id: string;
-  recruiter_name: string;
+export interface FollowUpNeeded {
+  id: string;
+  full_name: string;
   company: string;
-  reason: string;
-  priority: 'high' | 'medium' | 'low';
-  suggested_action: string;
+  days_since_contact: number;
+  follow_up_count: number;
 }
 
 // Labor Market types
