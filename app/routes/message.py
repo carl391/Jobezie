@@ -7,13 +7,18 @@ API endpoints for message management and quality scoring.
 from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
+from app.extensions import db
+from app.models.user import User
 from app.services.message_service import MessageService
+from app.utils.decorators import feature_limit
+from app.utils.validators import validate_text_fields
 
 message_bp = Blueprint("message", __name__, url_prefix="/api/messages")
 
 
 @message_bp.route("", methods=["POST"])
 @jwt_required()
+@feature_limit("ai_messages")
 def create_message():
     """
     Create a new message with quality scoring.
@@ -34,23 +39,37 @@ def create_message():
     user_id = get_jwt_identity()
     data = request.get_json() or {}
 
-    body = data.get("body")
-    if not body:
-        return jsonify({"error": "body is required"}), 400
+    # Validate and sanitize text fields
+    schema = {
+        'body': {'required': True, 'max_length': 10000},
+        'subject': {'required': False, 'max_length': 500},
+        'signature': {'required': False, 'max_length': 500},
+        'message_type': {'required': False, 'max_length': 50},
+        'generation_prompt': {'required': False, 'max_length': 5000},
+    }
+    validated, errors = validate_text_fields(data, schema)
+    if errors:
+        return jsonify({'success': False, 'errors': errors}), 400
 
     try:
         message, quality_result = MessageService.create_message(
             user_id=user_id,
-            body=body,
-            message_type=data.get("message_type", "initial_outreach"),
-            subject=data.get("subject"),
+            body=validated["body"],
+            message_type=validated.get("message_type") or "initial_outreach",
+            subject=validated.get("subject"),
             recruiter_id=data.get("recruiter_id"),
-            signature=data.get("signature"),
+            signature=validated.get("signature"),
             is_ai_generated=data.get("is_ai_generated", False),
-            generation_prompt=data.get("generation_prompt"),
+            generation_prompt=validated.get("generation_prompt"),
             generation_context=data.get("generation_context"),
             ai_model_used=data.get("ai_model_used"),
         )
+
+        # Increment usage counter
+        current_user = User.query.get(user_id)
+        if current_user:
+            current_user.monthly_message_count += 1
+            db.session.commit()
 
         return (
             jsonify(

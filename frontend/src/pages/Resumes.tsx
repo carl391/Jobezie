@@ -20,7 +20,7 @@ export function Resumes() {
   const fetchResumes = useCallback(async () => {
     try {
       const response = await resumeApi.list();
-      setResumes(response.data.resumes || []);
+      setResumes(response.data.data?.resumes || response.data.resumes || []);
     } catch (error) {
       console.error('Failed to fetch resumes:', error);
     } finally {

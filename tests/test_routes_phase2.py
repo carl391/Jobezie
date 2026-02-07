@@ -2,6 +2,7 @@
 Tests for Phase 2 Routes
 
 Tests the Resume, Recruiter, Message, and Activity API endpoints.
+Updated to handle standardized {success, data} response wrapper.
 """
 
 import io
@@ -11,6 +12,14 @@ from app.models.activity import Activity, PipelineItem
 from app.models.message import Message
 from app.models.recruiter import Recruiter
 from app.models.resume import Resume
+
+
+def get_data(response):
+    """Extract data from standardized API response."""
+    json_data = response.json
+    if isinstance(json_data, dict) and "data" in json_data and "success" in json_data:
+        return json_data["data"]
+    return json_data
 
 
 class TestResumeRoutes:
@@ -31,9 +40,10 @@ class TestResumeRoutes:
         )
 
         assert response.status_code == 201
-        assert "resume" in response.json
-        assert response.json["resume"]["title"] == "My Test Resume"
-        assert "ats_analysis" in response.json
+        rdata = get_data(response)
+        assert "resume" in rdata
+        assert rdata["resume"]["title"] == "My Test Resume"
+        assert "ats_analysis" in rdata
 
     def test_upload_no_file(self, client, auth_headers):
         """Test upload with no file."""
@@ -48,7 +58,6 @@ class TestResumeRoutes:
 
     def test_get_resumes(self, client, auth_headers, test_user, app):
         """Test getting all resumes."""
-        # Create a resume first
         with app.app_context():
             resume = Resume(
                 user_id=test_user.id,
@@ -63,8 +72,9 @@ class TestResumeRoutes:
         response = client.get("/api/resumes", headers=auth_headers)
 
         assert response.status_code == 200
-        assert "resumes" in response.json
-        assert len(response.json["resumes"]) >= 1
+        rdata = get_data(response)
+        assert "resumes" in rdata
+        assert len(rdata["resumes"]) >= 1
 
     def test_get_master_resume(self, client, auth_headers, test_user, app):
         """Test getting master resume."""
@@ -83,7 +93,8 @@ class TestResumeRoutes:
         response = client.get("/api/resumes/master", headers=auth_headers)
 
         assert response.status_code == 200
-        assert response.json["resume"]["title"] == "Master Resume"
+        rdata = get_data(response)
+        assert rdata["resume"]["title"] == "Master Resume"
 
     def test_score_for_job(self, client, auth_headers, test_user, app):
         """Test scoring resume against job keywords."""
@@ -109,8 +120,9 @@ class TestResumeRoutes:
         )
 
         assert response.status_code == 200
-        assert "score" in response.json
-        assert "missing_keywords" in response.json
+        rdata = get_data(response)
+        assert "score" in rdata
+        assert "missing_keywords" in rdata
 
 
 class TestRecruiterRoutes:
@@ -133,7 +145,8 @@ class TestRecruiterRoutes:
         )
 
         assert response.status_code == 201
-        assert response.json["recruiter"]["first_name"] == "Jane"
+        rdata = get_data(response)
+        assert rdata["recruiter"]["first_name"] == "Jane"
 
     def test_create_recruiter_missing_fields(self, client, auth_headers):
         """Test creating recruiter with missing required fields."""
@@ -159,15 +172,17 @@ class TestRecruiterRoutes:
         response = client.get("/api/recruiters", headers=auth_headers)
 
         assert response.status_code == 200
-        assert "recruiters" in response.json
+        rdata = get_data(response)
+        assert "recruiters" in rdata
 
     def test_get_recruiter_stats(self, client, auth_headers):
         """Test getting pipeline statistics."""
         response = client.get("/api/recruiters/stats", headers=auth_headers)
 
         assert response.status_code == 200
-        assert "total" in response.json
-        assert "by_stage" in response.json
+        rdata = get_data(response)
+        assert "total" in rdata
+        assert "by_stage" in rdata
 
     def test_update_recruiter_stage(self, client, auth_headers, test_user, app):
         """Test updating recruiter pipeline stage."""
@@ -181,7 +196,6 @@ class TestRecruiterRoutes:
             db.session.add(recruiter)
             db.session.commit()
 
-            # Also create pipeline item
             item = PipelineItem(
                 user_id=test_user.id,
                 recruiter_id=recruiter.id,
@@ -198,7 +212,8 @@ class TestRecruiterRoutes:
         )
 
         assert response.status_code == 200
-        assert response.json["recruiter"]["status"] == "contacted"
+        rdata = get_data(response)
+        assert rdata["recruiter"]["status"] == "contacted"
 
     def test_record_message_sent(self, client, auth_headers, test_user, app):
         """Test recording message sent to recruiter."""
@@ -220,7 +235,8 @@ class TestRecruiterRoutes:
         )
 
         assert response.status_code == 200
-        assert response.json["messages_sent"] == 1
+        rdata = get_data(response)
+        assert rdata["messages_sent"] == 1
 
     def test_add_note(self, client, auth_headers, test_user, app):
         """Test adding a note to recruiter."""
@@ -244,7 +260,8 @@ class TestRecruiterRoutes:
         )
 
         assert response.status_code == 201
-        assert response.json["note"]["content"] == "Great call today"
+        rdata = get_data(response)
+        assert rdata["note"]["content"] == "Great call today"
 
 
 class TestMessageRoutes:
@@ -262,8 +279,9 @@ class TestMessageRoutes:
         )
 
         assert response.status_code == 201
-        assert "message" in response.json
-        assert "quality_analysis" in response.json
+        rdata = get_data(response)
+        assert "message" in rdata
+        assert "quality_analysis" in rdata
 
     def test_create_message_no_body(self, client, auth_headers):
         """Test creating message without body."""
@@ -288,15 +306,17 @@ class TestMessageRoutes:
         response = client.get("/api/messages", headers=auth_headers)
 
         assert response.status_code == 200
-        assert "messages" in response.json
+        rdata = get_data(response)
+        assert "messages" in rdata
 
     def test_get_message_stats(self, client, auth_headers):
         """Test getting message statistics."""
         response = client.get("/api/messages/stats", headers=auth_headers)
 
         assert response.status_code == 200
-        assert "total" in response.json
-        assert "by_status" in response.json
+        rdata = get_data(response)
+        assert "total" in rdata
+        assert "by_status" in rdata
 
     def test_validate_message(self, client, auth_headers):
         """Test quick message validation."""
@@ -310,8 +330,9 @@ class TestMessageRoutes:
         )
 
         assert response.status_code == 200
-        assert "is_optimal" in response.json
-        assert "word_count" in response.json
+        rdata = get_data(response)
+        assert "is_optimal" in rdata
+        assert "word_count" in rdata
 
     def test_get_tips(self, client, auth_headers):
         """Test getting message tips."""
@@ -321,8 +342,9 @@ class TestMessageRoutes:
         )
 
         assert response.status_code == 200
-        assert "structure" in response.json
-        assert "research_insights" in response.json
+        rdata = get_data(response)
+        assert "structure" in rdata
+        assert "research_insights" in rdata
 
     def test_mark_sent(self, client, auth_headers, test_user, app):
         """Test marking message as sent."""
@@ -342,7 +364,8 @@ class TestMessageRoutes:
         )
 
         assert response.status_code == 200
-        assert response.json["data"]["status"] == "sent"
+        rdata = get_data(response)
+        assert rdata["data"]["status"] == "sent"
 
 
 class TestActivityRoutes:
@@ -360,7 +383,8 @@ class TestActivityRoutes:
         )
 
         assert response.status_code == 201
-        assert response.json["activity"]["activity_type"] == "message_sent"
+        rdata = get_data(response)
+        assert rdata["activity"]["activity_type"] == "message_sent"
 
     def test_log_activity_invalid_type(self, client, auth_headers):
         """Test logging activity with invalid type."""
@@ -387,45 +411,51 @@ class TestActivityRoutes:
         response = client.get("/api/activities", headers=auth_headers)
 
         assert response.status_code == 200
-        assert "activities" in response.json
+        rdata = get_data(response)
+        assert "activities" in rdata
 
     def test_get_recent_activities(self, client, auth_headers):
         """Test getting recent activities."""
         response = client.get("/api/activities/recent", headers=auth_headers)
 
         assert response.status_code == 200
-        assert "activities" in response.json
+        rdata = get_data(response)
+        assert "activities" in rdata
 
     def test_get_activity_counts(self, client, auth_headers):
         """Test getting activity counts."""
         response = client.get("/api/activities/counts", headers=auth_headers)
 
         assert response.status_code == 200
-        assert "by_type" in response.json
+        rdata = get_data(response)
+        assert "by_type" in rdata
 
     def test_get_pipeline(self, client, auth_headers):
         """Test getting Kanban pipeline."""
         response = client.get("/api/activities/pipeline", headers=auth_headers)
 
         assert response.status_code == 200
-        assert "pipeline" in response.json
-        assert "stages" in response.json
+        rdata = get_data(response)
+        assert "pipeline" in rdata
+        assert "stages" in rdata
 
     def test_get_pipeline_stats(self, client, auth_headers):
         """Test getting pipeline statistics."""
         response = client.get("/api/activities/pipeline/stats", headers=auth_headers)
 
         assert response.status_code == 200
-        assert "total" in response.json
-        assert "by_stage" in response.json
+        rdata = get_data(response)
+        assert "total" in rdata
+        assert "by_stage" in rdata
 
     def test_get_weekly_summary(self, client, auth_headers):
         """Test getting weekly summary."""
         response = client.get("/api/activities/weekly-summary", headers=auth_headers)
 
         assert response.status_code == 200
-        assert "total_activities" in response.json
-        assert "messages_sent" in response.json
+        rdata = get_data(response)
+        assert "total_activities" in rdata
+        assert "messages_sent" in rdata
 
 
 class TestAIRoutes:
@@ -436,8 +466,9 @@ class TestAIRoutes:
         response = client.get("/api/ai/status", headers=auth_headers)
 
         assert response.status_code == 200
-        assert "available" in response.json
-        assert "features" in response.json
+        rdata = get_data(response)
+        assert "available" in rdata
+        assert "features" in rdata
 
     def test_generate_message_no_recruiter(self, client, auth_headers):
         """Test message generation without recruiter ID."""
@@ -469,12 +500,23 @@ class TestAIRoutes:
 
         assert response.status_code == 400
 
-    def test_interview_prep_no_title(self, client, auth_headers):
-        """Test interview prep without job title."""
+    def test_interview_prep_no_title(self, client, auth_headers_pro):
+        """Test interview prep without job title (uses PRO user for access)."""
         response = client.post(
             "/api/ai/interview-prep",
             json={},
-            headers=auth_headers,
+            headers=auth_headers_pro,
         )
 
         assert response.status_code == 400
+
+    def test_interview_prep_blocked_basic(self, client, auth_headers):
+        """Test that BASIC users are blocked from interview prep (0 limit)."""
+        response = client.post(
+            "/api/ai/interview-prep",
+            json={"job_title": "Software Engineer"},
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 429
+        assert response.json["success"] is False

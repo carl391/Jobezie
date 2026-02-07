@@ -7,7 +7,10 @@ API endpoints for resume management and ATS scoring.
 from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
+from app.extensions import db
+from app.models.user import User
 from app.services.resume_service import ResumeService
+from app.utils.decorators import feature_limit
 
 resume_bp = Blueprint("resume", __name__, url_prefix="/api/resumes")
 
@@ -232,6 +235,7 @@ def score_for_job(resume_id):
 
 @resume_bp.route("/<resume_id>/tailor", methods=["POST"])
 @jwt_required()
+@feature_limit("tailored_resumes")
 def create_tailored_version(resume_id):
     """
     Create a tailored version of a resume for a specific job.
@@ -262,6 +266,12 @@ def create_tailored_version(resume_id):
             target_company=target_company,
             optimized_text=optimized_text,
         )
+
+        # Increment usage counter
+        current_user = User.query.get(user_id)
+        if current_user:
+            current_user.monthly_tailoring_count += 1
+            db.session.commit()
 
         return (
             jsonify(

@@ -7,6 +7,7 @@ API endpoints for AI-powered career assistance features.
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
+from app.extensions import db
 from app.services.ai_service import (
     AIService,
     career_coaching_sync,
@@ -16,6 +17,8 @@ from app.services.ai_service import (
 )
 from app.services.message_service import MessageService
 from app.services.resume_service import ResumeService
+from app.utils.decorators import feature_limit
+from app.utils.validators import validate_text_fields
 
 ai_bp = Blueprint("ai", __name__, url_prefix="/api/ai")
 
@@ -50,6 +53,7 @@ def get_status():
 
 @ai_bp.route("/generate-message", methods=["POST"])
 @jwt_required()
+@feature_limit("ai_messages")
 def generate_message():
     """
     Generate an outreach message using AI.
@@ -117,11 +121,19 @@ def generate_message():
         response_data["quality_score"] = quality["total_score"]
         response_data["quality_feedback"] = quality["feedback"]
 
+    # Increment usage counter
+    from app.models.user import User
+    current_user = User.query.get(user_id)
+    if current_user:
+        current_user.monthly_message_count += 1
+        db.session.commit()
+
     return jsonify(response_data), 200
 
 
 @ai_bp.route("/optimize-resume", methods=["POST"])
 @jwt_required()
+@feature_limit("research")
 def optimize_resume():
     """
     Get AI suggestions for resume optimization.
@@ -167,6 +179,13 @@ def optimize_resume():
             500,
         )
 
+    # Increment usage counter
+    from app.models.user import User
+    current_user = User.query.get(user_id)
+    if current_user:
+        current_user.monthly_research_count += 1
+        db.session.commit()
+
     return (
         jsonify(
             {
@@ -183,9 +202,14 @@ def optimize_resume():
 
 @ai_bp.route("/career-coach", methods=["POST"])
 @jwt_required()
+@feature_limit("coach_daily")
 def career_coach():
     """
-    Get AI career coaching response.
+    Get AI career coaching response with algorithm-first context.
+
+    The career coach receives algorithmic scores as context, implementing
+    the algorithm-first principle: scores calculated by algorithm, then
+    passed to AI for contextual advice.
 
     Request body:
         question: Required - User's question
@@ -197,16 +221,26 @@ def career_coach():
     user_id = get_jwt_identity()
     data = request.get_json() or {}
 
-    question = data.get("question")
-    if not question:
-        return jsonify({"error": "question is required"}), 400
+    # Validate and sanitize text fields
+    schema = {
+        'question': {'required': True, 'max_length': 5000},
+    }
+    validated, errors = validate_text_fields(data, schema)
+    if errors:
+        return jsonify({'success': False, 'errors': errors}), 400
+
+    question = validated["question"]
 
     # Get user context from profile
     from app.models.user import User
+    from app.models.resume import Resume
+    from app.models.recruiter import Recruiter
 
     user = User.query.get(user_id)
 
     user_context = None
+    algorithm_context = None
+
     if user:
         user_context = {
             "current_role": user.current_role,
@@ -216,6 +250,9 @@ def career_coach():
             "location": user.location,
         }
 
+        # Algorithm-first: Fetch computed scores as context for AI
+        algorithm_context = _get_algorithm_context(user_id, user)
+
     # Get conversation history if continuing
     conversation_history = data.get("conversation_history", [])
 
@@ -223,6 +260,7 @@ def career_coach():
         question=question,
         user_context=user_context,
         conversation_history=conversation_history,
+        algorithm_context=algorithm_context,
     )
 
     if not result["success"]:
@@ -235,19 +273,124 @@ def career_coach():
             500,
         )
 
+    # Increment usage counter
+    user = User.query.get(user_id)
+    if user:
+        user.daily_coach_count += 1
+        db.session.commit()
+
     return (
         jsonify(
             {
                 "response": result["response"],
                 "provider": result["provider"],
+                "algorithm_context": algorithm_context,
             }
         ),
         200,
     )
 
 
+def _get_algorithm_context(user_id: str, user) -> dict:
+    """
+    Fetch algorithm-computed scores to provide context for AI coaching.
+
+    This implements the algorithm-first principle: deterministic algorithms
+    calculate scores, then AI uses those scores for personalized advice.
+
+    Returns dict with:
+        - ats_score: Latest resume ATS score
+        - readiness_score: Career readiness score
+        - engagement_avg: Average recruiter engagement
+        - market_shortage: Shortage scores for target roles
+    """
+    from app.models.resume import Resume
+    from app.models.recruiter import Recruiter
+    from app.services.scoring import calculate_career_readiness
+    from app.services.labor_market_service import LaborMarketService
+
+    context = {
+        "ats_score": None,
+        "readiness_score": None,
+        "engagement_avg": None,
+        "market_shortage": [],
+        "skills_gap": None,
+    }
+
+    try:
+        # Get latest resume ATS score
+        latest_resume = (
+            Resume.query.filter_by(user_id=user_id, is_master=True)
+            .order_by(Resume.updated_at.desc())
+            .first()
+        )
+        if not latest_resume:
+            latest_resume = (
+                Resume.query.filter_by(user_id=user_id)
+                .order_by(Resume.updated_at.desc())
+                .first()
+            )
+        if latest_resume and latest_resume.ats_total_score:
+            context["ats_score"] = {
+                "total": latest_resume.ats_total_score,
+                "weak_sections": latest_resume.weak_sections or [],
+            }
+
+        # Get career readiness score
+        readiness = calculate_career_readiness(user_id)
+        if readiness:
+            context["readiness_score"] = {
+                "total": readiness.get("total_score"),
+                "components": readiness.get("components", {}),
+            }
+
+        # Get average recruiter engagement
+        recruiters = Recruiter.query.filter_by(user_id=user_id).all()
+        if recruiters:
+            engagement_scores = [r.engagement_score for r in recruiters if r.engagement_score]
+            if engagement_scores:
+                context["engagement_avg"] = {
+                    "average": sum(engagement_scores) // len(engagement_scores),
+                    "count": len(recruiters),
+                    "active": len([r for r in recruiters if r.pipeline_stage not in ["archived", "rejected"]]),
+                }
+
+        # Get market shortage for target roles
+        target_roles = user.target_roles or []
+        target_industries = user.target_industries or []
+        primary_industry = target_industries[0] if target_industries else None
+
+        for role in target_roles[:3]:  # Limit to top 3 roles
+            shortage = LaborMarketService.calculate_shortage_score(
+                role=role,
+                industry=primary_industry,
+            )
+            context["market_shortage"].append({
+                "role": role,
+                "score": shortage["total_score"],
+                "interpretation": shortage["interpretation"],
+            })
+
+        # Get skills gap for primary target role (uses O*NET skills, abilities, knowledge)
+        if target_roles:
+            user_skills = (user.technical_skills or []) + (user.soft_skills or [])
+            skills_gap = LaborMarketService.get_skills_gap_by_category(
+                user_skills=user_skills,
+                target_role=target_roles[0],
+            )
+            if "error" not in skills_gap:
+                context["skills_gap"] = skills_gap
+
+    except Exception:
+        # Don't fail the request if context gathering fails
+        pass
+
+    return context
+
+
 @ai_bp.route("/interview-prep", methods=["POST"])
 @jwt_required()
+@feature_limit("interview_prep")
 def interview_prep():
     """
     Generate interview preparation materials.
@@ -264,9 +407,17 @@ def interview_prep():
     user_id = get_jwt_identity()
     data = request.get_json() or {}
 
-    job_title = data.get("job_title")
-    if not job_title:
-        return jsonify({"error": "job_title is required"}), 400
+    # Validate and sanitize text fields
+    schema = {
+        'job_title': {'required': True, 'max_length': 200},
+        'company': {'required': False, 'max_length': 200},
+        'interview_type': {'required': False, 'max_length': 50},
+    }
+    validated, errors = validate_text_fields(data, schema)
+    if errors:
+        return jsonify({'success': False, 'errors': errors}), 400
+
+    job_title = validated["job_title"]
 
     # Get user experience from resume if provided
     user_experience = None
@@ -278,8 +429,8 @@ def interview_prep():
 
     result = interview_prep_sync(
         job_title=job_title,
-        company=data.get("company"),
-        interview_type=data.get("interview_type", "behavioral"),
+        company=validated.get("company"),
+        interview_type=validated.get("interview_type") or "behavioral",
         user_experience=user_experience,
     )
 
@@ -293,12 +444,19 @@ def interview_prep():
             500,
         )
 
+    # Increment usage counter
+    from app.models.user import User
+    current_user = User.query.get(user_id)
+    if current_user:
+        current_user.monthly_interview_prep_count += 1
+        db.session.commit()
+
     return (
         jsonify(
             {
                 "job_title": job_title,
-                "company": data.get("company"),
-                "interview_type": data.get("interview_type", "behavioral"),
+                "company": validated.get("company"),
+                "interview_type": validated.get("interview_type") or "behavioral",
                 "prep_materials": result["prep_materials"],
                 "provider": result["provider"],
             }

@@ -5,6 +5,7 @@ Provides labor market data using BLS (Bureau of Labor Statistics) and O*NET data
 Calculates shortage scores, salary benchmarks, and job growth projections.
 """
 
+import math
 import os
 from datetime import datetime
 from typing import Dict, List, Optional
@@ -58,6 +59,34 @@ class LaborMarketService:
         "construction": 4.0,
         "hospitality": 6.0,
         "media": 5.0,
+    }
+
+    # Shortage score weights per spec (Differentiator 4)
+    # Research basis: 2.2 openings per worker in skilled trades, 70% of jobs in hidden market
+    SHORTAGE_WEIGHTS = {
+        "openings": 30,      # Openings per unemployed ratio
+        "quits": 20,         # Voluntary quit rate (worker confidence indicator)
+        "growth": 20,        # Employment growth %
+        "salary": 15,        # Salary growth %
+        "projection": 15,    # 10-year BLS projection %
+    }
+
+    # User match weights per spec
+    USER_MATCH_WEIGHTS = {
+        "skills": 40,        # Skill alignment with role requirements
+        "experience": 20,    # Experience level match
+        "location": 15,      # Geographic fit
+        "salary": 10,        # Salary expectations alignment
+        "interest": 15,      # Career interest alignment
+    }
+
+    # Shortage score benchmarks per spec
+    SHORTAGE_BENCHMARKS = {
+        "openings": {"excellent": 2.0, "high": 1.5, "moderate": 1.0, "low": 0.7},
+        "quits": {"excellent": 4.0, "high": 3.0, "moderate": 2.5, "low": 2.0},
+        "growth": {"excellent": 5.0, "high": 3.0, "moderate": 1.0, "low": 0.0},
+        "salary": {"excellent": 6.0, "high": 4.0, "moderate": 3.0, "low": 2.0},
+        "projection": {"excellent": 15.0, "high": 10.0, "moderate": 5.0, "low": 0.0},
     }
 
     # Salary benchmarks by role and experience (annual, USD)
@@ -147,10 +176,12 @@ class LaborMarketService:
         location: Optional[str] = None,
     ) -> Dict:
         """
-        Calculate labor shortage score for a role.
+        Calculate labor shortage score for a role using 5-factor model.
 
-        Shortage Score Formula:
-        shortage = demand(40%) + growth(30%) + supply_gap(30%)
+        Shortage Score Formula (per spec):
+        shortage = openings(30) + quits(20) + growth(20) + salary(15) + projection(15) = 100
+
+        Research basis: 2.2 openings per worker in skilled trades, 70% hidden market.
 
         Args:
             role: Target job role
@@ -158,43 +189,279 @@ class LaborMarketService:
             location: Geographic location
 
         Returns:
-            Shortage score with breakdown
+            Shortage score with 5-factor breakdown
         """
-        # Normalize role name
         normalized_role = cls._normalize_role(role)
 
-        # Get base shortage data
+        # Get base role data
         role_data = cls.HIGH_DEMAND_ROLES.get(
             normalized_role, {"growth_rate": 5, "shortage_score": 50}
         )
 
-        # Calculate components
-        demand_score = min(100, role_data["shortage_score"])
-        growth_score = min(100, role_data["growth_rate"] * 3)
+        # Calculate 5-factor components using benchmarks
+        # Openings score: Based on role shortage indicator (proxy for openings/unemployed)
+        base_shortage = role_data["shortage_score"]
+        openings_score = cls._score_against_benchmark(
+            base_shortage / 50,  # Convert to ~ratio format
+            cls.SHORTAGE_BENCHMARKS["openings"]
+        )
 
-        # Adjust for industry
+        # Quits score: Higher shortage = more worker confidence to quit
+        quits_score = cls._score_against_benchmark(
+            base_shortage / 25,  # Proxy quit rate
+            cls.SHORTAGE_BENCHMARKS["quits"]
+        )
+
+        # Growth score: Employment growth rate
+        growth_rate = role_data["growth_rate"]
+        growth_score = cls._score_against_benchmark(
+            growth_rate,
+            cls.SHORTAGE_BENCHMARKS["growth"]
+        )
+
+        # Salary score: High-demand roles have higher salary growth
+        salary_growth = growth_rate * 0.4  # Proxy: ~40% of employment growth
+        salary_score = cls._score_against_benchmark(
+            salary_growth,
+            cls.SHORTAGE_BENCHMARKS["salary"]
+        )
+
+        # Projection score: 10-year outlook
+        projection_score = cls._score_against_benchmark(
+            growth_rate,
+            cls.SHORTAGE_BENCHMARKS["projection"]
+        )
+
+        # Apply industry adjustment
         industry_multiplier = 1.0
         if industry:
             industry_growth = cls.INDUSTRY_GROWTH.get(industry.lower(), 5.0)
-            industry_multiplier = 1 + (industry_growth - 5) / 20
+            industry_multiplier = 1 + (industry_growth - 5) / 30
 
-        # Calculate total
-        base_score = demand_score * 0.4 + growth_score * 0.3 + 50 * 0.3  # Supply gap baseline
-        total_score = int(min(100, base_score * industry_multiplier))
+        # Calculate weighted total per spec: openings(30) + quits(20) + growth(20) + salary(15) + projection(15)
+        raw_score = (
+            openings_score * (cls.SHORTAGE_WEIGHTS["openings"] / 100)
+            + quits_score * (cls.SHORTAGE_WEIGHTS["quits"] / 100)
+            + growth_score * (cls.SHORTAGE_WEIGHTS["growth"] / 100)
+            + salary_score * (cls.SHORTAGE_WEIGHTS["salary"] / 100)
+            + projection_score * (cls.SHORTAGE_WEIGHTS["projection"] / 100)
+        )
+        total_score = int(min(100, raw_score * industry_multiplier))
 
         return {
             "total_score": total_score,
             "interpretation": cls._interpret_shortage(total_score),
             "components": {
-                "demand": demand_score,
-                "growth": growth_score,
-                "supply_gap": 50,
+                "openings": int(openings_score),
+                "quits": int(quits_score),
+                "growth": int(growth_score),
+                "salary": int(salary_score),
+                "projection": int(projection_score),
             },
+            "weights": cls.SHORTAGE_WEIGHTS,
             "role": role,
             "normalized_role": normalized_role,
             "industry": industry,
             "projected_growth": f"{role_data['growth_rate']}%",
         }
+
+    @staticmethod
+    def _score_against_benchmark(value: float, benchmarks: Dict[str, float]) -> float:
+        """Score a value against benchmark thresholds (0-100 scale)."""
+        if value >= benchmarks["excellent"]:
+            return 100
+        elif value >= benchmarks["high"]:
+            return 80
+        elif value >= benchmarks["moderate"]:
+            return 60
+        elif value >= benchmarks["low"]:
+            return 40
+        else:
+            return 20
+
+    @classmethod
+    def calculate_user_match(
+        cls,
+        user_skills: List[str],
+        user_experience: str,
+        user_location: Optional[str],
+        target_salary: Optional[int],
+        user_interests: Optional[List[str]],
+        target_role: str,
+        target_industry: Optional[str] = None,
+    ) -> Dict:
+        """
+        Calculate user-role match score using 5-factor model.
+
+        User Match Formula (per spec):
+        match = skills(40) + experience(20) + location(15) + salary(10) + interest(15) = 100
+
+        Args:
+            user_skills: User's skill list
+            user_experience: Experience level (entry, mid, senior, executive)
+            user_location: User's location
+            target_salary: User's target salary
+            user_interests: User's career interests/industries
+            target_role: Target job role
+            target_industry: Target industry
+
+        Returns:
+            User match score with 5-factor breakdown
+        """
+        normalized_role = cls._normalize_role(target_role)
+
+        # 1. Skills match (40 points)
+        required_skills = cls._get_required_skills(normalized_role)
+        matching_skills = set(s.lower() for s in user_skills) & set(required_skills)
+        skills_score = (len(matching_skills) / max(len(required_skills), 1)) * 100
+
+        # 2. Experience match (20 points)
+        role_data = cls.HIGH_DEMAND_ROLES.get(normalized_role, {"shortage_score": 50})
+        experience_levels = {"entry": 25, "mid": 50, "senior": 75, "executive": 100}
+        user_exp_value = experience_levels.get(user_experience, 50)
+        # Higher shortage roles are more forgiving on experience
+        exp_flexibility = role_data.get("shortage_score", 50) / 100
+        experience_score = min(100, user_exp_value + (exp_flexibility * 25))
+
+        # 3. Location match (15 points)
+        location_score = 100  # Default to full score
+        if user_location and target_industry:
+            # Adjust based on industry concentration in location
+            location_multiplier = cls._get_location_multiplier(user_location)
+            location_score = min(100, 70 + (location_multiplier - 1) * 100)
+
+        # 4. Salary alignment (10 points)
+        salary_score = 100  # Default to full score
+        if target_salary:
+            benchmarks = cls.SALARY_BENCHMARKS.get(
+                normalized_role, cls.SALARY_BENCHMARKS["default"]
+            )
+            expected_salary = benchmarks.get(user_experience, benchmarks["mid"])
+            # Score based on how close target is to market rate
+            salary_ratio = target_salary / expected_salary if expected_salary else 1
+            if 0.85 <= salary_ratio <= 1.2:
+                salary_score = 100
+            elif 0.7 <= salary_ratio <= 1.35:
+                salary_score = 70
+            else:
+                salary_score = 40
+
+        # 5. Interest alignment (15 points)
+        interest_score = 50  # Default baseline
+        if user_interests:
+            interests_lower = [i.lower() for i in user_interests]
+            if target_industry and target_industry.lower() in interests_lower:
+                interest_score = 100
+            elif normalized_role in interests_lower:
+                interest_score = 90
+            else:
+                interest_score = 60
+
+        # Calculate weighted total per spec: skills(40) + experience(20) + location(15) + salary(10) + interest(15)
+        total_score = int(
+            skills_score * (cls.USER_MATCH_WEIGHTS["skills"] / 100)
+            + experience_score * (cls.USER_MATCH_WEIGHTS["experience"] / 100)
+            + location_score * (cls.USER_MATCH_WEIGHTS["location"] / 100)
+            + salary_score * (cls.USER_MATCH_WEIGHTS["salary"] / 100)
+            + interest_score * (cls.USER_MATCH_WEIGHTS["interest"] / 100)
+        )
+
+        return {
+            "total_score": total_score,
+            "interpretation": cls._interpret_user_match(total_score),
+            "components": {
+                "skills": int(skills_score),
+                "experience": int(experience_score),
+                "location": int(location_score),
+                "salary": int(salary_score),
+                "interest": int(interest_score),
+            },
+            "weights": cls.USER_MATCH_WEIGHTS,
+            "matching_skills": list(matching_skills),
+            "missing_skills": list(set(required_skills) - set(s.lower() for s in user_skills))[:5],
+            "target_role": target_role,
+            "target_industry": target_industry,
+        }
+
+    @staticmethod
+    def _interpret_user_match(score: int) -> str:
+        """Interpret user match score."""
+        if score >= 80:
+            return "Excellent match - Strong alignment with role requirements"
+        elif score >= 60:
+            return "Good match - Well suited with minor gaps"
+        elif score >= 40:
+            return "Moderate match - Some areas need development"
+        else:
+            return "Limited match - Significant skill building needed"
+
+    @classmethod
+    def get_skills_gap_by_category(
+        cls,
+        user_skills: List[str],
+        target_role: str,
+    ) -> Dict:
+        """
+        Get skills gap analysis broken down by category (skills, abilities, knowledge).
+
+        Args:
+            user_skills: User's skill list
+            target_role: Target job role
+
+        Returns:
+            Skills gap breakdown by category with matched/missing items
+        """
+        from app.extensions import db
+        from app.models.labor_market import Occupation, OccupationSkill, Skill
+
+        # Normalize role for matching
+        normalized = cls._normalize_role(target_role)
+        search_term = normalized.replace("_", " ")
+
+        occupation = Occupation.query.filter(
+            Occupation.title.ilike(f"%{search_term}%")
+        ).first()
+
+        if not occupation:
+            return {"error": "Occupation not found", "role": target_role}
+
+        user_skills_lower = {s.lower() for s in user_skills}
+        result = {"role": target_role, "occupation_title": occupation.title, "categories": {}}
+        total_matched = 0
+        total_required = 0
+
+        for category in ["skills", "abilities", "knowledge"]:
+            required = (
+                db.session.query(Skill.name)
+                .join(OccupationSkill, OccupationSkill.skill_id == Skill.id)
+                .filter(OccupationSkill.occupation_id == occupation.id)
+                .filter(Skill.category == category)
+                .filter(OccupationSkill.importance >= 3.0)
+                .all()
+            )
+
+            required_names = {s.name.lower() for s in required}
+            matched = user_skills_lower & required_names
+            missing = required_names - user_skills_lower
+
+            result["categories"][category] = {
+                "matched": len(matched),
+                "total": len(required_names),
+                "pct": int(len(matched) / max(len(required_names), 1) * 100),
+                "matched_items": list(matched),
+                "missing_items": list(missing)[:5],
+            }
+
+            total_matched += len(matched)
+            total_required += len(required_names)
+
+        result["overall"] = {
+            "matched": total_matched,
+            "total": total_required,
+            "pct": int(total_matched / max(total_required, 1) * 100),
+        }
+
+        return result
 
     @classmethod
     def get_salary_benchmark(
@@ -247,56 +514,72 @@ class LaborMarketService:
         user_skills: List[str],
         target_role: str,
         target_industry: Optional[str] = None,
+        user_experience: str = "mid",
+        user_location: Optional[str] = None,
+        target_salary: Optional[int] = None,
+        user_interests: Optional[List[str]] = None,
     ) -> Dict:
         """
-        Calculate opportunity score based on user skills and market demand.
+        Calculate opportunity score using geometric mean formula.
 
-        Opportunity Score Formula:
-        opportunity = shortage(40%) + skill_match(35%) + growth(25%)
+        Opportunity Score Formula (per spec):
+        opportunity = √(user_match × shortage)  [GEOMETRIC MEAN]
+
+        This formula ensures both user fit AND market demand must be strong.
+        A high shortage with low match = moderate opportunity.
+        A high match with low shortage = moderate opportunity.
+        High match AND high shortage = excellent opportunity.
 
         Args:
             user_skills: User's skills list
             target_role: Target job role
             target_industry: Target industry
+            user_experience: Experience level (entry, mid, senior, executive)
+            user_location: User's location
+            target_salary: User's target salary
+            user_interests: User's career interests
 
         Returns:
-            Opportunity score with recommendations
+            Opportunity score with geometric mean calculation
         """
-        # Get shortage score
+        # Get shortage score (market demand)
         shortage = cls.calculate_shortage_score(target_role, target_industry)
 
-        # Calculate skill match
-        required_skills = cls._get_required_skills(target_role)
-        matching_skills = set(s.lower() for s in user_skills) & set(required_skills)
-        skill_match_score = (len(matching_skills) / max(len(required_skills), 1)) * 100
-
-        # Get growth score
-        normalized_role = cls._normalize_role(target_role)
-        role_data = cls.HIGH_DEMAND_ROLES.get(normalized_role, {"growth_rate": 5})
-        growth_score = min(100, role_data["growth_rate"] * 3)
-
-        # Calculate total
-        total_score = int(
-            shortage["total_score"] * 0.4 + skill_match_score * 0.35 + growth_score * 0.25
+        # Get user match score (user fit)
+        user_match = cls.calculate_user_match(
+            user_skills=user_skills,
+            user_experience=user_experience,
+            user_location=user_location,
+            target_salary=target_salary,
+            user_interests=user_interests,
+            target_role=target_role,
+            target_industry=target_industry,
         )
 
-        # Generate recommendations
-        missing_skills = set(required_skills) - set(s.lower() for s in user_skills)
+        # Calculate opportunity using GEOMETRIC MEAN per spec: √(match × shortage)
+        match_score = user_match["total_score"]
+        shortage_score = shortage["total_score"]
+        total_score = int(round(math.sqrt(match_score * shortage_score)))
+
+        # Generate recommendations based on which factor is weaker
+        missing_skills = user_match.get("missing_skills", [])
 
         return {
             "total_score": total_score,
             "interpretation": cls._interpret_opportunity(total_score),
+            "formula": "√(user_match × shortage)",
             "components": {
-                "shortage": shortage["total_score"],
-                "skill_match": int(skill_match_score),
-                "growth": growth_score,
+                "user_match": match_score,
+                "shortage": shortage_score,
             },
+            "user_match_breakdown": user_match["components"],
+            "shortage_breakdown": shortage["components"],
             "target_role": target_role,
             "target_industry": target_industry,
-            "matching_skills": list(matching_skills),
-            "missing_skills": list(missing_skills)[:5],
+            "matching_skills": user_match.get("matching_skills", []),
+            "missing_skills": missing_skills,
             "recommendations": cls._generate_opportunity_recommendations(
-                total_score, skill_match_score, missing_skills
+                total_score, match_score, set(missing_skills)
             ),
         }
 
@@ -478,59 +761,36 @@ class LaborMarketService:
 
     @staticmethod
     def _get_required_skills(role: str) -> List[str]:
-        """Get required skills for a role."""
-        skills_map = {
-            "software_engineer": [
-                "python",
-                "javascript",
-                "sql",
-                "git",
-                "apis",
-                "data structures",
-                "algorithms",
-                "cloud",
-            ],
-            "data_scientist": [
-                "python",
-                "sql",
-                "machine learning",
-                "statistics",
-                "pandas",
-                "numpy",
-                "visualization",
-                "tensorflow",
-            ],
-            "product_manager": [
-                "product strategy",
-                "agile",
-                "analytics",
-                "roadmapping",
-                "user research",
-                "stakeholder management",
-                "prioritization",
-            ],
-            "ux_designer": [
-                "figma",
-                "user research",
-                "wireframing",
-                "prototyping",
-                "usability testing",
-                "design systems",
-                "accessibility",
-            ],
-            "devops_engineer": [
-                "docker",
-                "kubernetes",
-                "ci/cd",
-                "aws",
-                "terraform",
-                "linux",
-                "monitoring",
-                "scripting",
-            ],
-        }
+        """Get required skills/abilities/knowledge for a role from O*NET database."""
+        from app.extensions import db
+        from app.models.labor_market import Occupation, OccupationSkill, Skill
+
+        # Normalize role for matching
         normalized = LaborMarketService._normalize_role(role)
-        return skills_map.get(normalized, ["communication", "problem solving", "teamwork"])
+        search_term = normalized.replace("_", " ")
+
+        # Find matching occupation by title
+        occupation = Occupation.query.filter(
+            Occupation.title.ilike(f"%{search_term}%")
+        ).first()
+
+        if not occupation:
+            # Fallback to generic skills
+            return ["communication", "problem solving", "teamwork"]
+
+        # Get all skills/abilities/knowledge for this occupation (importance >= 3.0)
+        occ_skills = (
+            db.session.query(Skill.name)
+            .join(OccupationSkill, OccupationSkill.skill_id == Skill.id)
+            .filter(OccupationSkill.occupation_id == occupation.id)
+            .filter(OccupationSkill.importance >= 3.0)
+            .all()
+        )
+
+        if not occ_skills:
+            return ["communication", "problem solving", "teamwork"]
+
+        return [s.name.lower() for s in occ_skills]
 
     @staticmethod
     def _generate_opportunity_recommendations(

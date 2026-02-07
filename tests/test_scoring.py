@@ -117,7 +117,7 @@ class TestEngagementScoring:
             messages_opened=6,
             responses_received=4,  # 40% response rate
         )
-        assert result["components"]["response_rate"] == 100
+        assert result["components"]["response_rate"]["score"] == 100
 
     def test_poor_response_rate(self):
         """Test score with poor response rate."""
@@ -126,7 +126,7 @@ class TestEngagementScoring:
             messages_opened=20,
             responses_received=0,
         )
-        assert result["components"]["response_rate"] < 50
+        assert result["components"]["response_rate"]["score"] < 50
 
     def test_recency_fresh(self):
         """Test recency score for fresh contact."""
@@ -136,7 +136,7 @@ class TestEngagementScoring:
             responses_received=1,
             last_contact_date=datetime.utcnow() - timedelta(days=3),
         )
-        assert result["components"]["recency"] == 100
+        assert result["components"]["recency"]["score"] == 100
 
     def test_recency_cold(self):
         """Test recency score for old contact."""
@@ -146,7 +146,7 @@ class TestEngagementScoring:
             responses_received=1,
             last_contact_date=datetime.utcnow() - timedelta(days=90),
         )
-        assert result["components"]["recency"] < 25
+        assert result["components"]["recency"]["score"] < 25
 
 
 class TestFitScoring:

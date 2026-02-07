@@ -166,6 +166,7 @@ export function Messages() {
         <button
           onClick={() => setShowComposeModal(true)}
           className="btn btn-primary flex items-center"
+          data-tour="message-compose"
         >
           <Plus className="w-4 h-4 mr-2" />
           Compose
@@ -173,7 +174,7 @@ export function Messages() {
       </div>
 
       {/* Stats cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4" data-tour="message-quality">
         <div className="card p-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">

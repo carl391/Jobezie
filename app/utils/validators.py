@@ -345,3 +345,76 @@ def validate_integer(
         raise ValidationError(f"{field_name} must be at most {max_value}")
 
     return value
+
+
+def validate_text_fields(data: dict, schema: dict) -> tuple:
+    """
+    Validate and sanitize multiple text fields according to a schema.
+
+    This function provides a non-exception-based validation approach
+    for use in route handlers where consistent JSON error responses
+    are preferred over exceptions.
+
+    Args:
+        data: Dictionary containing field values to validate
+        schema: Dictionary mapping field names to validation rules:
+            - required: bool - Whether field is required (default: False)
+            - min_length: int - Minimum length (default: 0)
+            - max_length: int - Maximum length (default: 1000)
+
+    Returns:
+        Tuple of (validated_dict, errors_list):
+            - validated_dict: Dictionary with sanitized values
+            - errors_list: List of error messages (empty if valid)
+
+    Example:
+        schema = {
+            'first_name': {'required': True, 'max_length': 100},
+            'email': {'required': False, 'max_length': 254},
+        }
+        validated, errors = validate_text_fields(data, schema)
+        if errors:
+            return jsonify({'success': False, 'errors': errors}), 400
+    """
+    validated = {}
+    errors = []
+
+    for field, rules in schema.items():
+        value = data.get(field, '')
+
+        # Handle required field check
+        if rules.get('required') and not value:
+            errors.append(f"{field} is required")
+            continue
+
+        # If value is provided, validate and sanitize it
+        if value:
+            # Convert to string if not already
+            if not isinstance(value, str):
+                value = str(value)
+
+            value = value.strip()
+
+            # Check length constraints
+            min_len = rules.get('min_length', 0)
+            max_len = rules.get('max_length', 1000)
+
+            if len(value) < min_len:
+                errors.append(f"{field} must be at least {min_len} characters")
+                continue
+
+            if len(value) > max_len:
+                errors.append(f"{field} must be less than {max_len} characters")
+                continue
+
+            # Check for dangerous patterns
+            if contains_dangerous_patterns(value):
+                errors.append(f"{field} contains invalid content")
+                continue
+
+            # Sanitize and store
+            validated[field] = sanitize_string(value)
+        else:
+            validated[field] = None
+
+    return validated, errors

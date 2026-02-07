@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { driver, type DriveStep, type Driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
-import { TOURS, type TourConfig } from '../config/tours';
+import { TOURS, type TourConfig, createDescriptionWithImage } from '../config/tours';
 import { api } from '../lib/api';
 
 interface TourContextType {
@@ -115,7 +115,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
       element: step.element,
       popover: {
         title: step.title,
-        description: step.description,
+        description: createDescriptionWithImage(step.description, step.image),
         side: step.position || 'bottom',
         align: 'center',
       },
@@ -140,12 +140,27 @@ export function TourProvider({ children }: { children: ReactNode }) {
         // User clicked the X button to close
         markTourComplete(tourId);
         driverObj.destroy();
-      },
-      onDestroyStarted: () => {
-        // User completed the tour or clicked close
-        markTourComplete(tourId);
         setIsTourActive(false);
         setCurrentTourId(null);
+        setDriverInstance(null);
+      },
+      onNextClick: () => {
+        // Check if this is the last step (Finish button clicked)
+        if (!driverObj.hasNextStep()) {
+          // This is the last step - Finish button was clicked
+          markTourComplete(tourId);
+          driverObj.destroy();
+          setIsTourActive(false);
+          setCurrentTourId(null);
+          setDriverInstance(null);
+        } else {
+          // Move to next step
+          driverObj.moveNext();
+        }
+      },
+      onDestroyStarted: () => {
+        // Tour is being destroyed
+        markTourComplete(tourId);
       },
       onDestroyed: () => {
         setIsTourActive(false);

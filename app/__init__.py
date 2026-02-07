@@ -40,8 +40,15 @@ def create_app(config_name=None):
     # Register error handlers
     _register_error_handlers(app)
 
+    # Register response wrapper for consistent API format
+    _register_response_wrapper(app)
+
     # Register shell context
     _register_shell_context(app)
+
+    # Register CLI commands
+    from app.cli import register_commands
+    register_commands(app)
 
     # Health check endpoint
     @app.route("/health")
@@ -145,6 +152,48 @@ def create_app(config_name=None):
         })
 
     return app
+
+
+def _register_response_wrapper(app):
+    """Wrap all API JSON responses in standardized {success, data} format."""
+    import json as _json
+
+    @app.after_request
+    def wrap_json_response(response):
+        # Only wrap JSON responses for /api/ routes
+        if not response.content_type or 'application/json' not in response.content_type:
+            return response
+
+        # Skip non-API routes (health check, root docs)
+        from flask import request as _req
+        if not _req.path.startswith('/api/'):
+            return response
+
+        try:
+            data = response.get_json(silent=True)
+        except Exception:
+            return response
+
+        if data is None:
+            return response
+
+        # Already wrapped — has 'success' key at top level
+        if isinstance(data, dict) and 'success' in data:
+            return response
+
+        # Wrap based on status code
+        if response.status_code < 400:
+            wrapped = {"success": True, "data": data}
+        else:
+            wrapped = {
+                "success": False,
+                "error": data.get("error", "unknown_error") if isinstance(data, dict) else "error",
+                "message": data.get("message", data.get("error", "An error occurred")) if isinstance(data, dict) else str(data),
+            }
+
+        response.data = _json.dumps(wrapped)
+        response.content_length = len(response.data)
+        return response
 
 
 def _register_blueprints(app):

@@ -31,12 +31,12 @@ class StripeService:
         SubscriptionTier.CAREER_KEEPER.value: os.getenv("STRIPE_PRICE_CAREER_KEEPER"),
     }
 
-    # Monthly prices (cents)
+    # Monthly prices (cents) - Per business plan pricing
     TIER_PRICES = {
         SubscriptionTier.BASIC.value: 0,
-        SubscriptionTier.PRO.value: 1999,  # $19.99
-        SubscriptionTier.EXPERT.value: 4999,  # $49.99
-        SubscriptionTier.CAREER_KEEPER.value: 999,  # $9.99
+        SubscriptionTier.PRO.value: 1900,  # $19.00
+        SubscriptionTier.EXPERT.value: 3900,  # $39.00
+        SubscriptionTier.CAREER_KEEPER.value: 900,  # $9.00
     }
 
     @staticmethod
@@ -466,7 +466,7 @@ class StripeService:
                     "id": SubscriptionTier.PRO.value,
                     "name": "Pro",
                     "price": cls.TIER_PRICES[SubscriptionTier.PRO.value],
-                    "price_display": "$19.99/month",
+                    "price_display": "$19/month",
                     "features": [
                         "50 recruiters",
                         "10 tailored resumes/month",
@@ -480,7 +480,7 @@ class StripeService:
                     "id": SubscriptionTier.EXPERT.value,
                     "name": "Expert",
                     "price": cls.TIER_PRICES[SubscriptionTier.EXPERT.value],
-                    "price_display": "$49.99/month",
+                    "price_display": "$39/month",
                     "features": [
                         "Unlimited recruiters",
                         "Unlimited tailored resumes",
@@ -494,7 +494,7 @@ class StripeService:
                     "id": SubscriptionTier.CAREER_KEEPER.value,
                     "name": "Career Keeper",
                     "price": cls.TIER_PRICES[SubscriptionTier.CAREER_KEEPER.value],
-                    "price_display": "$9.99/month",
+                    "price_display": "$9/month",
                     "features": [
                         "Maintain your network",
                         "5 recruiters",

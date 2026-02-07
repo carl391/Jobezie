@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { dashboardApi, activityApi } from '../lib/api';
+import { dashboardApi, activityApi, laborMarketApi } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useTour } from '../contexts/TourContext';
 import {
@@ -11,14 +11,25 @@ import {
   ArrowRight,
   Clock,
   AlertCircle,
+  Zap,
+  BarChart3,
 } from 'lucide-react';
-import type { DashboardData, Activity } from '../types';
+import type { DashboardData, Activity, SkillsMapData } from '../types';
+
+interface HighDemandRole {
+  role: string;
+  growth_rate: number;
+  shortage_score: number;
+  demand_level: string;
+}
 
 export function Dashboard() {
   const { user } = useAuth();
   const { startTour, shouldShowTour, markTourSeen } = useTour();
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
+  const [skillsMap, setSkillsMap] = useState<SkillsMapData | null>(null);
+  const [highDemandRoles, setHighDemandRoles] = useState<HighDemandRole[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const tourStarted = useRef(false);
@@ -30,8 +41,17 @@ export function Dashboard() {
           dashboardApi.getDashboard(),
           activityApi.getRecent(5),
         ]);
-        setDashboardData(dashboardRes.data);
-        setRecentActivities(activitiesRes.data.activities || []);
+        setDashboardData(dashboardRes.data.data || dashboardRes.data);
+        setRecentActivities(activitiesRes.data.data?.activities || activitiesRes.data.activities || []);
+
+        // Fetch skills coverage and high-demand roles (non-blocking)
+        laborMarketApi.getSkillsMap()
+          .then((res) => setSkillsMap(res.data.data || null))
+          .catch(() => {});
+
+        laborMarketApi.getHighDemandRoles()
+          .then((res) => setHighDemandRoles((res.data.data || []).slice(0, 5)))
+          .catch(() => {});
       } catch (err) {
         setError('Failed to load dashboard data');
         console.error(err);
@@ -210,6 +230,98 @@ export function Dashboard() {
             <div className="text-center py-8 text-gray-500">
               <Clock className="w-12 h-12 mx-auto mb-3 text-gray-300" />
               <p>No recent activity</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Skills Coverage + Hot Markets row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Skills Coverage Card */}
+        <div className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-primary-600" />
+              Skills Coverage
+            </h2>
+            <Link
+              to="/settings"
+              className="text-sm text-primary-600 hover:text-primary-700 flex items-center"
+            >
+              Improve <ArrowRight className="w-4 h-4 ml-1" />
+            </Link>
+          </div>
+          {skillsMap ? (
+            <div className="space-y-3">
+              {Object.entries(skillsMap.coverage_by_category).map(([category, data]) => {
+                const pct = data.pct;
+                const barColor = pct >= 71 ? 'bg-green-500' : pct >= 41 ? 'bg-yellow-500' : 'bg-red-500';
+                return (
+                  <div key={category}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm text-gray-700 capitalize">{category}</span>
+                      <span className="text-xs text-gray-500">{data.matched}/{data.total}</span>
+                    </div>
+                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div className={`h-full ${barColor} rounded-full`} style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="pt-2 border-t border-gray-100">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-900">Overall</span>
+                  <span className="text-sm font-bold text-gray-900">
+                    {skillsMap.total_matched} matched
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <BarChart3 className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+              <p>Add skills in Settings to see coverage</p>
+            </div>
+          )}
+        </div>
+
+        {/* Hot Job Markets */}
+        <div className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <Zap className="w-5 h-5 text-yellow-500" />
+              Hot Job Markets
+            </h2>
+          </div>
+          {highDemandRoles.length > 0 ? (
+            <div className="space-y-3">
+              {highDemandRoles.map((role) => {
+                const scoreColor = role.shortage_score >= 71 ? 'text-green-600' : role.shortage_score >= 41 ? 'text-yellow-600' : 'text-red-600';
+                const bgColor = role.shortage_score >= 71 ? 'bg-green-50' : role.shortage_score >= 41 ? 'bg-yellow-50' : 'bg-red-50';
+                return (
+                  <div key={role.role} className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 capitalize">
+                        {role.role.replace(/_/g, ' ')}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {role.growth_rate}% projected growth
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className={`text-sm font-bold ${scoreColor} px-2 py-1 rounded ${bgColor}`}>
+                        {role.shortage_score}
+                      </span>
+                      <p className="text-xs text-gray-500 mt-1">{role.demand_level}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <Zap className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+              <p>Loading market data...</p>
             </div>
           )}
         </div>

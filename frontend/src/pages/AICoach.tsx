@@ -12,9 +12,14 @@ import {
   ChevronRight,
   User,
   Bot,
+  DollarSign,
+  BarChart3,
+  BookOpen,
 } from 'lucide-react';
 import { aiApi } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
+
+type CoachMode = 'general' | 'interview' | 'resume' | 'salary';
 
 interface ChatMessage {
   id: string;
@@ -23,32 +28,119 @@ interface ChatMessage {
   timestamp: Date;
 }
 
-const QUICK_PROMPTS = [
-  {
-    icon: <Target className="w-5 h-5" />,
-    title: 'Career Strategy',
-    prompt: "What's the best strategy for transitioning into a senior role in my field?",
-    color: 'bg-blue-100 text-blue-700 hover:bg-blue-200',
-  },
-  {
-    icon: <FileText className="w-5 h-5" />,
-    title: 'Resume Tips',
-    prompt: 'How can I make my resume stand out to recruiters and ATS systems?',
-    color: 'bg-green-100 text-green-700 hover:bg-green-200',
-  },
-  {
-    icon: <MessageCircle className="w-5 h-5" />,
-    title: 'Interview Prep',
-    prompt: 'What are the most common behavioral interview questions and how should I answer them?',
-    color: 'bg-purple-100 text-purple-700 hover:bg-purple-200',
-  },
-  {
-    icon: <Users className="w-5 h-5" />,
-    title: 'Networking',
-    prompt: 'How can I effectively network with recruiters on LinkedIn?',
-    color: 'bg-orange-100 text-orange-700 hover:bg-orange-200',
-  },
+const COACH_MODES: { id: CoachMode; label: string; icon: React.ReactNode }[] = [
+  { id: 'general', label: 'General Coach', icon: <Sparkles className="w-4 h-4" /> },
+  { id: 'interview', label: 'Interview Prep', icon: <MessageCircle className="w-4 h-4" /> },
+  { id: 'resume', label: 'Resume Review', icon: <FileText className="w-4 h-4" /> },
+  { id: 'salary', label: 'Salary Negotiation', icon: <DollarSign className="w-4 h-4" /> },
 ];
+
+const MODE_PROMPTS: Record<CoachMode, { icon: React.ReactNode; title: string; prompt: string; color: string }[]> = {
+  general: [
+    {
+      icon: <Target className="w-5 h-5" />,
+      title: 'Career Strategy',
+      prompt: "What's the best strategy for transitioning into a senior role in my field?",
+      color: 'bg-blue-100 text-blue-700 hover:bg-blue-200',
+    },
+    {
+      icon: <BarChart3 className="w-5 h-5" />,
+      title: 'Review My Skills Gap',
+      prompt: 'Review my skills gap and tell me what skills I need to develop for my target role.',
+      color: 'bg-green-100 text-green-700 hover:bg-green-200',
+    },
+    {
+      icon: <Lightbulb className="w-5 h-5" />,
+      title: 'Market Insights',
+      prompt: 'What are the top shortage occupations that match my skills? Show me market insights.',
+      color: 'bg-purple-100 text-purple-700 hover:bg-purple-200',
+    },
+    {
+      icon: <Users className="w-5 h-5" />,
+      title: 'Networking',
+      prompt: 'How can I effectively network with recruiters on LinkedIn?',
+      color: 'bg-orange-100 text-orange-700 hover:bg-orange-200',
+    },
+  ],
+  interview: [
+    {
+      icon: <MessageCircle className="w-5 h-5" />,
+      title: 'Behavioral Questions',
+      prompt: 'What are the most common behavioral interview questions and how should I answer them using the STAR method?',
+      color: 'bg-blue-100 text-blue-700 hover:bg-blue-200',
+    },
+    {
+      icon: <Target className="w-5 h-5" />,
+      title: 'Technical Interview',
+      prompt: 'Help me prepare for a technical interview for my target role. What topics should I study?',
+      color: 'bg-green-100 text-green-700 hover:bg-green-200',
+    },
+    {
+      icon: <Users className="w-5 h-5" />,
+      title: 'Mock Interview',
+      prompt: 'Can you do a mock interview with me? Ask me common questions for my target role.',
+      color: 'bg-purple-100 text-purple-700 hover:bg-purple-200',
+    },
+    {
+      icon: <BookOpen className="w-5 h-5" />,
+      title: 'Company Research',
+      prompt: 'What should I research about a company before an interview?',
+      color: 'bg-orange-100 text-orange-700 hover:bg-orange-200',
+    },
+  ],
+  resume: [
+    {
+      icon: <FileText className="w-5 h-5" />,
+      title: 'Improve ATS Score',
+      prompt: 'How can I improve my resume ATS score? What are the key factors?',
+      color: 'bg-blue-100 text-blue-700 hover:bg-blue-200',
+    },
+    {
+      icon: <BarChart3 className="w-5 h-5" />,
+      title: 'Skills Gap Analysis',
+      prompt: 'Review my skills gap for my target role and suggest what to add to my resume.',
+      color: 'bg-green-100 text-green-700 hover:bg-green-200',
+    },
+    {
+      icon: <Target className="w-5 h-5" />,
+      title: 'Achievement Bullets',
+      prompt: 'Help me write strong achievement-focused bullet points for my resume.',
+      color: 'bg-purple-100 text-purple-700 hover:bg-purple-200',
+    },
+    {
+      icon: <Lightbulb className="w-5 h-5" />,
+      title: 'Resume Format',
+      prompt: 'What resume format and structure works best for ATS systems?',
+      color: 'bg-orange-100 text-orange-700 hover:bg-orange-200',
+    },
+  ],
+  salary: [
+    {
+      icon: <DollarSign className="w-5 h-5" />,
+      title: 'Market Rate',
+      prompt: 'What is the market salary rate for my target role and experience level?',
+      color: 'bg-blue-100 text-blue-700 hover:bg-blue-200',
+    },
+    {
+      icon: <Target className="w-5 h-5" />,
+      title: 'Negotiate Offer',
+      prompt: 'I received a job offer. How should I negotiate for a higher salary?',
+      color: 'bg-green-100 text-green-700 hover:bg-green-200',
+    },
+    {
+      icon: <Lightbulb className="w-5 h-5" />,
+      title: 'Counter Offer',
+      prompt: 'How do I make a counter offer without risking the job opportunity?',
+      color: 'bg-purple-100 text-purple-700 hover:bg-purple-200',
+    },
+    {
+      icon: <BarChart3 className="w-5 h-5" />,
+      title: 'Total Compensation',
+      prompt: 'Beyond salary, what other compensation elements should I negotiate?',
+      color: 'bg-orange-100 text-orange-700 hover:bg-orange-200',
+    },
+  ],
+};
 
 const FOLLOW_UP_SUGGESTIONS = [
   'Can you give me specific examples?',
@@ -63,6 +155,7 @@ export function AICoach() {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mode, setMode] = useState<CoachMode>('general');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -94,6 +187,7 @@ export function AICoach() {
       const response = await aiApi.careerCoach({
         question: text,
         context: {
+          mode,
           user_name: user?.first_name || user?.full_name,
           career_stage: user?.career_stage,
           current_role: user?.current_role,
@@ -162,6 +256,24 @@ export function AICoach() {
         )}
       </div>
 
+      {/* Mode selector */}
+      <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg mb-4 overflow-x-auto">
+        {COACH_MODES.map((m) => (
+          <button
+            key={m.id}
+            onClick={() => setMode(m.id)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md whitespace-nowrap transition-all ${
+              mode === m.id
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            {m.icon}
+            {m.label}
+          </button>
+        ))}
+      </div>
+
       {/* Chat container */}
       <div className="flex-1 flex flex-col bg-white rounded-xl border border-gray-200 overflow-hidden" data-tour="coach-chat">
         {/* Messages area */}
@@ -182,7 +294,7 @@ export function AICoach() {
 
               {/* Quick prompts */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-lg">
-                {QUICK_PROMPTS.map((prompt, index) => (
+                {MODE_PROMPTS[mode].map((prompt, index) => (
                   <button
                     key={index}
                     onClick={() => handleSendMessage(prompt.prompt)}

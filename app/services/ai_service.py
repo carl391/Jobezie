@@ -205,15 +205,20 @@ Help candidates prepare confident, structured responses that highlight their str
         question: str,
         user_context: Optional[Dict] = None,
         conversation_history: Optional[List[Dict]] = None,
+        algorithm_context: Optional[Dict] = None,
         provider: Optional[str] = None,
     ) -> Dict:
         """
-        Get AI career coaching response.
+        Get AI career coaching response with algorithm-first context.
+
+        This implements the algorithm-first principle: algorithmic scores are
+        calculated first, then passed to AI for contextual, personalized advice.
 
         Args:
             question: User's question
             user_context: User profile information
             conversation_history: Previous messages in conversation
+            algorithm_context: Pre-computed algorithmic scores (ATS, readiness, etc.)
             provider: Force specific provider
 
         Returns:
@@ -228,7 +233,7 @@ Help candidates prepare confident, structured responses that highlight their str
                 "response": None,
             }
 
-        prompt = AIService._build_coaching_prompt(question, user_context)
+        prompt = AIService._build_coaching_prompt(question, user_context, algorithm_context)
 
         try:
             if provider == "claude":
@@ -392,12 +397,21 @@ Focus on quantified achievements and strong action verbs."""
         return prompt
 
     @staticmethod
-    def _build_coaching_prompt(question: str, user_context: Optional[Dict]) -> str:
-        """Build prompt for career coaching."""
+    def _build_coaching_prompt(
+        question: str,
+        user_context: Optional[Dict],
+        algorithm_context: Optional[Dict] = None,
+    ) -> str:
+        """
+        Build prompt for career coaching with algorithm-first context.
+
+        The algorithm context provides pre-computed scores that the AI should
+        reference when giving advice. This ensures advice is data-driven.
+        """
         context_str = ""
         if user_context:
             context_str = f"""
-USER CONTEXT:
+USER PROFILE:
 - Current Role: {user_context.get('current_role', 'Not specified')}
 - Target Roles: {', '.join(user_context.get('target_roles', []))}
 - Industries: {', '.join(user_context.get('industries', []))}
@@ -405,13 +419,48 @@ USER CONTEXT:
 - Location: {user_context.get('location', 'Not specified')}
 """
 
+        # Add algorithm-computed context (algorithm-first principle)
+        algo_str = ""
+        if algorithm_context:
+            algo_str = "\nALGORITHM-COMPUTED METRICS (use these to inform your advice):"
+
+            if algorithm_context.get("ats_score"):
+                ats = algorithm_context["ats_score"]
+                algo_str += f"""
+- Resume ATS Score: {ats.get('total', 'N/A')}/100
+  Weak sections: {', '.join(ats.get('weak_sections', [])) or 'None identified'}"""
+
+            if algorithm_context.get("readiness_score"):
+                readiness = algorithm_context["readiness_score"]
+                algo_str += f"""
+- Career Readiness Score: {readiness.get('total', 'N/A')}/100"""
+                if readiness.get("components"):
+                    comps = readiness["components"]
+                    algo_str += f"""
+  Components: Profile {comps.get('profile', 'N/A')}%, Resume {comps.get('resume', 'N/A')}%, Network {comps.get('network', 'N/A')}%, Activity {comps.get('activity', 'N/A')}%"""
+
+            if algorithm_context.get("engagement_avg"):
+                eng = algorithm_context["engagement_avg"]
+                algo_str += f"""
+- Recruiter Engagement: {eng.get('average', 'N/A')}/100 avg across {eng.get('count', 0)} recruiters ({eng.get('active', 0)} active)"""
+
+            if algorithm_context.get("market_shortage"):
+                shortages = algorithm_context["market_shortage"]
+                if shortages:
+                    algo_str += "\n- Market Shortage Scores:"
+                    for s in shortages:
+                        algo_str += f"\n  {s['role']}: {s['score']}/100 ({s['interpretation']})"
+
         prompt = f"""Please provide career coaching advice for the following question:
-{context_str}
+{context_str}{algo_str}
+
 USER QUESTION:
 {question}
 
-Provide specific, actionable advice. If relevant, include:
-- Step-by-step recommendations
+Provide specific, actionable advice. Reference the algorithm-computed metrics above
+when relevant to give data-driven recommendations. If relevant, include:
+- Step-by-step recommendations based on their current scores
+- Specific areas to improve based on weak sections identified
 - Resources or tools they might find helpful
 - Common pitfalls to avoid
 - Timeline expectations where applicable"""

@@ -9,14 +9,19 @@ from datetime import datetime
 from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
+from app.extensions import db
 from app.models.activity import PipelineStage
+from app.models.user import User
 from app.services.recruiter_service import RecruiterService
+from app.utils.decorators import feature_limit
+from app.utils.validators import validate_text_fields
 
 recruiter_bp = Blueprint("recruiter", __name__, url_prefix="/api/recruiters")
 
 
 @recruiter_bp.route("", methods=["POST"])
 @jwt_required()
+@feature_limit("recruiters")
 def create_recruiter():
     """
     Add a new recruiter to the CRM.
@@ -42,27 +47,47 @@ def create_recruiter():
     user_id = get_jwt_identity()
     data = request.get_json() or {}
 
-    # Validate required fields
-    if not data.get("first_name") or not data.get("last_name"):
-        return jsonify({"error": "first_name and last_name are required"}), 400
+    # Validate and sanitize text fields
+    schema = {
+        'first_name': {'required': True, 'max_length': 100},
+        'last_name': {'required': True, 'max_length': 100},
+        'email': {'required': False, 'max_length': 254},
+        'company': {'required': False, 'max_length': 200},
+        'title': {'required': False, 'max_length': 200},
+        'linkedin_url': {'required': False, 'max_length': 500},
+        'phone': {'required': False, 'max_length': 30},
+        'specialty': {'required': False, 'max_length': 200},
+        'company_type': {'required': False, 'max_length': 50},
+        'source': {'required': False, 'max_length': 200},
+        'notes': {'required': False, 'max_length': 5000},
+    }
+    validated, errors = validate_text_fields(data, schema)
+    if errors:
+        return jsonify({'success': False, 'errors': errors}), 400
 
     try:
         recruiter = RecruiterService.create_recruiter(
             user_id=user_id,
-            first_name=data["first_name"],
-            last_name=data["last_name"],
-            email=data.get("email"),
-            company=data.get("company"),
-            title=data.get("title"),
-            linkedin_url=data.get("linkedin_url"),
-            phone=data.get("phone"),
-            industries=data.get("industries"),
+            first_name=validated["first_name"],
+            last_name=validated["last_name"],
+            email=validated.get("email"),
+            company=validated.get("company"),
+            title=validated.get("title"),
+            linkedin_url=validated.get("linkedin_url"),
+            phone=validated.get("phone"),
+            industries=data.get("industries"),  # Lists handled separately
             locations=data.get("locations"),
-            specialty=data.get("specialty"),
-            company_type=data.get("company_type"),
-            source=data.get("source"),
-            notes=data.get("notes"),
+            specialty=validated.get("specialty"),
+            company_type=validated.get("company_type"),
+            source=validated.get("source"),
+            notes=validated.get("notes"),
         )
+
+        # Increment usage counter
+        current_user = User.query.get(user_id)
+        if current_user:
+            current_user.monthly_recruiter_count += 1
+            db.session.commit()
 
         return (
             jsonify(
@@ -491,16 +516,21 @@ def add_note(recruiter_id):
     user_id = get_jwt_identity()
     data = request.get_json() or {}
 
-    content = data.get("content")
-    if not content:
-        return jsonify({"error": "content is required"}), 400
+    # Validate and sanitize text fields
+    schema = {
+        'content': {'required': True, 'max_length': 10000},
+        'note_type': {'required': False, 'max_length': 50},
+    }
+    validated, errors = validate_text_fields(data, schema)
+    if errors:
+        return jsonify({'success': False, 'errors': errors}), 400
 
     try:
         note = RecruiterService.add_note(
             recruiter_id=recruiter_id,
             user_id=user_id,
-            content=content,
-            note_type=data.get("note_type", "general"),
+            content=validated["content"],
+            note_type=validated.get("note_type") or "general",
         )
 
         return (

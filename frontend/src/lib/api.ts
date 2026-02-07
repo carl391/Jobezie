@@ -267,6 +267,19 @@ export const laborMarketApi = {
 
   getTrends: (params: { role?: string; industry?: string }) =>
     api.get('/labor-market/trends', { params }),
+
+  getSkillsMap: () => api.get('/labor-market/skills-map'),
+
+  getSkillsGap: (data: { target_role?: string; skills?: string[] }) =>
+    api.post('/labor-market/skills-gap', data),
+
+  searchOccupations: (query: string, limit?: number) =>
+    api.get('/labor-market/occupations', { params: { q: query, limit: limit || 10 } }),
+
+  searchSkills: (query: string, category?: string, limit?: number) =>
+    api.get('/labor-market/skills', { params: { q: query, category, limit: limit || 20 } }),
+
+  getHighDemandRoles: () => api.get('/labor-market/roles/high-demand'),
 };
 
 export default api;

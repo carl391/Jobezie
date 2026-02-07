@@ -63,6 +63,17 @@ export function MessageCard({
     return text.slice(0, maxLength) + '...';
   };
 
+  const getWordCount = (text: string) => text.split(/\s+/).filter(Boolean).length;
+
+  const getWordCountBadge = (count: number) => {
+    if (count <= 150) return { color: 'bg-green-100 text-green-700', label: `${count} words` };
+    if (count <= 200) return { color: 'bg-yellow-100 text-yellow-700', label: `${count} words` };
+    return { color: 'bg-red-100 text-red-700', label: `${count} words` };
+  };
+
+  const wordCount = getWordCount(message.body);
+  const wordBadge = getWordCountBadge(wordCount);
+
   return (
     <div className="card hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between">
@@ -158,9 +169,14 @@ export function MessageCard({
 
       {/* Footer */}
       <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
-        <span className="text-xs text-gray-500">
-          {formatDate(message.updated_at || message.created_at)}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-500">
+            {formatDate(message.updated_at || message.created_at)}
+          </span>
+          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${wordBadge.color}`}>
+            {wordBadge.label}
+          </span>
+        </div>
 
         <div className="flex items-center gap-3">
           {message.quality_score !== undefined && message.quality_score !== null && (

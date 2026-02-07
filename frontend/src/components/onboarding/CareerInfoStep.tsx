@@ -4,7 +4,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ChevronLeft, Briefcase, GraduationCap, TrendingUp, Award, Crown } from 'lucide-react';
 import { authApi } from '../../lib/api';
-import type { OnboardingData } from '../../types';
+import { OccupationAutocomplete } from '../ui/OccupationAutocomplete';
+import { SkillsAutocomplete } from '../ui/SkillsAutocomplete';
+import type { OnboardingData, OccupationResult } from '../../types';
 
 const careerInfoSchema = z.object({
   search_status: z.string().min(1, 'Please select your job search status'),
@@ -52,10 +54,16 @@ const INDUSTRY_OPTIONS = [
   'Other',
 ];
 
+interface SelectedSkill {
+  name: string;
+  category: 'skills' | 'abilities' | 'knowledge';
+}
+
 export function CareerInfoStep({ onNext, onBack, initialData }: CareerInfoStepProps) {
   const [step, setStep] = useState<'status' | 'experience' | 'details'>('status');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [targetRoleInput, setTargetRoleInput] = useState('');
+  const [userSkills, setUserSkills] = useState<SelectedSkill[]>([]);
 
   const {
     register,
@@ -112,6 +120,7 @@ export function CareerInfoStep({ onNext, onBack, initialData }: CareerInfoStepPr
     setIsSubmitting(true);
     try {
       const experienceOption = EXPERIENCE_OPTIONS.find((o) => o.value === data.career_stage);
+      const skillNames = userSkills.map((s) => s.name);
 
       await authApi.updateProfile({
         career_stage: data.career_stage,
@@ -119,6 +128,7 @@ export function CareerInfoStep({ onNext, onBack, initialData }: CareerInfoStepPr
         current_role: data.current_role,
         target_roles: data.target_roles,
         target_industries: data.target_industries,
+        technical_skills: skillNames,
         onboarding_step: 2,
       });
 
@@ -272,30 +282,19 @@ export function CareerInfoStep({ onNext, onBack, initialData }: CareerInfoStepPr
       {/* Target Roles */}
       <div className="mb-6">
         <label className="label">Target Roles *</label>
-        <div className="flex gap-2 mb-2">
-          <input
-            type="text"
-            value={targetRoleInput}
-            onChange={(e) => setTargetRoleInput(e.target.value)}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                handleAddTargetRole();
-              }
-            }}
-            placeholder="e.g., Product Manager, Senior PM"
-            className="input flex-1"
-          />
-          <button
-            type="button"
-            onClick={handleAddTargetRole}
-            className="btn btn-secondary"
-          >
-            Add
-          </button>
-        </div>
+        <OccupationAutocomplete
+          value={targetRoleInput}
+          onChange={(title, occupation) => {
+            if (title && !targetRoles.includes(title)) {
+              setValue('target_roles', [...targetRoles, title]);
+            }
+            setTargetRoleInput('');
+          }}
+          placeholder="Search O*NET occupations (e.g., Software Developer)"
+          showShortagePreview
+        />
         {targetRoles.length > 0 && (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 mt-2">
             {targetRoles.map((role) => (
               <span
                 key={role}
@@ -319,7 +318,7 @@ export function CareerInfoStep({ onNext, onBack, initialData }: CareerInfoStepPr
       </div>
 
       {/* Target Industries */}
-      <div className="mb-8">
+      <div className="mb-6">
         <label className="label">Target Industries * (select up to 3)</label>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {INDUSTRY_OPTIONS.map((industry) => (
@@ -347,6 +346,20 @@ export function CareerInfoStep({ onNext, onBack, initialData }: CareerInfoStepPr
         {errors.target_industries && (
           <p className="error-text mt-1">{errors.target_industries.message}</p>
         )}
+      </div>
+
+      {/* Skills */}
+      <div className="mb-8">
+        <label className="label">Your Skills</label>
+        <p className="text-xs text-gray-500 mb-2">
+          Add your top skills — we'll match them against 1,016 occupations and 120 skill dimensions
+        </p>
+        <SkillsAutocomplete
+          selectedSkills={userSkills}
+          onChange={setUserSkills}
+          showMatchPreview={userSkills.length >= 5}
+          compact
+        />
       </div>
 
       <button

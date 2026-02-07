@@ -23,7 +23,8 @@ import {
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/Tabs';
 import { Badge } from '../components/ui/Badge';
-import { authApi, subscriptionApi } from '../lib/api';
+import { SkillsAutocomplete } from '../components/ui/SkillsAutocomplete';
+import { authApi, subscriptionApi, dashboardApi } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useTour } from '../contexts/TourContext';
 
@@ -86,13 +87,26 @@ const SUBSCRIPTION_TIERS = [
   {
     id: 'expert',
     name: 'Expert',
-    price: 49,
+    price: 39,
     description: 'Maximum career acceleration',
     features: ['Unlimited recruiter contacts', 'Unlimited resumes', 'Full AI coaching', 'Interview prep', 'Dedicated support'],
     icon: <Crown className="w-5 h-5" />,
     color: 'bg-purple-100 text-purple-700',
   },
 ];
+
+interface SelectedSkill {
+  name: string;
+  category: 'skills' | 'abilities' | 'knowledge';
+}
+
+interface UsageData {
+  recruiters?: { used: number; limit: number };
+  messages?: { used: number; limit: number };
+  resumes?: { used: number; limit: number };
+  research?: { used: number; limit: number };
+  tailored_resumes?: { used: number; limit: number };
+}
 
 export function Settings() {
   const { user, refreshUser } = useAuth();
@@ -105,6 +119,8 @@ export function Settings() {
   const [error, setError] = useState<string | null>(null);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
+  const [skills, setSkills] = useState<SelectedSkill[]>([]);
+  const [usageData, setUsageData] = useState<UsageData | null>(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState<{
     tier: string;
     status: string;
@@ -142,9 +158,10 @@ export function Settings() {
     resolver: zodResolver(passwordSchema),
   });
 
-  // Load subscription status
+  // Load subscription status and usage data
   useEffect(() => {
     fetchSubscriptionStatus();
+    fetchUsageData();
   }, []);
 
   // Reset profile form when user changes
@@ -175,13 +192,27 @@ export function Settings() {
     }
   };
 
+  const fetchUsageData = async () => {
+    try {
+      const response = await dashboardApi.getDashboard();
+      const usage = response.data.data?.usage || response.data.usage;
+      if (usage) setUsageData(usage);
+    } catch (err) {
+      console.error('Error fetching usage data:', err);
+    }
+  };
+
   const handleProfileSubmit = async (data: ProfileFormData) => {
     setIsUpdatingProfile(true);
     setProfileSuccess(false);
     setError(null);
 
     try {
-      await authApi.updateProfile(data);
+      const skillNames = skills.map((s) => s.name);
+      await authApi.updateProfile({
+        ...data,
+        technical_skills: skillNames,
+      });
       await refreshUser();
       setProfileSuccess(true);
       setTimeout(() => setProfileSuccess(false), 3000);
@@ -390,6 +421,19 @@ export function Settings() {
                 </div>
               </div>
 
+              {/* Skills Section */}
+              <div className="border-t border-gray-200 pt-4 mt-4">
+                <h3 className="font-medium text-gray-900 mb-1">Skills</h3>
+                <p className="text-xs text-gray-500 mb-3">
+                  Add skills from 120 O*NET dimensions across 3 categories
+                </p>
+                <SkillsAutocomplete
+                  selectedSkills={skills}
+                  onChange={setSkills}
+                  showMatchPreview={skills.length >= 5}
+                />
+              </div>
+
               {error && (
                 <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg flex items-center gap-2">
                   <AlertCircle className="w-4 h-4" />
@@ -562,6 +606,45 @@ export function Settings() {
                 </div>
               )}
             </div>
+
+            {/* Usage meters */}
+            {usageData && (
+              <div className="card">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Usage This Month</h2>
+                <div className="space-y-4">
+                  {[
+                    { label: 'Recruiters', data: usageData.recruiters },
+                    { label: 'Messages', data: usageData.messages },
+                    { label: 'Resumes', data: usageData.resumes },
+                  ].map(({ label, data }) => {
+                    if (!data || !data.limit) return null;
+                    const pct = Math.min(100, (data.used / data.limit) * 100);
+                    const barColor = pct > 80 ? 'bg-red-500' : pct > 50 ? 'bg-yellow-500' : 'bg-green-500';
+                    return (
+                      <div key={label}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm text-gray-700">{label}</span>
+                          <span className="text-sm font-medium text-gray-900">
+                            {data.used}/{data.limit === 999999 ? '∞' : data.limit}
+                          </span>
+                        </div>
+                        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full ${barColor} rounded-full transition-all`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                        {pct > 80 && data.limit !== 999999 && (
+                          <p className="text-xs text-red-600 mt-1">
+                            Approaching limit — upgrade for more capacity
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Plan comparison */}
             <div className="card">

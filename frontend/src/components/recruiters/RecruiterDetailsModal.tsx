@@ -114,8 +114,8 @@ export function RecruiterDetailsModal({
     }
   };
 
-  // Use engagement score from backend
-  const getEngagementScore = () => {
+  // Use response score from backend (formerly "engagement score")
+  const getResponseScore = () => {
     return recruiter?.engagement_score || 0;
   };
 
@@ -152,7 +152,7 @@ export function RecruiterDetailsModal({
     );
   }
 
-  const engagementScore = getEngagementScore();
+  const responseScore = getResponseScore();
   const fitScore = getFitScore();
 
   return (
@@ -207,8 +207,8 @@ export function RecruiterDetailsModal({
         {/* Scores */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="card p-4 text-center">
-            <ScoreCircle score={engagementScore} size="md" />
-            <p className="text-sm text-gray-600 mt-2">Engagement</p>
+            <ScoreCircle score={responseScore} size="md" />
+            <p className="text-sm text-gray-600 mt-2">Response Score</p>
           </div>
           <div className="card p-4 text-center">
             <ScoreCircle score={fitScore} size="md" />

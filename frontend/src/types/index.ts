@@ -233,6 +233,71 @@ export interface FollowUpRecommendation {
   suggested_action: string;
 }
 
+// Labor Market types
+export interface OccupationResult {
+  id: string;
+  title: string;
+  description?: string;
+  job_zone?: number;
+  bright_outlook?: boolean;
+  green?: boolean;
+  shortage_score?: number;
+  demand_level?: string;
+}
+
+export interface SkillResult {
+  id: string;
+  name: string;
+  category: 'skills' | 'abilities' | 'knowledge';
+  description?: string;
+}
+
+export interface SkillsMapData {
+  skills: string[];
+  abilities: string[];
+  knowledge: string[];
+  total_matched: number;
+  coverage_by_category: {
+    [key: string]: {
+      matched: number;
+      total: number;
+      pct: number;
+    };
+  };
+}
+
+export interface SkillsGapData {
+  role: string;
+  occupation_title: string;
+  categories: {
+    [key: string]: {
+      matched: number;
+      total: number;
+      pct: number;
+      matched_items: string[];
+      missing_items: string[];
+    };
+  };
+  overall: {
+    matched: number;
+    total: number;
+    pct: number;
+  };
+}
+
+export interface OpportunityData {
+  total_score: number;
+  interpretation: string;
+  components: {
+    user_match: number;
+    shortage: number;
+  };
+  target_role: string;
+  matching_skills: string[];
+  missing_skills: string[];
+  recommendations: string[];
+}
+
 // Form types
 export interface LoginFormData {
   email: string;

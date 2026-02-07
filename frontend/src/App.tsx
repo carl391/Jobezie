@@ -20,6 +20,8 @@ import { LinkedIn } from './pages/LinkedIn';
 import { LaborMarket } from './pages/LaborMarket';
 import { InterviewPrep } from './pages/InterviewPrep';
 import { Learn } from './pages/Learn';
+import { ForgotPassword } from './pages/ForgotPassword';
+import { ResetPassword } from './pages/ResetPassword';
 
 import './index.css';
 
@@ -42,6 +44,8 @@ function App() {
             {/* Public routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password/:token" element={<ResetPassword />} />
 
             {/* Onboarding route (protected but doesn't require onboarding completion) */}
             <Route

@@ -43,55 +43,84 @@ def calculate_engagement_score(
     messages_opened: int,
     responses_received: int,
     last_contact_date: Optional[datetime] = None,
+    email_tracking_available: bool = False,
 ) -> Dict:
     """
-    Calculate recruiter engagement score.
+    Calculate recruiter engagement score based on available data.
+
+    When email tracking is unavailable, returns "Response Score" with
+    redistributed weights to maintain transparency about what's being measured.
 
     Args:
         messages_sent: Total messages sent to recruiter
         messages_opened: Messages that were opened
         responses_received: Responses received from recruiter
         last_contact_date: Date of last contact
+        email_tracking_available: Whether email open tracking is enabled
 
     Returns:
-        Dictionary with total score and component breakdown
+        Dictionary with total score, label, and component breakdown
     """
-    # Calculate response rate score
+    # Calculate component scores
     response_score = _calculate_response_rate_score(messages_sent, responses_received)
-
-    # Calculate open rate score
-    open_score = _calculate_open_rate_score(messages_sent, messages_opened)
-
-    # Calculate recency score
     recency_score = _calculate_recency_score(last_contact_date)
 
-    # Calculate weighted total
-    total_score = int(
-        response_score * (ENGAGEMENT_WEIGHTS["response_rate"] / 100)
-        + open_score * (ENGAGEMENT_WEIGHTS["open_rate"] / 100)
-        + recency_score * (ENGAGEMENT_WEIGHTS["recency"] / 100)
-    )
+    if email_tracking_available:
+        # Full engagement score with all three components
+        open_score = _calculate_open_rate_score(messages_sent, messages_opened)
 
-    return {
-        "total_score": total_score,
-        "components": {
-            "response_rate": response_score,
-            "open_rate": open_score,
-            "recency": recency_score,
-        },
-        "metrics": {
-            "messages_sent": messages_sent,
-            "messages_opened": messages_opened,
-            "responses_received": responses_received,
-            "response_rate": round(
-                (responses_received / messages_sent * 100) if messages_sent > 0 else 0,
-                1,
-            ),
-            "open_rate": round(
-                (messages_opened / messages_sent * 100) if messages_sent > 0 else 0, 1
-            ),
-        },
-    }
+        total_score = int(
+            response_score * (ENGAGEMENT_WEIGHTS["response_rate"] / 100)
+            + open_score * (ENGAGEMENT_WEIGHTS["open_rate"] / 100)
+            + recency_score * (ENGAGEMENT_WEIGHTS["recency"] / 100)
+        )
+
+        return {
+            "total_score": total_score,
+            "label": "Engagement Score",
+            "components": {
+                "response_rate": {"score": response_score, "weight": 40},
+                "open_rate": {"score": open_score, "weight": 30},
+                "recency": {"score": recency_score, "weight": 30},
+            },
+            "metrics": {
+                "messages_sent": messages_sent,
+                "messages_opened": messages_opened,
+                "responses_received": responses_received,
+                "response_rate": round(
+                    (responses_received / messages_sent * 100) if messages_sent > 0 else 0,
+                    1,
+                ),
+                "open_rate": round(
+                    (messages_opened / messages_sent * 100) if messages_sent > 0 else 0, 1
+                ),
+            },
+        }
+    else:
+        # Response Score only - redistribute weights: 55% response, 45% recency
+        # This maintains transparency about what's being measured
+        total_score = int(
+            response_score * 0.55
+            + recency_score * 0.45
+        )
+
+        return {
+            "total_score": total_score,
+            "label": "Response Score",
+            "components": {
+                "response_rate": {"score": response_score, "weight": 55},
+                "recency": {"score": recency_score, "weight": 45},
+            },
+            "metrics": {
+                "messages_sent": messages_sent,
+                "responses_received": responses_received,
+                "response_rate": round(
+                    (responses_received / messages_sent * 100) if messages_sent > 0 else 0,
+                    1,
+                ),
+            },
+            "note": "Full engagement tracking coming soon",
+        }
 
 
 def _calculate_response_rate_score(messages_sent: int, responses_received: int) -> int:

@@ -6,6 +6,13 @@ with SQLAlchemy before migrations are created.
 """
 
 from app.models.activity import Activity, ActivityType, PipelineItem, PipelineStage
+from app.models.labor_market import (
+    LaborMarketData,
+    Occupation,
+    OccupationSkill,
+    ShortageScore,
+    Skill,
+)
 from app.models.message import Message, MessageStatus, MessageType
 from app.models.recruiter import Recruiter, RecruiterNote, RecruiterStatus
 from app.models.resume import Resume, ResumeVersion
@@ -34,4 +41,10 @@ __all__ = [
     "ActivityType",
     "PipelineStage",
     "PipelineItem",
+    # Labor Market
+    "Occupation",
+    "Skill",
+    "OccupationSkill",
+    "LaborMarketData",
+    "ShortageScore",
 ]

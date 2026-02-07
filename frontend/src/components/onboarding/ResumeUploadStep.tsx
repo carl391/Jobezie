@@ -88,7 +88,7 @@ export function ResumeUploadStep({ onNext, onBack, onSkip }: ResumeUploadStepPro
       formData.append('is_master', 'true');
 
       const response = await resumeApi.upload(formData);
-      const resume = response.data.resume;
+      const resume = response.data.data?.resume || response.data.resume;
 
       // Update onboarding step
       await authApi.updateProfile({ onboarding_step: 3 });

@@ -68,6 +68,12 @@ export function Onboarding() {
   };
 
   const handleSkip = () => {
+    // If skipping Step 3 (Resume Upload), also skip Step 4 (ATS Results)
+    // since there's no resume to score
+    if (currentStep === 3) {
+      setCurrentStep(5);
+      return;
+    }
     handleNext();
   };
 

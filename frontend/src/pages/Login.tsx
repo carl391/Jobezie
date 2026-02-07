@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -16,6 +16,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export function Login() {
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -26,15 +27,33 @@ export function Login() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
 
+  // Pre-fill email from localStorage if Remember Me was checked
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('jobezie_remember_email');
+    if (savedEmail) {
+      setValue('email', savedEmail);
+      setRememberMe(true);
+    }
+  }, [setValue]);
+
   const onSubmit = async (data: LoginFormData) => {
     setError(null);
     try {
       await login(data.email, data.password);
+
+      // Save or clear remembered email
+      if (rememberMe) {
+        localStorage.setItem('jobezie_remember_email', data.email);
+      } else {
+        localStorage.removeItem('jobezie_remember_email');
+      }
+
       navigate(from, { replace: true });
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
@@ -102,6 +121,8 @@ export function Login() {
               <label className="flex items-center">
                 <input
                   type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
                   className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                 />
                 <span className="ml-2 text-sm text-gray-600">Remember me</span>

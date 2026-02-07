@@ -46,12 +46,14 @@ const ACTIVITY_COLORS: Record<string, string> = {
 };
 
 const PIPELINE_STAGES = [
-  { id: 'identified', label: 'Identified', color: 'bg-gray-100' },
-  { id: 'researched', label: 'Researched', color: 'bg-blue-100' },
+  { id: 'new', label: 'New', color: 'bg-gray-100' },
+  { id: 'researching', label: 'Researching', color: 'bg-blue-100' },
   { id: 'contacted', label: 'Contacted', color: 'bg-yellow-100' },
   { id: 'responded', label: 'Responded', color: 'bg-green-100' },
-  { id: 'meeting_scheduled', label: 'Meeting', color: 'bg-purple-100' },
-  { id: 'interviewed', label: 'Interviewed', color: 'bg-indigo-100' },
+  { id: 'interviewing', label: 'Interviewing', color: 'bg-purple-100' },
+  { id: 'offer', label: 'Offer', color: 'bg-orange-100' },
+  { id: 'accepted', label: 'Accepted', color: 'bg-emerald-100' },
+  { id: 'declined', label: 'Declined', color: 'bg-red-100' },
 ];
 
 export function Activity() {

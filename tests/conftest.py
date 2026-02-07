@@ -137,6 +137,132 @@ class AuthActions:
         return self._client.post("/api/auth/logout", headers={"Authorization": f"Bearer {token}"})
 
 
+@pytest.fixture(scope="function")
+def test_user_expert(app):
+    """Create a test user with Expert subscription."""
+    with app.app_context():
+        user = User(
+            email="expert@example.com",
+            first_name="Expert",
+            last_name="User",
+            subscription_tier="expert",
+            years_experience=12,
+            career_stage="senior",
+            current_role="Principal Engineer",
+            target_roles=["VP Engineering", "CTO"],
+            target_industries=["technology", "fintech"],
+            technical_skills=["Python", "Go", "Kubernetes", "AWS", "System Design"],
+            soft_skills=["Leadership", "Mentoring", "Strategic Planning"],
+            location="Seattle, WA",
+            salary_expectation=280000,
+        )
+        user.set_password("TestPassword123")
+        db.session.add(user)
+        db.session.commit()
+        db.session.refresh(user)
+        yield user
+
+
+@pytest.fixture(scope="function")
+def test_user_career_keeper(app):
+    """Create a test user with Career Keeper subscription."""
+    with app.app_context():
+        user = User(
+            email="keeper@example.com",
+            first_name="Keeper",
+            last_name="User",
+            subscription_tier="career_keeper",
+        )
+        user.set_password("TestPassword123")
+        db.session.add(user)
+        db.session.commit()
+        db.session.refresh(user)
+        yield user
+
+
+@pytest.fixture(scope="function")
+def test_user_at_limit(app):
+    """Create a BASIC user who has hit all their tier limits."""
+    with app.app_context():
+        user = User(
+            email="limited@example.com",
+            first_name="Limited",
+            last_name="User",
+            subscription_tier="basic",
+            monthly_recruiter_count=5,
+            monthly_message_count=10,
+            monthly_research_count=5,
+            monthly_tailoring_count=2,
+            daily_coach_count=10,
+            monthly_interview_prep_count=0,  # BASIC has 0 limit
+        )
+        user.set_password("TestPassword123")
+        db.session.add(user)
+        db.session.commit()
+        db.session.refresh(user)
+        yield user
+
+
+@pytest.fixture(scope="function")
+def auth_headers_expert(app, test_user_expert):
+    """Create authorization headers for expert user."""
+    with app.app_context():
+        access_token = create_access_token(identity=str(test_user_expert.id))
+        return {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json",
+        }
+
+
+@pytest.fixture(scope="function")
+def auth_headers_career_keeper(app, test_user_career_keeper):
+    """Create authorization headers for career keeper user."""
+    with app.app_context():
+        access_token = create_access_token(identity=str(test_user_career_keeper.id))
+        return {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json",
+        }
+
+
+@pytest.fixture(scope="function")
+def auth_headers_at_limit(app, test_user_at_limit):
+    """Create authorization headers for user at tier limits."""
+    with app.app_context():
+        access_token = create_access_token(identity=str(test_user_at_limit.id))
+        return {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json",
+        }
+
+
+@pytest.fixture
+def second_user(app):
+    """Create a second user for data isolation tests."""
+    with app.app_context():
+        user = User(
+            email="other@example.com",
+            first_name="Other",
+            last_name="User",
+        )
+        user.set_password("TestPassword123")
+        db.session.add(user)
+        db.session.commit()
+        db.session.refresh(user)
+        yield user
+
+
+@pytest.fixture
+def auth_headers_second(app, second_user):
+    """Create authorization headers for the second user."""
+    with app.app_context():
+        access_token = create_access_token(identity=str(second_user.id))
+        return {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json",
+        }
+
+
 @pytest.fixture
 def auth(client):
     """Provide auth helper for tests."""

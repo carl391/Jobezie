@@ -5,7 +5,7 @@ Core user model with authentication, profile data, and subscription management.
 """
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import Enum
 
 import bcrypt
@@ -232,8 +232,29 @@ class User(db.Model):
         }
         return limits.get(self.subscription_tier, limits[SubscriptionTier.BASIC.value])
 
+    def reset_monthly_usage(self) -> None:
+        """Reset all monthly usage counters and set next reset date."""
+        self.monthly_recruiter_count = 0
+        self.monthly_research_count = 0
+        self.monthly_message_count = 0
+        self.monthly_resume_count = 0
+        self.monthly_tailoring_count = 0
+        self.monthly_interview_prep_count = 0
+        self.daily_coach_count = 0
+        self.usage_reset_date = datetime.utcnow() + timedelta(days=30)
+
     def can_use_feature(self, feature: str, count: int = 1) -> bool:
-        """Check if user can use a feature based on tier limits."""
+        """
+        Check if user can use a feature based on tier limits.
+
+        Includes lazy reset: if usage_reset_date has passed, automatically
+        resets all monthly counters before checking the limit.
+        """
+        # Lazy reset: check if reset is due BEFORE checking limit
+        if self.usage_reset_date and self.usage_reset_date <= datetime.utcnow():
+            self.reset_monthly_usage()
+            db.session.commit()
+
         limit = self.tier_limits.get(feature, 0)
         if limit == -1:  # Unlimited
             return True

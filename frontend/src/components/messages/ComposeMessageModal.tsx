@@ -296,6 +296,7 @@ export function ComposeMessageModal({
                   onClick={handleGenerate}
                   disabled={isGenerating || !watchRecruiterId}
                   className="btn btn-outline btn-sm"
+                  data-tour="message-ai"
                 >
                   {isGenerating ? (
                     <Loader2 className="w-3 h-3 animate-spin mr-1" />
