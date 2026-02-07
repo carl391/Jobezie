@@ -352,7 +352,7 @@ export function InterviewPrep() {
                         AI Feedback
                       </h3>
                       <div className="flex items-center gap-2">
-                        <span className="text-2xl font-bold text-green-700">{feedback.score}/10</span>
+                        <span className="text-2xl font-bold text-green-700">{feedback.score ?? 0}/10</span>
                       </div>
                     </div>
                     <p className="text-green-800 whitespace-pre-wrap">{feedback.feedback}</p>

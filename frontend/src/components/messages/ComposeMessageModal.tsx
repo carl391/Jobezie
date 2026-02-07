@@ -377,11 +377,11 @@ export function ComposeMessageModal({
                     <div key={item.label} className="flex items-center justify-between text-xs">
                       <span className="text-gray-600">{item.label}</span>
                       <span className={`font-medium ${
-                        item.score >= 80 ? 'text-green-600' :
-                        item.score >= 60 ? 'text-yellow-600' :
+                        item.score >= 71 ? 'text-green-600' :
+                        item.score >= 41 ? 'text-yellow-600' :
                         'text-red-600'
                       }`}>
-                        {item.score}%
+                        {item.score ?? 0}%
                       </span>
                     </div>
                   ))}

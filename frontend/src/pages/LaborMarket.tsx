@@ -17,41 +17,43 @@ import { laborMarketApi } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 
 interface MarketOverview {
-  employment_rate: number;
-  job_openings: number;
-  avg_salary_growth: number;
-  remote_percentage: number;
-  top_industries: Array<{ name: string; growth: number }>;
-  market_sentiment: 'bullish' | 'neutral' | 'bearish';
+  unemployment_rate: number;
+  market_condition: string;
+  trending_industries: Array<{ name: string; growth_rate: number }>;
+  high_demand_roles: string[];
+  updated_at: string;
 }
 
 interface ShortageData {
-  score: number;
-  grade: string;
-  demand_level: string;
-  supply_level: string;
-  factors: Array<{ name: string; impact: string; score: number }>;
-  recommendations: string[];
+  total_score: number;
+  interpretation: string;
+  components: Record<string, number>;
+  weights: Record<string, number>;
+  role: string;
+  normalized_role: string;
+  industry?: string;
+  projected_growth: string;
 }
 
 interface SalaryData {
   role: string;
   experience_level: string;
+  base_salary: number;
+  adjusted_salary: number;
   location?: string;
-  min_salary: number;
-  median_salary: number;
-  max_salary: number;
-  percentiles: { p25: number; p50: number; p75: number; p90: number };
-  comparison_to_market: number;
+  location_adjustment: string;
+  range: { low: number; median: number; high: number };
+  all_levels: Record<string, number>;
 }
 
 interface OpportunityData {
-  score: number;
-  grade: string;
-  match_factors: Array<{ name: string; score: number; max: number }>;
+  total_score: number;
+  interpretation: string;
+  components: { user_match: number; shortage: number };
+  target_role: string;
+  matching_skills: string[];
+  missing_skills: string[];
   recommendations: string[];
-  skill_gaps: string[];
-  in_demand_skills: string[];
 }
 
 export function LaborMarket() {
@@ -163,14 +165,14 @@ export function LaborMarket() {
   };
 
   const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600';
-    if (score >= 60) return 'text-yellow-600';
+    if (score >= 71) return 'text-green-600';
+    if (score >= 41) return 'text-yellow-600';
     return 'text-red-600';
   };
 
   const getScoreBg = (score: number) => {
-    if (score >= 80) return 'bg-green-100';
-    if (score >= 60) return 'bg-yellow-100';
+    if (score >= 71) return 'bg-green-100';
+    if (score >= 41) return 'bg-yellow-100';
     return 'bg-red-100';
   };
 
@@ -205,28 +207,25 @@ export function LaborMarket() {
         ) : overview ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-600 font-medium">Job Openings</p>
-              <p className="text-2xl font-bold text-blue-900">{(overview.job_openings / 1000000).toFixed(1)}M</p>
+              <p className="text-sm text-blue-600 font-medium">Unemployment Rate</p>
+              <p className="text-2xl font-bold text-blue-900">{overview.unemployment_rate ?? 0}%</p>
             </div>
             <div className="p-4 bg-green-50 rounded-lg">
-              <p className="text-sm text-green-600 font-medium">Avg. Salary Growth</p>
-              <p className="text-2xl font-bold text-green-900 flex items-center gap-1">
-                <ArrowUp className="w-5 h-5" />
-                {overview.avg_salary_growth}%
+              <p className="text-sm text-green-600 font-medium">Market Condition</p>
+              <p className="text-2xl font-bold text-green-900 capitalize flex items-center gap-1">
+                {overview.market_condition?.toLowerCase() === 'strong' && <ArrowUp className="w-5 h-5 text-green-500" />}
+                {(overview.market_condition?.toLowerCase() === 'challenging' || overview.market_condition?.toLowerCase() === 'difficult') && <ArrowDown className="w-5 h-5 text-red-500" />}
+                {overview.market_condition?.toLowerCase() === 'moderate' && <Minus className="w-5 h-5 text-yellow-500" />}
+                {overview.market_condition || 'N/A'}
               </p>
             </div>
             <div className="p-4 bg-purple-50 rounded-lg">
-              <p className="text-sm text-purple-600 font-medium">Remote Jobs</p>
-              <p className="text-2xl font-bold text-purple-900">{overview.remote_percentage}%</p>
+              <p className="text-sm text-purple-600 font-medium">Trending Industries</p>
+              <p className="text-2xl font-bold text-purple-900">{overview.trending_industries?.length ?? 0}</p>
             </div>
             <div className="p-4 bg-orange-50 rounded-lg">
-              <p className="text-sm text-orange-600 font-medium">Market Sentiment</p>
-              <p className="text-2xl font-bold text-orange-900 capitalize flex items-center gap-1">
-                {overview.market_sentiment === 'bullish' && <ArrowUp className="w-5 h-5 text-green-500" />}
-                {overview.market_sentiment === 'bearish' && <ArrowDown className="w-5 h-5 text-red-500" />}
-                {overview.market_sentiment === 'neutral' && <Minus className="w-5 h-5 text-gray-500" />}
-                {overview.market_sentiment}
-              </p>
+              <p className="text-sm text-orange-600 font-medium">High Demand Roles</p>
+              <p className="text-2xl font-bold text-orange-900">{overview.high_demand_roles?.length ?? 0}</p>
             </div>
           </div>
         ) : (
@@ -293,36 +292,37 @@ export function LaborMarket() {
               <div className="mt-4 p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-sm text-gray-600">Shortage Score</span>
-                  <div className={`text-3xl font-bold ${getScoreColor(shortageData.score)}`}>
-                    {shortageData.score}
+                  <div className={`text-3xl font-bold ${getScoreColor(shortageData.total_score)}`}>
+                    {shortageData.total_score}
                   </div>
                 </div>
-                <div className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getScoreBg(shortageData.score)} ${getScoreColor(shortageData.score)}`}>
-                  {shortageData.grade}
+                <div className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getScoreBg(shortageData.total_score)} ${getScoreColor(shortageData.total_score)}`}>
+                  {shortageData.interpretation}
                 </div>
                 <div className="mt-4 space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Demand Level:</span>
-                    <span className="font-medium">{shortageData.demand_level}</span>
+                    <span className="text-gray-600">Projected Growth:</span>
+                    <span className="font-medium">{shortageData.projected_growth}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Supply Level:</span>
-                    <span className="font-medium">{shortageData.supply_level}</span>
-                  </div>
-                </div>
-                {shortageData.recommendations?.length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-gray-200">
-                    <p className="text-sm font-medium text-gray-700 mb-2">Recommendations</p>
-                    <ul className="space-y-1 text-sm text-gray-600">
-                      {shortageData.recommendations.slice(0, 3).map((rec, i) => (
-                        <li key={i} className="flex items-start gap-2">
-                          <span className="text-primary-600">•</span>
-                          {rec}
-                        </li>
+                  {shortageData.components && (
+                    <div className="mt-3 space-y-2">
+                      {Object.entries(shortageData.components).map(([key, value]) => (
+                        <div key={key}>
+                          <div className="flex items-center justify-between text-xs mb-1">
+                            <span className="text-gray-600 capitalize">{key}</span>
+                            <span className="font-medium">{value}/100</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-1.5">
+                            <div
+                              className={`h-full rounded-full ${value >= 80 ? 'bg-green-500' : value >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                              style={{ width: `${value}%` }}
+                            />
+                          </div>
+                        </div>
                       ))}
-                    </ul>
-                  </div>
-                )}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -380,39 +380,32 @@ export function LaborMarket() {
               <div className="mt-4 p-4 bg-gray-50 rounded-lg">
                 <div className="text-center mb-4">
                   <p className="text-sm text-gray-600 mb-1">Median Salary</p>
-                  <p className="text-3xl font-bold text-green-600">{formatSalary(salaryData.median_salary)}</p>
+                  <p className="text-3xl font-bold text-green-600">{formatSalary(salaryData.range?.median ?? salaryData.adjusted_salary)}</p>
                   <p className="text-sm text-gray-500">{salaryData.role} ({salaryData.experience_level})</p>
+                  {salaryData.location && (
+                    <p className="text-xs text-gray-400 mt-1">{salaryData.location} ({salaryData.location_adjustment})</p>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-4 text-center">
                   <div className="p-3 bg-white rounded-lg">
                     <p className="text-xs text-gray-500">Minimum</p>
-                    <p className="font-semibold text-gray-700">{formatSalary(salaryData.min_salary)}</p>
+                    <p className="font-semibold text-gray-700">{formatSalary(salaryData.range?.low ?? 0)}</p>
                   </div>
                   <div className="p-3 bg-white rounded-lg">
                     <p className="text-xs text-gray-500">Maximum</p>
-                    <p className="font-semibold text-gray-700">{formatSalary(salaryData.max_salary)}</p>
+                    <p className="font-semibold text-gray-700">{formatSalary(salaryData.range?.high ?? 0)}</p>
                   </div>
                 </div>
-                {salaryData.percentiles && (
+                {salaryData.all_levels && Object.keys(salaryData.all_levels).length > 0 && (
                   <div className="mt-4 pt-4 border-t border-gray-200">
-                    <p className="text-sm font-medium text-gray-700 mb-2">Percentiles</p>
-                    <div className="grid grid-cols-4 gap-2 text-center text-sm">
-                      <div>
-                        <p className="text-gray-500">25th</p>
-                        <p className="font-medium">{formatSalary(salaryData.percentiles.p25)}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-500">50th</p>
-                        <p className="font-medium">{formatSalary(salaryData.percentiles.p50)}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-500">75th</p>
-                        <p className="font-medium">{formatSalary(salaryData.percentiles.p75)}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-500">90th</p>
-                        <p className="font-medium">{formatSalary(salaryData.percentiles.p90)}</p>
-                      </div>
+                    <p className="text-sm font-medium text-gray-700 mb-2">By Experience Level</p>
+                    <div className="space-y-2">
+                      {Object.entries(salaryData.all_levels).map(([level, salary]) => (
+                        <div key={level} className="flex items-center justify-between text-sm">
+                          <span className="text-gray-600 capitalize">{level.replace(/_/g, ' ')}</span>
+                          <span className="font-medium">{formatSalary(salary)}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -441,36 +434,39 @@ export function LaborMarket() {
         {opportunityData ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="text-center p-6 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl">
-              <div className={`text-5xl font-bold ${getScoreColor(opportunityData.score)} mb-2`}>
-                {opportunityData.score}%
+              <div className={`text-5xl font-bold ${getScoreColor(opportunityData.total_score)} mb-2`}>
+                {opportunityData.total_score}%
               </div>
-              <div className="text-lg font-medium text-orange-800">{opportunityData.grade}</div>
+              <div className="text-lg font-medium text-orange-800">{opportunityData.interpretation}</div>
+              {opportunityData.target_role && (
+                <p className="text-sm text-orange-600 mt-1 capitalize">{opportunityData.target_role.replace(/_/g, ' ')}</p>
+              )}
             </div>
 
             <div className="md:col-span-2">
               <h3 className="font-medium text-gray-900 mb-3">Match Factors</h3>
               <div className="space-y-2">
-                {opportunityData.match_factors?.map((factor, index) => (
-                  <div key={index}>
+                {opportunityData.components && Object.entries(opportunityData.components).map(([name, score]) => (
+                  <div key={name}>
                     <div className="flex items-center justify-between text-sm mb-1">
-                      <span className="text-gray-700">{factor.name}</span>
-                      <span className="font-medium">{factor.score}/{factor.max}</span>
+                      <span className="text-gray-700 capitalize">{name.replace(/_/g, ' ')}</span>
+                      <span className="font-medium">{score}/100</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div
                         className="bg-orange-500 h-2 rounded-full transition-all"
-                        style={{ width: `${(factor.score / factor.max) * 100}%` }}
+                        style={{ width: `${score}%` }}
                       />
                     </div>
                   </div>
                 ))}
               </div>
 
-              {opportunityData.skill_gaps?.length > 0 && (
+              {opportunityData.missing_skills?.length > 0 && (
                 <div className="mt-4">
                   <h4 className="text-sm font-medium text-gray-700 mb-2">Skills to Develop</h4>
                   <div className="flex flex-wrap gap-2">
-                    {opportunityData.skill_gaps.map((skill, i) => (
+                    {opportunityData.missing_skills.map((skill: string, i: number) => (
                       <span key={i} className="px-2 py-1 bg-red-50 text-red-700 text-xs rounded-full">
                         {skill}
                       </span>
@@ -479,16 +475,30 @@ export function LaborMarket() {
                 </div>
               )}
 
-              {opportunityData.in_demand_skills?.length > 0 && (
+              {opportunityData.matching_skills?.length > 0 && (
                 <div className="mt-4">
                   <h4 className="text-sm font-medium text-gray-700 mb-2">Your In-Demand Skills</h4>
                   <div className="flex flex-wrap gap-2">
-                    {opportunityData.in_demand_skills.map((skill, i) => (
+                    {opportunityData.matching_skills.map((skill: string, i: number) => (
                       <span key={i} className="px-2 py-1 bg-green-50 text-green-700 text-xs rounded-full">
                         {skill}
                       </span>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {opportunityData.recommendations?.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Recommendations</h4>
+                  <ul className="space-y-1 text-sm text-gray-600">
+                    {opportunityData.recommendations.slice(0, 3).map((rec: string, i: number) => (
+                      <li key={i} className="flex items-start gap-2">
+                        <span className="text-primary-600">•</span>
+                        {rec}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
             </div>

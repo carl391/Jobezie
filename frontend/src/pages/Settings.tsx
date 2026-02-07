@@ -618,7 +618,7 @@ export function Settings() {
                     { label: 'Resumes', data: usageData.resumes },
                   ].map(({ label, data }) => {
                     if (!data || !data.limit) return null;
-                    const pct = Math.min(100, (data.used / data.limit) * 100);
+                    const pct = data.limit > 0 ? Math.min(100, ((data.used ?? 0) / data.limit) * 100) : 0;
                     const barColor = pct > 80 ? 'bg-red-500' : pct > 50 ? 'bg-yellow-500' : 'bg-green-500';
                     return (
                       <div key={label}>

@@ -156,15 +156,15 @@ export function Recruiters() {
                 data-tour={index === 0 ? "recruiter-engagement" : undefined}
               >
                 <div>
-                  <p className="text-lg font-semibold text-gray-900">{recruiter.messages_sent}</p>
+                  <p className="text-lg font-semibold text-gray-900">{recruiter.messages_sent ?? 0}</p>
                   <p className="text-xs text-gray-500">Sent</p>
                 </div>
                 <div>
-                  <p className="text-lg font-semibold text-gray-900">{recruiter.messages_opened || 0}</p>
+                  <p className="text-lg font-semibold text-gray-900">{recruiter.messages_opened ?? 0}</p>
                   <p className="text-xs text-gray-500">Opened</p>
                 </div>
                 <div>
-                  <p className="text-lg font-semibold text-gray-900">{recruiter.responses_received}</p>
+                  <p className="text-lg font-semibold text-gray-900">{recruiter.responses_received ?? 0}</p>
                   <p className="text-xs text-gray-500">Replies</p>
                 </div>
               </div>

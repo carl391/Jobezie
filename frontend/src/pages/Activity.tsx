@@ -373,8 +373,8 @@ export function Activity() {
                             </p>
                             {recruiter && (
                               <p className="text-sm text-gray-500 mt-0.5">
-                                {recruiter.name}
-                                {recruiter.company_name && ` at ${recruiter.company_name}`}
+                                {recruiter.full_name || recruiter.name || 'Unknown'}
+                                {(recruiter.company || recruiter.company_name) && ` at ${recruiter.company || recruiter.company_name}`}
                               </p>
                             )}
                           </div>
@@ -450,11 +450,11 @@ export function Activity() {
                                 <GripVertical className="w-4 h-4 text-gray-300 flex-shrink-0" />
                                 <div>
                                   <p className="font-medium text-gray-900 text-sm">
-                                    {recruiter?.name || 'Unknown'}
+                                    {recruiter?.full_name || recruiter?.name || 'Unknown'}
                                   </p>
-                                  {recruiter?.company_name && (
+                                  {(recruiter?.company || recruiter?.company_name) && (
                                     <p className="text-xs text-gray-500">
-                                      {recruiter.company_name}
+                                      {recruiter.company || recruiter.company_name}
                                     </p>
                                   )}
                                 </div>
@@ -466,7 +466,7 @@ export function Activity() {
 
                             <div className="flex items-center justify-between text-xs">
                               <span className="text-gray-500">
-                                {item.days_in_stage} {item.days_in_stage === 1 ? 'day' : 'days'} in stage
+                                {item.days_in_stage ?? 0} {item.days_in_stage === 1 ? 'day' : 'days'} in stage
                               </span>
                               {item.last_activity && (
                                 <span className="text-gray-400">

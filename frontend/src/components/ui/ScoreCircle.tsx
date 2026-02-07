@@ -23,7 +23,8 @@ export function ScoreCircle({
   className = '',
 }: ScoreCircleProps) {
   const config = sizeConfig[size];
-  const percentage = Math.min((score / maxScore) * 100, 100);
+  const safeScore = score ?? 0;
+  const percentage = maxScore > 0 ? Math.min((safeScore / maxScore) * 100, 100) : 0;
   const radius = (config.size - config.stroke) / 2;
   const circumference = radius * 2 * Math.PI;
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
@@ -85,7 +86,7 @@ export function ScoreCircle({
         {/* Score text */}
         <div className="absolute inset-0 flex items-center justify-center">
           <span className={`font-bold ${getColor(percentage)} ${config.fontSize}`}>
-            {Math.round(score)}
+            {Math.round(safeScore)}
           </span>
         </div>
       </div>
@@ -121,7 +122,8 @@ export function ScoreBar({
   size = 'md',
   className = '',
 }: ScoreBarProps) {
-  const percentage = Math.min((score / maxScore) * 100, 100);
+  const safeScore = score ?? 0;
+  const percentage = maxScore > 0 ? Math.min((safeScore / maxScore) * 100, 100) : 0;
 
   const getBarColor = (pct: number): string => {
     if (pct >= 80) return 'bg-green-500';
@@ -144,7 +146,7 @@ export function ScoreBar({
           {label && <span className="text-sm text-gray-600">{label}</span>}
           {showValue && (
             <span className="text-sm font-medium text-gray-900">
-              {Math.round(score)}/{maxScore}
+              {Math.round(safeScore)}/{maxScore}
             </span>
           )}
         </div>

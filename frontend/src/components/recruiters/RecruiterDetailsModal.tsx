@@ -215,11 +215,11 @@ export function RecruiterDetailsModal({
             <p className="text-sm text-gray-600 mt-2">Fit Score</p>
           </div>
           <div className="card p-4 text-center">
-            <div className="text-3xl font-bold text-gray-900">{recruiter.messages_sent}</div>
+            <div className="text-3xl font-bold text-gray-900">{recruiter.messages_sent ?? 0}</div>
             <p className="text-sm text-gray-600 mt-1">Messages Sent</p>
           </div>
           <div className="card p-4 text-center">
-            <div className="text-3xl font-bold text-gray-900">{recruiter.responses_received}</div>
+            <div className="text-3xl font-bold text-gray-900">{recruiter.responses_received ?? 0}</div>
             <p className="text-sm text-gray-600 mt-1">Responses</p>
           </div>
         </div>
@@ -355,7 +355,7 @@ export function RecruiterDetailsModal({
                 )}
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-gray-600">Priority Score:</span>
-                  <span className="text-sm font-medium">{recruiter.priority_score}</span>
+                  <span className="text-sm font-medium">{recruiter.priority_score ?? 0}</span>
                 </div>
               </div>
             </div>

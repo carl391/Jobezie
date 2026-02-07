@@ -13,6 +13,8 @@ export interface User {
   current_role?: string;
   target_roles?: string[];
   target_industries?: string[];
+  technical_skills?: string[];
+  location?: string;
   // Onboarding
   onboarding_completed: boolean;
   onboarding_step?: number;

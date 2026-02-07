@@ -163,8 +163,8 @@ export function Resumes() {
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600">ATS Score</span>
                       <span className={`text-lg font-bold ${
-                        resume.ats_total_score >= 80 ? 'text-green-600' :
-                        resume.ats_total_score >= 60 ? 'text-yellow-600' :
+                        resume.ats_total_score >= 71 ? 'text-green-600' :
+                        resume.ats_total_score >= 41 ? 'text-yellow-600' :
                         'text-red-600'
                       }`}>
                         {resume.ats_total_score}%
@@ -173,8 +173,8 @@ export function Resumes() {
                     <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
                       <div
                         className={`h-full rounded-full ${
-                          resume.ats_total_score >= 80 ? 'bg-green-500' :
-                          resume.ats_total_score >= 60 ? 'bg-yellow-500' :
+                          resume.ats_total_score >= 71 ? 'bg-green-500' :
+                          resume.ats_total_score >= 41 ? 'bg-yellow-500' :
                           'bg-red-500'
                         }`}
                         style={{ width: `${resume.ats_total_score}%` }}

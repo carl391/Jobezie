@@ -305,7 +305,7 @@ export function Dashboard() {
                         {role.role.replace(/_/g, ' ')}
                       </p>
                       <p className="text-xs text-gray-500">
-                        {role.growth_rate}% projected growth
+                        {role.growth_rate ?? 0}% projected growth
                       </p>
                     </div>
                     <div className="text-right">

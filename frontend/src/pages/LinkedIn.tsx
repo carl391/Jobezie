@@ -546,12 +546,12 @@ export function LinkedIn() {
                       <div key={index}>
                         <div className="flex items-center justify-between text-sm mb-1">
                           <span className="text-gray-700">{factor.name}</span>
-                          <span className="font-medium">{factor.score}/{factor.max_score}</span>
+                          <span className="font-medium">{factor.score ?? 0}/{factor.max_score ?? 0}</span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
                           <div
                             className="bg-primary-600 h-2 rounded-full transition-all"
-                            style={{ width: `${(factor.score / factor.max_score) * 100}%` }}
+                            style={{ width: `${factor.max_score ? (factor.score / factor.max_score) * 100 : 0}%` }}
                           />
                         </div>
                         {factor.recommendation && (
