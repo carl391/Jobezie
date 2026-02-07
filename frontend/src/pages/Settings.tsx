@@ -184,7 +184,7 @@ export function Settings() {
     setIsLoadingSubscription(true);
     try {
       const response = await subscriptionApi.getStatus();
-      setSubscriptionStatus(response.data.data?.subscription || response.data.subscription);
+      setSubscriptionStatus(response.data.data || response.data);
     } catch (err) {
       console.error('Error fetching subscription:', err);
     } finally {
@@ -249,7 +249,7 @@ export function Settings() {
   const handleManageSubscription = async () => {
     try {
       const response = await subscriptionApi.getPortal();
-      const portalUrl = response.data.data?.url || response.data.url;
+      const portalUrl = response.data.data?.portal_url || response.data.portal_url;
       if (portalUrl) {
         window.open(portalUrl, '_blank');
       }
@@ -261,14 +261,18 @@ export function Settings() {
 
   const handleUpgrade = async (tierId: string) => {
     try {
+      setError(null);
       const response = await subscriptionApi.createCheckout(tierId);
-      const checkoutUrl = response.data.data?.url || response.data.url;
+      const checkoutUrl = response.data.data?.checkout_url || response.data.checkout_url;
       if (checkoutUrl) {
         window.location.href = checkoutUrl;
+      } else {
+        setError('Unable to create checkout session. Please try again.');
       }
-    } catch (err) {
+    } catch (err: unknown) {
+      const apiError = err as { response?: { data?: { message?: string } } };
       console.error('Error creating checkout:', err);
-      setError('Failed to start upgrade process.');
+      setError(apiError.response?.data?.message || 'Failed to start upgrade process.');
     }
   };
 
@@ -614,8 +618,9 @@ export function Settings() {
                 <div className="space-y-4">
                   {[
                     { label: 'Recruiters', data: usageData.recruiters },
-                    { label: 'Messages', data: usageData.messages },
-                    { label: 'Resumes', data: usageData.resumes },
+                    { label: 'AI Messages', data: usageData.messages },
+                    { label: 'Research', data: usageData.research },
+                    { label: 'Tailored Resumes', data: usageData.tailored_resumes },
                   ].map(({ label, data }) => {
                     if (!data || !data.limit) return null;
                     const pct = data.limit > 0 ? Math.min(100, ((data.used ?? 0) / data.limit) * 100) : 0;

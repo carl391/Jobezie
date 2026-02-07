@@ -192,8 +192,8 @@ export const aiApi = {
 export const subscriptionApi = {
   getTiers: () => api.get('/subscription/tiers'),
   getStatus: () => api.get('/subscription/status'),
-  createCheckout: (priceId: string) =>
-    api.post('/subscription/checkout', { price_id: priceId }),
+  createCheckout: (tier: string) =>
+    api.post('/subscription/checkout', { tier }),
   getPortal: () => api.post('/subscription/portal'),
   cancel: () => api.post('/subscription/cancel'),
   reactivate: () => api.post('/subscription/reactivate'),

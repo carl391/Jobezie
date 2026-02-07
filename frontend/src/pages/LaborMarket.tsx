@@ -12,6 +12,8 @@ import {
   Briefcase,
   MapPin,
   Building2,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { laborMarketApi } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -64,6 +66,7 @@ export function LaborMarket() {
   // Overview State
   const [overview, setOverview] = useState<MarketOverview | null>(null);
   const [overviewLoading, setOverviewLoading] = useState(true);
+  const [expandedCard, setExpandedCard] = useState<string | null>(null);
 
   // Shortage State
   const [shortageForm, setShortageForm] = useState({
@@ -205,29 +208,72 @@ export function LaborMarket() {
             <Loader2 className="w-6 h-6 animate-spin text-primary-600" />
           </div>
         ) : overview ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-600 font-medium">Unemployment Rate</p>
-              <p className="text-2xl font-bold text-blue-900">{overview.unemployment_rate ?? 0}%</p>
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="p-4 bg-blue-50 rounded-lg">
+                <p className="text-sm text-blue-600 font-medium">Unemployment Rate</p>
+                <p className="text-2xl font-bold text-blue-900">{overview.unemployment_rate ?? 0}%</p>
+              </div>
+              <div className="p-4 bg-green-50 rounded-lg">
+                <p className="text-sm text-green-600 font-medium">Market Condition</p>
+                <p className="text-2xl font-bold text-green-900 capitalize flex items-center gap-1">
+                  {overview.market_condition?.toLowerCase() === 'strong' && <ArrowUp className="w-5 h-5 text-green-500" />}
+                  {(overview.market_condition?.toLowerCase() === 'challenging' || overview.market_condition?.toLowerCase() === 'difficult') && <ArrowDown className="w-5 h-5 text-red-500" />}
+                  {overview.market_condition?.toLowerCase() === 'moderate' && <Minus className="w-5 h-5 text-yellow-500" />}
+                  {overview.market_condition || 'N/A'}
+                </p>
+              </div>
+              <button
+                onClick={() => setExpandedCard(expandedCard === 'industries' ? null : 'industries')}
+                className="p-4 bg-purple-50 rounded-lg text-left hover:bg-purple-100 transition-colors cursor-pointer"
+              >
+                <p className="text-sm text-purple-600 font-medium flex items-center justify-between">
+                  Trending Industries
+                  {expandedCard === 'industries' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </p>
+                <p className="text-2xl font-bold text-purple-900">{overview.trending_industries?.length ?? 0}</p>
+              </button>
+              <button
+                onClick={() => setExpandedCard(expandedCard === 'roles' ? null : 'roles')}
+                className="p-4 bg-orange-50 rounded-lg text-left hover:bg-orange-100 transition-colors cursor-pointer"
+              >
+                <p className="text-sm text-orange-600 font-medium flex items-center justify-between">
+                  High Demand Roles
+                  {expandedCard === 'roles' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </p>
+                <p className="text-2xl font-bold text-orange-900">{overview.high_demand_roles?.length ?? 0}</p>
+              </button>
             </div>
-            <div className="p-4 bg-green-50 rounded-lg">
-              <p className="text-sm text-green-600 font-medium">Market Condition</p>
-              <p className="text-2xl font-bold text-green-900 capitalize flex items-center gap-1">
-                {overview.market_condition?.toLowerCase() === 'strong' && <ArrowUp className="w-5 h-5 text-green-500" />}
-                {(overview.market_condition?.toLowerCase() === 'challenging' || overview.market_condition?.toLowerCase() === 'difficult') && <ArrowDown className="w-5 h-5 text-red-500" />}
-                {overview.market_condition?.toLowerCase() === 'moderate' && <Minus className="w-5 h-5 text-yellow-500" />}
-                {overview.market_condition || 'N/A'}
-              </p>
-            </div>
-            <div className="p-4 bg-purple-50 rounded-lg">
-              <p className="text-sm text-purple-600 font-medium">Trending Industries</p>
-              <p className="text-2xl font-bold text-purple-900">{overview.trending_industries?.length ?? 0}</p>
-            </div>
-            <div className="p-4 bg-orange-50 rounded-lg">
-              <p className="text-sm text-orange-600 font-medium">High Demand Roles</p>
-              <p className="text-2xl font-bold text-orange-900">{overview.high_demand_roles?.length ?? 0}</p>
-            </div>
-          </div>
+
+            {expandedCard === 'industries' && overview.trending_industries?.length > 0 && (
+              <div className="mt-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
+                <h3 className="text-sm font-semibold text-purple-800 mb-3">Trending Industries</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {overview.trending_industries.map((industry, i) => (
+                    <div key={i} className="flex items-center justify-between p-2 bg-white rounded-lg">
+                      <span className="text-sm font-medium text-gray-900">{industry.name}</span>
+                      <span className="text-xs font-medium text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">
+                        {industry.growth_rate}% growth
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {expandedCard === 'roles' && overview.high_demand_roles?.length > 0 && (
+              <div className="mt-4 p-4 bg-orange-50 rounded-lg border border-orange-200">
+                <h3 className="text-sm font-semibold text-orange-800 mb-3">High Demand Roles</h3>
+                <div className="flex flex-wrap gap-2">
+                  {overview.high_demand_roles.map((role, i) => (
+                    <span key={i} className="px-3 py-1.5 bg-white text-sm font-medium text-gray-900 rounded-lg border border-orange-200 capitalize">
+                      {role.replace(/_/g, ' ')}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         ) : (
           <p className="text-center text-gray-500 py-8">Unable to load market overview</p>
         )}
