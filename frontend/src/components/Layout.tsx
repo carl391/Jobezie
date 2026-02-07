@@ -77,10 +77,13 @@ export function Layout({ children }: LayoutProps) {
       {/* Brand header */}
       <div className="flex items-center h-16 px-5 bg-gradient-to-r from-primary-600 to-purple-600">
         <Link to="/dashboard" className="flex items-center gap-2.5" onClick={onLinkClick}>
-          <div className="w-9 h-9 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
-            <Zap className="w-5 h-5 text-white" />
-          </div>
-          <span className="text-lg font-bold text-white tracking-tight">Jobezie</span>
+          <svg width="32" height="32" viewBox="0 0 1024 1024" className="flex-shrink-0">
+            <rect width="1024" height="1024" rx="228" fill="rgba(255,255,255,0.2)"/>
+            <text x="512" y="712" textAnchor="middle" style={{ fontSize: 546, fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 700, fill: '#FFFFFF' }}>J</text>
+          </svg>
+          <svg width="90" height="28" viewBox="0 0 320 100">
+            <text x="160" y="65" textAnchor="middle" style={{ fontSize: 64, fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 700, fill: '#FFFFFF', letterSpacing: '-0.03em' }}>Jobezie</text>
+          </svg>
         </Link>
       </div>
 

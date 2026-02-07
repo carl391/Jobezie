@@ -1,11 +1,19 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '../contexts/AuthContext';
-import { Eye, EyeOff, Loader2, Check, X, Zap, Target, Sparkles, TrendingUp } from 'lucide-react';
+import { subscriptionApi } from '../lib/api';
+import { Eye, EyeOff, Loader2, Check, X, Target, Sparkles, TrendingUp, CreditCard } from 'lucide-react';
 import clsx from 'clsx';
+
+const PLAN_INFO: Record<string, { name: string; price: number; period: string }> = {
+  basic: { name: 'Basic', price: 0, period: 'Free forever' },
+  pro: { name: 'Pro', price: 19, period: '/month' },
+  expert: { name: 'Expert', price: 39, period: '/month' },
+  career_keeper: { name: 'Career Keeper', price: 9, period: '/month' },
+};
 
 const registerSchema = z
   .object({
@@ -38,6 +46,10 @@ export function Register() {
   const [error, setError] = useState<string | null>(null);
   const { register: registerUser } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const selectedPlan = searchParams.get('plan') || 'basic';
+  const planInfo = PLAN_INFO[selectedPlan] || PLAN_INFO.basic;
+  const isPaidPlan = selectedPlan !== 'basic' && planInfo.price > 0;
 
   const {
     register,
@@ -61,6 +73,21 @@ export function Register() {
     setError(null);
     try {
       await registerUser(data.email, data.password, data.name);
+
+      if (isPaidPlan) {
+        // Redirect to Stripe checkout for paid plans
+        try {
+          const response = await subscriptionApi.createCheckout(selectedPlan);
+          const checkoutUrl = response.data.data?.checkout_url || response.data.checkout_url;
+          if (checkoutUrl) {
+            window.location.href = checkoutUrl;
+            return;
+          }
+        } catch {
+          // If checkout fails, still go to dashboard — user can upgrade from Settings
+        }
+      }
+
       navigate('/dashboard');
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
@@ -81,10 +108,13 @@ export function Register() {
         <div className="relative z-10 flex flex-col justify-center px-12 xl:px-16 text-white">
           {/* Logo */}
           <div className="flex items-center gap-3 mb-12">
-            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
-              <Zap className="w-7 h-7 text-white" />
-            </div>
-            <span className="text-2xl font-bold tracking-tight">Jobezie</span>
+            <svg width="44" height="44" viewBox="0 0 1024 1024" className="flex-shrink-0">
+              <rect width="1024" height="1024" rx="228" fill="rgba(255,255,255,0.2)"/>
+              <text x="512" y="712" textAnchor="middle" style={{ fontSize: 546, fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 700, fill: '#FFFFFF' }}>J</text>
+            </svg>
+            <svg width="120" height="38" viewBox="0 0 320 100">
+              <text x="160" y="65" textAnchor="middle" style={{ fontSize: 64, fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 700, fill: '#FFFFFF', letterSpacing: '-0.03em' }}>Jobezie</text>
+            </svg>
           </div>
 
           <h2 className="text-3xl xl:text-4xl font-bold mb-4 leading-tight">
@@ -127,10 +157,15 @@ export function Register() {
           {/* Mobile logo */}
           <div className="lg:hidden text-center mb-8">
             <div className="inline-flex items-center gap-2">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary-600 to-purple-600 rounded-xl flex items-center justify-center">
-                <Zap className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-2xl font-bold text-gray-900">Jobezie</span>
+              <svg width="36" height="36" viewBox="0 0 1024 1024" className="flex-shrink-0">
+                <defs><linearGradient id="regMobGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#2563EB"/><stop offset="100%" stopColor="#7C3AED"/></linearGradient></defs>
+                <rect width="1024" height="1024" rx="228" fill="url(#regMobGrad)"/>
+                <text x="512" y="712" textAnchor="middle" style={{ fontSize: 546, fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 700, fill: '#FFFFFF' }}>J</text>
+              </svg>
+              <svg width="110" height="34" viewBox="0 0 320 100">
+                <defs><linearGradient id="regMobWord" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stopColor="#2563EB"/><stop offset="100%" stopColor="#7C3AED"/></linearGradient></defs>
+                <text x="160" y="65" textAnchor="middle" style={{ fontSize: 64, fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 700, fill: 'url(#regMobWord)', letterSpacing: '-0.03em' }}>Jobezie</text>
+              </svg>
             </div>
           </div>
 
@@ -138,6 +173,28 @@ export function Register() {
             <h2 className="text-2xl font-bold text-gray-900">Create your account</h2>
             <p className="mt-2 text-gray-600">Start optimizing your job search today</p>
           </div>
+
+          {/* Selected plan indicator */}
+          {isPaidPlan ? (
+            <div className="mb-4 p-3 rounded-xl bg-gradient-to-r from-primary-50 to-purple-50 border border-primary-200 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CreditCard className="w-4 h-4 text-primary-600" />
+                <span className="text-sm font-medium text-gray-900">
+                  {planInfo.name} plan — <span className="text-primary-600">${planInfo.price}{planInfo.period}</span>
+                </span>
+              </div>
+              <Link to="/#pricing" className="text-xs text-primary-600 hover:text-primary-700 font-medium">
+                Change
+              </Link>
+            </div>
+          ) : (
+            <div className="mb-4 p-3 rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-700">Free plan — no credit card required</span>
+              <Link to="/#pricing" className="text-xs text-primary-600 hover:text-primary-700 font-medium">
+                View plans
+              </Link>
+            </div>
+          )}
 
           <div className="card">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
@@ -254,8 +311,10 @@ export function Register() {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Creating account...
+                    {isPaidPlan ? 'Creating account...' : 'Creating account...'}
                   </>
+                ) : isPaidPlan ? (
+                  `Create account & continue to payment`
                 ) : (
                   'Create free account'
                 )}

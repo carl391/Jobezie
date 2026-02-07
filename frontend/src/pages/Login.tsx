@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '../contexts/AuthContext';
-import { Eye, EyeOff, Loader2, Zap, CheckCircle2, BarChart3, Users, Shield } from 'lucide-react';
+import { Eye, EyeOff, Loader2, CheckCircle2, BarChart3, Users, Shield } from 'lucide-react';
 import clsx from 'clsx';
 
 const loginSchema = z.object({
@@ -82,10 +82,13 @@ export function Login() {
         <div className="relative z-10 flex flex-col justify-center px-12 xl:px-16 text-white">
           {/* Logo */}
           <div className="flex items-center gap-3 mb-12">
-            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
-              <Zap className="w-7 h-7 text-white" />
-            </div>
-            <span className="text-2xl font-bold tracking-tight">Jobezie</span>
+            <svg width="44" height="44" viewBox="0 0 1024 1024" className="flex-shrink-0">
+              <rect width="1024" height="1024" rx="228" fill="rgba(255,255,255,0.2)"/>
+              <text x="512" y="712" textAnchor="middle" style={{ fontSize: 546, fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 700, fill: '#FFFFFF' }}>J</text>
+            </svg>
+            <svg width="120" height="38" viewBox="0 0 320 100">
+              <text x="160" y="65" textAnchor="middle" style={{ fontSize: 64, fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 700, fill: '#FFFFFF', letterSpacing: '-0.03em' }}>Jobezie</text>
+            </svg>
           </div>
 
           <h2 className="text-3xl xl:text-4xl font-bold mb-4 leading-tight">
@@ -137,10 +140,15 @@ export function Login() {
           {/* Mobile logo */}
           <div className="lg:hidden text-center mb-8">
             <div className="inline-flex items-center gap-2">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary-600 to-purple-600 rounded-xl flex items-center justify-center">
-                <Zap className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-2xl font-bold text-gray-900">Jobezie</span>
+              <svg width="36" height="36" viewBox="0 0 1024 1024" className="flex-shrink-0">
+                <defs><linearGradient id="loginMobGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#2563EB"/><stop offset="100%" stopColor="#7C3AED"/></linearGradient></defs>
+                <rect width="1024" height="1024" rx="228" fill="url(#loginMobGrad)"/>
+                <text x="512" y="712" textAnchor="middle" style={{ fontSize: 546, fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 700, fill: '#FFFFFF' }}>J</text>
+              </svg>
+              <svg width="110" height="34" viewBox="0 0 320 100">
+                <defs><linearGradient id="loginMobWord" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stopColor="#2563EB"/><stop offset="100%" stopColor="#7C3AED"/></linearGradient></defs>
+                <text x="160" y="65" textAnchor="middle" style={{ fontSize: 64, fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 700, fill: 'url(#loginMobWord)', letterSpacing: '-0.03em' }}>Jobezie</text>
+              </svg>
             </div>
           </div>
 

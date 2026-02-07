@@ -6,7 +6,6 @@ import {
   Sparkles,
   BarChart3,
   Shield,
-  Zap,
   ArrowRight,
   Check,
   Star,
@@ -64,6 +63,7 @@ const FEATURES = [
 const TIERS = [
   {
     name: 'Basic',
+    slug: 'basic',
     price: 0,
     period: 'Free forever',
     description: 'Get started with essential tools',
@@ -74,6 +74,7 @@ const TIERS = [
   },
   {
     name: 'Pro',
+    slug: 'pro',
     price: 19,
     period: '/month',
     description: 'For serious job seekers',
@@ -84,6 +85,7 @@ const TIERS = [
   },
   {
     name: 'Expert',
+    slug: 'expert',
     price: 39,
     period: '/month',
     description: 'Maximum career acceleration',
@@ -94,6 +96,7 @@ const TIERS = [
   },
   {
     name: 'Career Keeper',
+    slug: 'career_keeper',
     price: 9,
     period: '/month',
     description: 'Stay career-ready while employed',
@@ -119,12 +122,15 @@ export function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-600 to-purple-600 flex items-center justify-center">
-                <Zap className="w-4 h-4 text-white" />
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent">
-                Jobezie
-              </span>
+              <svg width="32" height="32" viewBox="0 0 1024 1024" className="flex-shrink-0">
+                <defs><linearGradient id="navIconGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#2563EB"/><stop offset="100%" stopColor="#7C3AED"/></linearGradient></defs>
+                <rect width="1024" height="1024" rx="228" fill="url(#navIconGrad)"/>
+                <text x="512" y="712" textAnchor="middle" style={{ fontSize: 546, fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 700, fill: '#FFFFFF' }}>J</text>
+              </svg>
+              <svg width="100" height="32" viewBox="0 0 320 100">
+                <defs><linearGradient id="navWordGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stopColor="#2563EB"/><stop offset="100%" stopColor="#7C3AED"/></linearGradient></defs>
+                <text x="160" y="65" textAnchor="middle" style={{ fontSize: 64, fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 700, fill: 'url(#navWordGrad)', letterSpacing: '-0.03em' }}>Jobezie</text>
+              </svg>
             </div>
             <div className="hidden md:flex items-center gap-8">
               <a href="#features" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">Features</a>
@@ -350,7 +356,7 @@ export function Landing() {
             {TIERS.map((tier) => (
               <div
                 key={tier.name}
-                className={`relative p-6 rounded-2xl bg-white border-2 ${tier.color} ${
+                className={`relative p-6 rounded-2xl bg-white border-2 flex flex-col ${tier.color} ${
                   tier.popular ? 'shadow-xl shadow-primary-500/10' : 'shadow-sm'
                 }`}
               >
@@ -378,8 +384,8 @@ export function Landing() {
                   ))}
                 </ul>
                 <Link
-                  to="/register"
-                  className={`block text-center py-2.5 px-4 rounded-xl font-medium text-sm transition-all ${
+                  to={`/register?plan=${tier.slug}`}
+                  className={`mt-auto block text-center py-2.5 px-4 rounded-xl font-medium text-sm transition-all ${
                     tier.popular
                       ? 'bg-gradient-to-r from-primary-600 to-purple-600 text-white hover:from-primary-700 hover:to-purple-700 shadow-md'
                       : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
@@ -423,9 +429,11 @@ export function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary-600 to-purple-600 flex items-center justify-center">
-                <Zap className="w-3.5 h-3.5 text-white" />
-              </div>
+              <svg width="24" height="24" viewBox="0 0 1024 1024" className="flex-shrink-0">
+                <defs><linearGradient id="footIconGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#2563EB"/><stop offset="100%" stopColor="#7C3AED"/></linearGradient></defs>
+                <rect width="1024" height="1024" rx="228" fill="url(#footIconGrad)"/>
+                <text x="512" y="712" textAnchor="middle" style={{ fontSize: 546, fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 700, fill: '#FFFFFF' }}>J</text>
+              </svg>
               <span className="font-bold text-gray-900">Jobezie</span>
               <span className="text-gray-400 text-sm ml-2">&copy; {new Date().getFullYear()}</span>
             </div>
