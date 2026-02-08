@@ -133,17 +133,7 @@ export function Landing() {
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-2">
-              <svg width="32" height="32" viewBox="0 0 1024 1024" className="flex-shrink-0">
-                <defs><linearGradient id="navIconGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#2563EB"/><stop offset="100%" stopColor="#7C3AED"/></linearGradient></defs>
-                <rect width="1024" height="1024" rx="228" fill="url(#navIconGrad)"/>
-                <text x="512" y="712" textAnchor="middle" style={{ fontSize: 546, fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 700, fill: '#FFFFFF' }}>J</text>
-              </svg>
-              <svg width="100" height="32" viewBox="0 0 320 100">
-                <defs><linearGradient id="navWordGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stopColor="#2563EB"/><stop offset="100%" stopColor="#7C3AED"/></linearGradient></defs>
-                <text x="160" y="65" textAnchor="middle" style={{ fontSize: 64, fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 700, fill: 'url(#navWordGrad)', letterSpacing: '-0.03em' }}>Jobezie</text>
-              </svg>
-            </div>
+            <span className="text-xl font-bold bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent tracking-tight">Jobezie</span>
             <div className="hidden md:flex items-center gap-8">
               <a href="#features" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">Features</a>
               <a href="#pricing" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">Pricing</a>
@@ -441,11 +431,6 @@ export function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <svg width="24" height="24" viewBox="0 0 1024 1024" className="flex-shrink-0">
-                <defs><linearGradient id="footIconGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#2563EB"/><stop offset="100%" stopColor="#7C3AED"/></linearGradient></defs>
-                <rect width="1024" height="1024" rx="228" fill="url(#footIconGrad)"/>
-                <text x="512" y="712" textAnchor="middle" style={{ fontSize: 546, fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 700, fill: '#FFFFFF' }}>J</text>
-              </svg>
               <span className="font-bold text-gray-900">Jobezie</span>
               <span className="text-gray-400 text-sm ml-2">&copy; {new Date().getFullYear()}</span>
             </div>

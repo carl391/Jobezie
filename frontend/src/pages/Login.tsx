@@ -81,14 +81,8 @@ export function Login() {
 
         <div className="relative z-10 flex flex-col justify-center px-12 xl:px-16 text-white">
           {/* Logo */}
-          <div className="flex items-center gap-3 mb-12">
-            <svg width="44" height="44" viewBox="0 0 1024 1024" className="flex-shrink-0">
-              <rect width="1024" height="1024" rx="228" fill="rgba(255,255,255,0.2)"/>
-              <text x="512" y="712" textAnchor="middle" style={{ fontSize: 546, fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 700, fill: '#FFFFFF' }}>J</text>
-            </svg>
-            <svg width="120" height="38" viewBox="0 0 320 100">
-              <text x="160" y="65" textAnchor="middle" style={{ fontSize: 64, fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 700, fill: '#FFFFFF', letterSpacing: '-0.03em' }}>Jobezie</text>
-            </svg>
+          <div className="flex items-center mb-12">
+            <span className="text-3xl font-bold text-white tracking-tight">Jobezie</span>
           </div>
 
           <h2 className="text-3xl xl:text-4xl font-bold mb-4 leading-tight">
@@ -139,17 +133,7 @@ export function Login() {
         <div className="max-w-md w-full">
           {/* Mobile logo */}
           <div className="lg:hidden text-center mb-8">
-            <div className="inline-flex items-center gap-2">
-              <svg width="36" height="36" viewBox="0 0 1024 1024" className="flex-shrink-0">
-                <defs><linearGradient id="loginMobGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#2563EB"/><stop offset="100%" stopColor="#7C3AED"/></linearGradient></defs>
-                <rect width="1024" height="1024" rx="228" fill="url(#loginMobGrad)"/>
-                <text x="512" y="712" textAnchor="middle" style={{ fontSize: 546, fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 700, fill: '#FFFFFF' }}>J</text>
-              </svg>
-              <svg width="110" height="34" viewBox="0 0 320 100">
-                <defs><linearGradient id="loginMobWord" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stopColor="#2563EB"/><stop offset="100%" stopColor="#7C3AED"/></linearGradient></defs>
-                <text x="160" y="65" textAnchor="middle" style={{ fontSize: 64, fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 700, fill: 'url(#loginMobWord)', letterSpacing: '-0.03em' }}>Jobezie</text>
-              </svg>
-            </div>
+            <span className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent tracking-tight">Jobezie</span>
           </div>
 
           <div className="mb-8">
