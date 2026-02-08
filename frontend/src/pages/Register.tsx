@@ -83,8 +83,15 @@ export function Register() {
             window.location.href = checkoutUrl;
             return;
           }
-        } catch {
-          // If checkout fails, still go to dashboard — user can upgrade from Settings
+        } catch (checkoutErr) {
+          console.error('Checkout error:', checkoutErr);
+          // Account was created — let user know they can upgrade later
+          setError(
+            'Your account was created, but we couldn\'t start the payment process. ' +
+            'You can upgrade from Settings anytime.'
+          );
+          // Brief delay so user sees the message before redirect
+          await new Promise((resolve) => setTimeout(resolve, 3000));
         }
       }
 
