@@ -121,7 +121,7 @@ class NotificationService:
             body=body,
             notification_type=notification_type or NotificationType.SYSTEM.value,
             action_url=action_url,
-            metadata=metadata or {},
+            extra_data=metadata or {},
         )
         db.session.add(notification)
         db.session.commit()
@@ -167,7 +167,7 @@ class NotificationService:
                 Notification.user_id == user_id,
                 Notification.notification_type == NotificationType.FOLLOW_UP_REMINDER.value,
                 Notification.is_read == False,  # noqa: E712
-                Notification.metadata["recruiter_id"].astext == str(recruiter.id),
+                Notification.extra_data["recruiter_id"].astext == str(recruiter.id),
             ).first()
 
             if existing:
@@ -232,7 +232,7 @@ class NotificationService:
                     Notification.user_id == user_id,
                     Notification.notification_type == NotificationType.USAGE_WARNING.value,
                     Notification.is_read == False,  # noqa: E712
-                    Notification.metadata["usage_type"].astext == name,
+                    Notification.extra_data["usage_type"].astext == name,
                 ).first()
 
                 if existing:

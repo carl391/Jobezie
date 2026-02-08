@@ -50,7 +50,7 @@ class Notification(db.Model):
     )
     is_read = db.Column(db.Boolean, default=False, nullable=False)
     action_url = db.Column(db.String(500), nullable=True)
-    metadata = db.Column(JSONType, default=dict)
+    extra_data = db.Column("metadata", JSONType, default=dict)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
 
     # Relationships
@@ -66,7 +66,7 @@ class Notification(db.Model):
             "type": self.notification_type,
             "is_read": self.is_read,
             "action_url": self.action_url,
-            "metadata": self.metadata or {},
+            "metadata": self.extra_data or {},
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 
