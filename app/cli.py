@@ -24,10 +24,44 @@ from app.models.labor_market import (
 )
 
 
+import logging
+
+logger = logging.getLogger(__name__)
+
+
 def register_commands(app):
     """Register CLI commands with the Flask app."""
     app.cli.add_command(seed_market_data)
     app.cli.add_command(reset_usage)
+
+
+def _seed_onet_data(onet_path):
+    """
+    Core O*NET seeding logic, callable from both CLI and app startup.
+    Uses logging instead of click.echo so it works in both contexts.
+    """
+    onet_occupation_file = os.path.join(onet_path, "Occupation Data.txt")
+
+    if not os.path.exists(onet_occupation_file):
+        logger.warning(f"O*NET occupation file not found at {onet_occupation_file}")
+        return
+
+    _seed_onet_occupations(onet_occupation_file)
+
+    onet_files = [
+        ("Skills.txt", "skills"),
+        ("Abilities.txt", "abilities"),
+        ("Knowledge.txt", "knowledge"),
+    ]
+
+    for filename, category in onet_files:
+        filepath = os.path.join(onet_path, filename)
+        if os.path.exists(filepath):
+            _seed_onet_elements(filepath, category)
+        else:
+            logger.warning(f"{filepath} not found")
+
+    logger.info("O*NET data seed complete!")
 
 
 @click.command("seed-market-data")
@@ -85,6 +119,7 @@ def seed_market_data(onet_path, skip_bls):
 
 def _seed_onet_occupations(filepath):
     """Load O*NET occupation data with Job Zone cross-reference."""
+    logger.info(f"Loading O*NET occupations from {filepath}...")
     click.echo(f"Loading O*NET occupations from {filepath}...")
     count = 0
 
@@ -127,9 +162,11 @@ def _seed_onet_occupations(filepath):
                     click.echo(f"  Loaded {count} occupations...")
 
         db.session.commit()
+        logger.info(f"Loaded {count} O*NET occupations ({len(job_zones)} with job zones)")
         click.echo(f"Loaded {count} O*NET occupations ({len(job_zones)} with job zones)")
 
     except Exception as e:
+        logger.error(f"Error loading occupations: {e}")
         click.echo(f"Error loading occupations: {e}")
         db.session.rollback()
 
@@ -142,6 +179,7 @@ def _seed_onet_elements(filepath: str, category: str):
     - Scale ID "IM" = Importance (1-5 scale, normalized to 0-100)
     - Scale ID "LV" = Level (0-7 scale, normalized to 0-100)
     """
+    logger.info(f"Loading O*NET {category} from {filepath}...")
     click.echo(f"Loading O*NET {category} from {filepath}...")
     elements_loaded = set()
 
@@ -215,11 +253,14 @@ def _seed_onet_elements(filepath: str, category: str):
             db.session.bulk_save_objects(batch)
             db.session.commit()
 
+        logger.info(f"Loaded {len(elements_loaded)} {category}, {len(pair_data)} occupation mappings")
         click.echo(f"Loaded {len(elements_loaded)} {category}, {len(pair_data)} occupation mappings")
 
     except FileNotFoundError:
+        logger.warning(f"{filepath} not found, skipping {category}")
         click.echo(f"Warning: {filepath} not found, skipping {category}")
     except Exception as e:
+        logger.error(f"Error loading {category}: {e}")
         click.echo(f"Error loading {category}: {e}")
         db.session.rollback()
 

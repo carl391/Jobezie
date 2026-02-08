@@ -50,6 +50,9 @@ def create_app(config_name=None):
     from app.cli import register_commands
     register_commands(app)
 
+    # Auto-seed O*NET data if tables are empty (runs once at startup)
+    _auto_seed_onet(app)
+
     # Health check endpoint
     @app.route("/health")
     def health_check():
@@ -357,3 +360,31 @@ def _register_shell_context(app):
             "PipelineItem": PipelineItem,
             "Notification": Notification,
         }
+
+
+def _auto_seed_onet(app):
+    """Seed O*NET data on first startup if tables are empty."""
+    import os
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    with app.app_context():
+        try:
+            from app.models.labor_market import Occupation
+            count = Occupation.query.count()
+            if count > 0:
+                return  # Already seeded
+
+            onet_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "onet")
+            occupation_file = os.path.join(onet_path, "Occupation Data.txt")
+            if not os.path.exists(occupation_file):
+                logger.warning("O*NET data files not found, skipping auto-seed")
+                return
+
+            logger.info("Auto-seeding O*NET data (tables are empty)...")
+            from app.cli import _seed_onet_data
+            _seed_onet_data(onet_path)
+            logger.info("O*NET auto-seed complete")
+        except Exception as e:
+            logger.error(f"O*NET auto-seed failed: {e}")
