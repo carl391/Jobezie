@@ -139,10 +139,16 @@ export function ATSScoreModal({
       const raw = resData?.ai_suggestions || resData?.suggestions || '';
       const text = Array.isArray(raw) ? raw.join('\n') : String(raw);
       setOptimizedResume(text || null);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error optimizing resume:', err);
       setOptimizedResume(null);
-      setError('Failed to generate optimized resume. Please try again.');
+      const status = err?.response?.status;
+      const errData = err?.response?.data;
+      if (status === 429) {
+        toast.error(errData?.message || 'You have reached your optimization limit. Upgrade to continue.');
+      } else {
+        toast.error(errData?.message || errData?.error || 'Failed to generate optimized resume. Please try again.');
+      }
     } finally {
       setIsOptimizing(false);
     }
