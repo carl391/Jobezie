@@ -81,7 +81,7 @@ export function ATSScoreModal({
 
     try {
       const analysisRes = await resumeApi.getAnalysis(resumeId);
-      const analysisData = analysisRes.data?.ats_analysis;
+      const analysisData = analysisRes.data?.data?.ats_analysis || analysisRes.data?.ats_analysis;
 
       if (analysisData) {
         const scoreData: ATSScoreData = {
