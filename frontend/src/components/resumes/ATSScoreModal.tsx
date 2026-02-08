@@ -19,7 +19,7 @@ import { toast } from 'sonner';
 import { Modal, ModalFooter } from '../ui/Modal';
 import { ScoreCircle, ScoreBar } from '../ui/ScoreCircle';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/Tabs';
-import { resumeApi, aiApi } from '../../lib/api';
+import { resumeApi, aiApi, isHandledApiError } from '../../lib/api';
 import type { Resume, ATSBreakdown } from '../../types';
 
 interface ATSScoreData {
@@ -142,11 +142,8 @@ export function ATSScoreModal({
     } catch (err: any) {
       console.error('Error optimizing resume:', err);
       setOptimizedResume(null);
-      const status = err?.response?.status;
-      const errData = err?.response?.data;
-      if (status === 429) {
-        toast.error(errData?.message || 'You have reached your optimization limit. Upgrade to continue.');
-      } else {
+      if (!isHandledApiError(err)) {
+        const errData = err?.response?.data;
         toast.error(errData?.message || errData?.error || 'Failed to generate optimized resume. Please try again.');
       }
     } finally {

@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Loader2, Sparkles } from 'lucide-react';
 import { Modal, ModalFooter } from '../ui/Modal';
-import { recruiterApi } from '../../lib/api';
+import { recruiterApi, isHandledApiError } from '../../lib/api';
 import type { Recruiter } from '../../types';
 
 const recruiterSchema = z.object({
@@ -102,10 +102,10 @@ export function AddRecruiterModal({ isOpen, onClose, onSuccess }: AddRecruiterMo
       onSuccess(recruiter);
       onClose();
       toast.success('Recruiter added successfully');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error creating recruiter:', err);
-      toast.error('Failed to add recruiter');
-      setError('Failed to add recruiter. Please try again.');
+      if (!isHandledApiError(err)) toast.error('Failed to add recruiter');
+      setError(err?.response?.data?.message || 'Failed to add recruiter. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

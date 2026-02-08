@@ -212,9 +212,9 @@ export function AICoach() {
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error getting AI response:', err);
-      setError('Failed to get a response. Please try again.');
+      setError(err?.response?.data?.message || 'Failed to get a response. Please try again.');
     } finally {
       setIsLoading(false);
     }

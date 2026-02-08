@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { Modal, ModalFooter } from '../ui/Modal';
 import { ScoreCircle } from '../ui/ScoreCircle';
-import { messageApi, recruiterApi, aiApi } from '../../lib/api';
+import { messageApi, recruiterApi, aiApi, isHandledApiError } from '../../lib/api';
 import type { Message, Recruiter, MessageQualityScore } from '../../types';
 
 const messageSchema = z.object({
@@ -163,10 +163,10 @@ export function ComposeMessageModal({
         setValue('subject', generated.subject || '');
         setValue('body', generated.body || '');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error generating message:', err);
-      toast.error('Failed to generate message');
-      setError('Failed to generate message. Please try again.');
+      if (!isHandledApiError(err)) toast.error('Failed to generate message');
+      setError(err?.response?.data?.message || 'Failed to generate message. Please try again.');
     } finally {
       setIsGenerating(false);
     }
@@ -194,10 +194,10 @@ export function ComposeMessageModal({
       onSuccess(message);
       onClose();
       toast.success(editMessage ? 'Message updated' : 'Message created');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error saving message:', err);
-      toast.error('Failed to save message');
-      setError('Failed to save message. Please try again.');
+      if (!isHandledApiError(err)) toast.error('Failed to save message');
+      setError(err?.response?.data?.message || 'Failed to save message. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

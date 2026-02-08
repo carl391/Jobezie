@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import { resumeApi } from '../lib/api';
+import { resumeApi, isHandledApiError } from '../lib/api';
 import { FileText, Upload, Star, Trash2, Eye, BarChart2, Lightbulb, Target } from 'lucide-react';
 import { ViewResumeModal } from '../components/resumes/ViewResumeModal';
 import { ATSScoreModal } from '../components/resumes/ATSScoreModal';
@@ -52,9 +52,9 @@ export function Resumes() {
       await resumeApi.upload(formData);
       toast.success('Resume uploaded successfully');
       fetchResumes();
-    } catch (error) {
-      toast.error('Failed to upload resume');
-      setUploadError('Failed to upload resume');
+    } catch (error: any) {
+      if (!isHandledApiError(error)) toast.error('Failed to upload resume');
+      setUploadError(error?.response?.data?.message || 'Failed to upload resume');
       console.error(error);
     }
   };

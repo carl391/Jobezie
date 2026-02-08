@@ -87,9 +87,9 @@ export function InterviewPrep() {
         interview_type: practiceForm.question_type,
       });
       setCurrentQuestion(response.data.data);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error generating question:', err);
-      setError('Failed to generate question. Please try again.');
+      setError(err?.response?.data?.message || 'Failed to generate question. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -110,9 +110,9 @@ export function InterviewPrep() {
         user_answer: userAnswer,
       });
       setFeedback(response.data.data);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error evaluating answer:', err);
-      setError('Failed to evaluate answer. Please try again.');
+      setError(err?.response?.data?.message || 'Failed to evaluate answer. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -129,9 +129,9 @@ export function InterviewPrep() {
         question_type: practiceForm.question_type,
       });
       setTips(response.data.data?.tips || []);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching tips:', err);
-      setError('Failed to fetch tips. Please try again.');
+      setError(err?.response?.data?.message || 'Failed to fetch tips. Please try again.');
     } finally {
       setIsLoading(false);
     }

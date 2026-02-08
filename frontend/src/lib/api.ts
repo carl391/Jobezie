@@ -1,4 +1,5 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
+import { toast } from 'sonner';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -61,9 +62,42 @@ api.interceptors.response.use(
       }
     }
 
+    // Handle subscription limit errors globally
+    const errData = (error.response?.data as Record<string, unknown>) || {};
+    if (errData.error === 'limit_exceeded') {
+      toast.error(
+        (errData.message as string) || 'You have reached your usage limit for this feature.',
+        {
+          action: {
+            label: 'Upgrade',
+            onClick: () => { window.location.href = '/settings'; },
+          },
+          duration: 6000,
+        }
+      );
+      (error as any)._handled = true;
+    } else if (errData.error === 'subscription_required') {
+      toast.error(
+        (errData.message as string) || 'This feature requires a higher subscription tier.',
+        {
+          action: {
+            label: 'Upgrade',
+            onClick: () => { window.location.href = '/settings'; },
+          },
+          duration: 6000,
+        }
+      );
+      (error as any)._handled = true;
+    }
+
     return Promise.reject(error);
   }
 );
+
+// Check if an API error was already handled by the global interceptor (limit/subscription errors)
+export function isHandledApiError(error: unknown): boolean {
+  return !!(error as any)?._handled;
+}
 
 // Auth API
 export const authApi = {

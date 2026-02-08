@@ -72,9 +72,9 @@ export function ResumeTailorModal({
       setResult(response.data.data);
       setStep('result');
       onTailored?.();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error tailoring resume:', err);
-      setError('Failed to tailor resume. Please try again.');
+      setError(err?.response?.data?.message || 'Failed to tailor resume. Please try again.');
     } finally {
       setIsLoading(false);
     }
