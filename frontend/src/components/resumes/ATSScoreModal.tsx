@@ -125,7 +125,14 @@ export function ATSScoreModal({
         weak_sections: score?.weak_sections,
       });
 
-      const suggestions = response.data.suggestions || response.data.data?.suggestions || [];
+      const resData = response.data?.data || response.data;
+      const raw = resData?.ai_suggestions || resData?.suggestions;
+      // AI returns a string — split into individual suggestions
+      const suggestions = Array.isArray(raw)
+        ? raw
+        : typeof raw === 'string'
+          ? raw.split('\n').map(s => s.replace(/^\d+[\.\)]\s*/, '').trim()).filter(Boolean)
+          : [];
       setOptimizeSuggestions(suggestions);
     } catch (err) {
       console.error('Error optimizing resume:', err);
