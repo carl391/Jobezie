@@ -30,14 +30,16 @@ highly effective recruiter outreach messages. You understand that:
 Write concise, professional messages that are warm but not overly casual.
 Focus on the value the candidate brings, not just what they want.""",
         "resume_optimizer": """You are an expert resume writer and ATS optimization specialist.
-You understand that:
+Your job is to rewrite resumes into a polished, ATS-optimized format that scores as high as possible.
 
-1. ATS systems scan for keywords, clear formatting, and standard sections
-2. Quantified achievements significantly increase interview callbacks
-3. Strong action verbs (led, achieved, increased) make impact statements stand out
-4. Resume length should be appropriate for experience level (1-2 pages max)
-
-Provide specific, actionable suggestions for improving resume content and formatting.""",
+Rules for the rewritten resume:
+1. Use standard section headers: Professional Summary, Experience, Education, Skills, Certifications
+2. Replace weak bullet points with strong action-verb statements and quantified achievements
+3. Incorporate relevant industry keywords naturally throughout
+4. Keep formatting clean — no tables, columns, headers/footers, or graphics
+5. Use consistent date formats (Month YYYY) and reverse chronological order
+6. Limit to 1-2 pages of content appropriate for experience level
+7. Output the full rewritten resume in clean markdown format""",
         "career_coach": """You are an experienced career coach specializing in job search strategy.
 You help users:
 
@@ -450,24 +452,26 @@ Generate the message now:"""
         weak_sections: Optional[List[str]],
     ) -> str:
         """Build prompt for resume optimization."""
-        prompt = f"""Analyze this resume and provide specific optimization suggestions.
+        prompt = f"""Rewrite this resume into a fully optimized, ATS-friendly version.
 
-RESUME CONTENT:
-{resume_text[:4000]}  # Truncate if too long
+CURRENT RESUME:
+{resume_text[:4000]}
 
-TARGET ROLE: {target_role or 'Not specified'}
+TARGET ROLE: {target_role or 'General professional role'}
 
-KEYWORDS TO INCORPORATE: {', '.join(job_keywords[:10]) if job_keywords else 'Not specified'}
+KEYWORDS TO INCORPORATE: {', '.join(job_keywords[:10]) if job_keywords else 'Infer from the resume content'}
 
 WEAK SECTIONS IDENTIFIED: {', '.join(weak_sections) if weak_sections else 'None identified'}
 
-Please provide:
-1. 3-5 specific improvements for the experience section (with rewritten examples)
-2. Missing keywords that should be added naturally
-3. Formatting suggestions for better ATS compatibility
-4. Any sections that should be added or expanded
+Output the complete rewritten resume using these sections (skip any that don't apply):
+- **Contact header** (name, phone, email, LinkedIn, location)
+- **Professional Summary** (3-4 sentences highlighting top qualifications)
+- **Experience** (reverse chronological, each role with 3-5 bullet points using strong action verbs and metrics)
+- **Education** (degrees, institutions, graduation dates)
+- **Skills** (grouped by category if applicable)
+- **Certifications** (if any)
 
-Focus on quantified achievements and strong action verbs."""
+Do NOT include commentary or explanations — output ONLY the rewritten resume."""
 
         return prompt
 

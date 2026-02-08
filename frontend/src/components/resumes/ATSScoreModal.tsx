@@ -9,7 +9,13 @@ import {
   FileText,
   Target,
   Sparkles,
+  Copy,
+  Check,
+  Save,
 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { toast } from 'sonner';
 import { Modal, ModalFooter } from '../ui/Modal';
 import { ScoreCircle, ScoreBar } from '../ui/ScoreCircle';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/Tabs';
@@ -64,7 +70,10 @@ export function ATSScoreModal({
   const [isLoading, setIsLoading] = useState(true);
   const [isRescoring, setIsRescoring] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
-  const [optimizeSuggestions, setOptimizeSuggestions] = useState<string[] | null>(null);
+  const [optimizedResume, setOptimizedResume] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [jobDescription, setJobDescription] = useState('');
   const [showJobInput, setShowJobInput] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -116,7 +125,8 @@ export function ATSScoreModal({
 
   const handleOptimize = async () => {
     setIsOptimizing(true);
-    setOptimizeSuggestions(null);
+    setOptimizedResume(null);
+    setIsSaved(false);
 
     try {
       const response = await aiApi.optimizeResume({
@@ -126,19 +136,46 @@ export function ATSScoreModal({
       });
 
       const resData = response.data?.data || response.data;
-      const raw = resData?.ai_suggestions || resData?.suggestions;
-      // AI returns a string — split into individual suggestions
-      const suggestions = Array.isArray(raw)
-        ? raw
-        : typeof raw === 'string'
-          ? raw.split('\n').map(s => s.replace(/^\d+[\.\)]\s*/, '').trim()).filter(Boolean)
-          : [];
-      setOptimizeSuggestions(suggestions);
+      const raw = resData?.ai_suggestions || resData?.suggestions || '';
+      const text = Array.isArray(raw) ? raw.join('\n') : String(raw);
+      setOptimizedResume(text || null);
     } catch (err) {
       console.error('Error optimizing resume:', err);
-      setOptimizeSuggestions(['Failed to get AI suggestions. Please try again.']);
+      setOptimizedResume(null);
+      setError('Failed to generate optimized resume. Please try again.');
     } finally {
       setIsOptimizing(false);
+    }
+  };
+
+  const handleCopy = async () => {
+    if (!optimizedResume) return;
+    try {
+      await navigator.clipboard.writeText(optimizedResume);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!optimizedResume) return;
+    setIsSaving(true);
+    try {
+      await resumeApi.tailor(
+        resumeId,
+        jobDescription || 'ATS Optimized',
+        undefined,
+        optimizedResume,
+      );
+      setIsSaved(true);
+      toast.success('Optimized resume saved! You can find it in your Resumes.');
+    } catch (err) {
+      console.error('Error saving optimized resume:', err);
+      toast.error('Failed to save optimized resume.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -425,21 +462,43 @@ export function ATSScoreModal({
           )}
         </Tabs>
 
-        {/* AI Optimization Suggestions */}
-        {optimizeSuggestions && optimizeSuggestions.length > 0 && (
-          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-            <h4 className="flex items-center gap-2 text-sm font-semibold text-purple-700 mb-3">
-              <Sparkles className="w-4 h-4" />
-              AI Optimization Suggestions
-            </h4>
-            <ul className="space-y-2">
-              {optimizeSuggestions.map((suggestion, index) => (
-                <li key={index} className="flex items-start gap-2 text-sm text-gray-700">
-                  <span className="text-purple-500 font-bold">{index + 1}.</span>
-                  {suggestion}
-                </li>
-              ))}
-            </ul>
+        {/* AI Optimized Resume */}
+        {optimizedResume && (
+          <div className="border border-purple-200 rounded-lg overflow-hidden">
+            <div className="flex items-center justify-between bg-purple-50 px-4 py-3 border-b border-purple-200">
+              <h4 className="flex items-center gap-2 text-sm font-semibold text-purple-700">
+                <Sparkles className="w-4 h-4" />
+                AI Optimized Resume
+              </h4>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleCopy}
+                  className="flex items-center gap-1 px-2 py-1 text-xs text-purple-600 hover:bg-purple-100 rounded transition-colors"
+                >
+                  {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copied ? 'Copied' : 'Copy'}
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={isSaving || isSaved}
+                  className="flex items-center gap-1 px-2 py-1 text-xs text-purple-600 hover:bg-purple-100 rounded transition-colors disabled:opacity-50"
+                >
+                  {isSaving ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : isSaved ? (
+                    <Check className="w-3.5 h-3.5 text-green-500" />
+                  ) : (
+                    <Save className="w-3.5 h-3.5" />
+                  )}
+                  {isSaving ? 'Saving...' : isSaved ? 'Saved' : 'Save'}
+                </button>
+              </div>
+            </div>
+            <div className="p-4 max-h-96 overflow-y-auto">
+              <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:my-2">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{optimizedResume}</ReactMarkdown>
+              </div>
+            </div>
           </div>
         )}
 
