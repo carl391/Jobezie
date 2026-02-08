@@ -48,7 +48,7 @@ export function ATSResultsStep({ onNext, onBack, resume }: ATSResultsStepProps) 
         setIsLoading(true);
         // Use getAnalysis endpoint which doesn't require job keywords
         const response = await resumeApi.getAnalysis(resume.id);
-        const analysisData = response.data.ats_analysis;
+        const analysisData = response.data.data?.ats_analysis || response.data.ats_analysis;
 
         setAtsData(analysisData);
 
