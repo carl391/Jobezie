@@ -67,11 +67,15 @@ class JSONType(TypeDecorator):
     def process_result_value(self, value, dialect):
         if value is None:
             return value
-        if dialect.name == "postgresql":
-            return value
-        import json
+        # Always deserialize strings (handles TEXT columns and double-serialized JSONB)
+        if isinstance(value, str):
+            import json
 
-        return json.loads(value) if isinstance(value, str) else value
+            try:
+                return json.loads(value)
+            except (json.JSONDecodeError, TypeError):
+                return value
+        return value
 
 
 class SubscriptionTier(str, Enum):
