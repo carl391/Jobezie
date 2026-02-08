@@ -581,6 +581,13 @@ export function Settings() {
         {/* Subscription Tab */}
         <TabsContent value="subscription">
           <div className="space-y-6">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg flex items-center gap-2">
+                <AlertCircle className="w-4 h-4" />
+                {error}
+              </div>
+            )}
+
             {/* Current subscription */}
             <div className="card">
               <div className="flex items-center justify-between mb-4">
