@@ -365,7 +365,7 @@ class TestMessageRoutes:
 
         assert response.status_code == 200
         rdata = get_data(response)
-        assert rdata["data"]["status"] == "sent"
+        assert rdata["message"]["status"] == "sent"
 
 
 class TestActivityRoutes:
