@@ -325,9 +325,7 @@ class User(db.Model):
         if self.deletion_requested_at:
             data["deletion_requested_at"] = self.deletion_requested_at.isoformat()
             data["deletion_scheduled_for"] = (
-                self.deletion_scheduled_for.isoformat()
-                if self.deletion_scheduled_for
-                else None
+                self.deletion_scheduled_for.isoformat() if self.deletion_scheduled_for else None
             )
 
         if include_private:

@@ -36,6 +36,7 @@ def create_app(config_name=None):
 
     # Initialize Sentry error monitoring (before routes)
     from app.monitoring import init_sentry
+
     init_sentry(app)
 
     # Register blueprints
@@ -52,6 +53,7 @@ def create_app(config_name=None):
 
     # Register CLI commands
     from app.cli import register_commands
+
     register_commands(app)
 
     # Auto-seed O*NET data if tables are empty (runs once at startup)
@@ -75,95 +77,99 @@ def create_app(config_name=None):
     def api_docs():
         # Minimal info in production
         if not app.config.get("DEBUG", False):
-            return jsonify({
-                "service": "Jobezie API",
-                "version": "2.0.0",
-                "status": "online",
-                "health": "/health",
-                "documentation": "https://github.com/carl391/Jobezie"
-            })
+            return jsonify(
+                {
+                    "service": "Jobezie API",
+                    "version": "2.0.0",
+                    "status": "online",
+                    "health": "/health",
+                    "documentation": "https://github.com/carl391/Jobezie",
+                }
+            )
 
         # Full documentation in development only
-        return jsonify({
-            "service": "Jobezie API",
-            "version": "2.0.0",
-            "description": "AI-powered career assistant API",
-            "environment": "development",
-            "health": "/health",
-            "endpoints": {
-                "auth": {
-                    "base": "/api/auth",
-                    "routes": {
-                        "POST /register": "Create new user account",
-                        "POST /login": "Authenticate and get tokens",
-                        "POST /logout": "Invalidate current token",
-                        "POST /refresh": "Refresh access token",
-                        "POST /password-reset-request": "Request password reset",
-                        "POST /password-reset": "Reset password with token"
-                    }
+        return jsonify(
+            {
+                "service": "Jobezie API",
+                "version": "2.0.0",
+                "description": "AI-powered career assistant API",
+                "environment": "development",
+                "health": "/health",
+                "endpoints": {
+                    "auth": {
+                        "base": "/api/auth",
+                        "routes": {
+                            "POST /register": "Create new user account",
+                            "POST /login": "Authenticate and get tokens",
+                            "POST /logout": "Invalidate current token",
+                            "POST /refresh": "Refresh access token",
+                            "POST /password-reset-request": "Request password reset",
+                            "POST /password-reset": "Reset password with token",
+                        },
+                    },
+                    "resumes": {
+                        "base": "/api/resumes",
+                        "routes": {
+                            "GET /": "List user's resumes",
+                            "POST /": "Create new resume",
+                            "GET /<id>": "Get resume details",
+                            "PUT /<id>": "Update resume",
+                            "DELETE /<id>": "Delete resume",
+                            "POST /<id>/analyze": "Get ATS score analysis",
+                            "POST /<id>/tailor": "Tailor resume for job description",
+                        },
+                    },
+                    "recruiters": {
+                        "base": "/api/recruiters",
+                        "routes": {
+                            "GET /": "List recruiters (Kanban board)",
+                            "POST /": "Add new recruiter",
+                            "GET /<id>": "Get recruiter details",
+                            "PUT /<id>": "Update recruiter",
+                            "DELETE /<id>": "Delete recruiter",
+                            "POST /<id>/notes": "Add note to recruiter",
+                            "PUT /<id>/stage": "Update pipeline stage",
+                        },
+                    },
+                    "messages": {
+                        "base": "/api/messages",
+                        "routes": {
+                            "GET /": "List messages",
+                            "POST /": "Create message",
+                            "GET /<id>": "Get message details",
+                            "POST /generate": "AI-generate outreach message",
+                        },
+                    },
+                    "activities": {
+                        "base": "/api/activities",
+                        "routes": {
+                            "GET /": "List activities timeline",
+                            "POST /": "Log new activity",
+                            "GET /pipeline": "Get pipeline overview",
+                        },
+                    },
+                    "dashboard": {
+                        "base": "/api/dashboard",
+                        "routes": {
+                            "GET /stats": "Get dashboard statistics",
+                            "GET /readiness": "Get career readiness score",
+                            "GET /follow-ups": "Get recommended follow-ups",
+                        },
+                    },
+                    "ai": {
+                        "base": "/api/ai",
+                        "routes": {
+                            "POST /generate-message": "Generate outreach message",
+                            "POST /optimize-resume": "Get resume optimization suggestions",
+                            "POST /career-coach": "Get career coaching advice",
+                        },
+                    },
                 },
-                "resumes": {
-                    "base": "/api/resumes",
-                    "routes": {
-                        "GET /": "List user's resumes",
-                        "POST /": "Create new resume",
-                        "GET /<id>": "Get resume details",
-                        "PUT /<id>": "Update resume",
-                        "DELETE /<id>": "Delete resume",
-                        "POST /<id>/analyze": "Get ATS score analysis",
-                        "POST /<id>/tailor": "Tailor resume for job description"
-                    }
-                },
-                "recruiters": {
-                    "base": "/api/recruiters",
-                    "routes": {
-                        "GET /": "List recruiters (Kanban board)",
-                        "POST /": "Add new recruiter",
-                        "GET /<id>": "Get recruiter details",
-                        "PUT /<id>": "Update recruiter",
-                        "DELETE /<id>": "Delete recruiter",
-                        "POST /<id>/notes": "Add note to recruiter",
-                        "PUT /<id>/stage": "Update pipeline stage"
-                    }
-                },
-                "messages": {
-                    "base": "/api/messages",
-                    "routes": {
-                        "GET /": "List messages",
-                        "POST /": "Create message",
-                        "GET /<id>": "Get message details",
-                        "POST /generate": "AI-generate outreach message"
-                    }
-                },
-                "activities": {
-                    "base": "/api/activities",
-                    "routes": {
-                        "GET /": "List activities timeline",
-                        "POST /": "Log new activity",
-                        "GET /pipeline": "Get pipeline overview"
-                    }
-                },
-                "dashboard": {
-                    "base": "/api/dashboard",
-                    "routes": {
-                        "GET /stats": "Get dashboard statistics",
-                        "GET /readiness": "Get career readiness score",
-                        "GET /follow-ups": "Get recommended follow-ups"
-                    }
-                },
-                "ai": {
-                    "base": "/api/ai",
-                    "routes": {
-                        "POST /generate-message": "Generate outreach message",
-                        "POST /optimize-resume": "Get resume optimization suggestions",
-                        "POST /career-coach": "Get career coaching advice"
-                    }
-                }
-            },
-            "authentication": "Bearer token (JWT) required for most endpoints",
-            "rate_limits": "100 requests/minute per IP",
-            "documentation": "https://github.com/carl391/Jobezie"
-        })
+                "authentication": "Bearer token (JWT) required for most endpoints",
+                "rate_limits": "100 requests/minute per IP",
+                "documentation": "https://github.com/carl391/Jobezie",
+            }
+        )
 
     return app
 
@@ -175,12 +181,13 @@ def _register_response_wrapper(app):
     @app.after_request
     def wrap_json_response(response):
         # Only wrap JSON responses for /api/ routes
-        if not response.content_type or 'application/json' not in response.content_type:
+        if not response.content_type or "application/json" not in response.content_type:
             return response
 
         # Skip non-API routes (health check, root docs)
         from flask import request as _req
-        if not _req.path.startswith('/api/'):
+
+        if not _req.path.startswith("/api/"):
             return response
 
         try:
@@ -192,7 +199,7 @@ def _register_response_wrapper(app):
             return response
 
         # Already wrapped — has 'success' key at top level
-        if isinstance(data, dict) and 'success' in data:
+        if isinstance(data, dict) and "success" in data:
             return response
 
         # Wrap based on status code
@@ -202,7 +209,9 @@ def _register_response_wrapper(app):
             wrapped = {
                 "success": False,
                 "error": data.get("error", "unknown_error") if isinstance(data, dict) else "error",
-                "message": data.get("message", data.get("error", "An error occurred")) if isinstance(data, dict) else str(data),
+                "message": data.get("message", data.get("error", "An error occurred"))
+                if isinstance(data, dict)
+                else str(data),
             }
 
         response.data = _json.dumps(wrapped)
@@ -213,6 +222,7 @@ def _register_response_wrapper(app):
 def _register_blueprints(app):
     """Register Flask blueprints."""
     from app.routes.activity import activity_bp
+    from app.routes.admin import admin_bp
     from app.routes.ai import ai_bp
     from app.routes.auth import auth_bp
     from app.routes.dashboard import dashboard_bp
@@ -222,7 +232,6 @@ def _register_blueprints(app):
     from app.routes.notification import notification_bp
     from app.routes.recruiter import recruiter_bp
     from app.routes.resume import resume_bp
-    from app.routes.admin import admin_bp
     from app.routes.subscription import subscription_bp
 
     # Auth routes
@@ -338,6 +347,7 @@ def _register_error_handlers(app):
     def internal_error(error):
         db.session.rollback()
         from app.monitoring import capture_exception
+
         capture_exception(error)
         return (
             jsonify(
@@ -379,14 +389,15 @@ def _register_shell_context(app):
 
 def _auto_seed_onet(app):
     """Seed O*NET data on first startup if tables are empty."""
-    import os
     import logging
+    import os
 
     logger = logging.getLogger(__name__)
 
     with app.app_context():
         try:
             from app.models.labor_market import Occupation
+
             count = Occupation.query.count()
             if count > 0:
                 return  # Already seeded
@@ -399,6 +410,7 @@ def _auto_seed_onet(app):
 
             logger.info("Auto-seeding O*NET data (tables are empty)...")
             from app.cli import _seed_onet_data
+
             _seed_onet_data(onet_path)
             logger.info("O*NET auto-seed complete")
         except Exception as e:

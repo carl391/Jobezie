@@ -49,21 +49,21 @@ def create_recruiter():
 
     # Validate and sanitize text fields
     schema = {
-        'first_name': {'required': True, 'max_length': 100},
-        'last_name': {'required': True, 'max_length': 100},
-        'email': {'required': False, 'max_length': 254},
-        'company': {'required': False, 'max_length': 200},
-        'title': {'required': False, 'max_length': 200},
-        'linkedin_url': {'required': False, 'max_length': 500},
-        'phone': {'required': False, 'max_length': 30},
-        'specialty': {'required': False, 'max_length': 200},
-        'company_type': {'required': False, 'max_length': 50},
-        'source': {'required': False, 'max_length': 200},
-        'notes': {'required': False, 'max_length': 5000},
+        "first_name": {"required": True, "max_length": 100},
+        "last_name": {"required": True, "max_length": 100},
+        "email": {"required": False, "max_length": 254},
+        "company": {"required": False, "max_length": 200},
+        "title": {"required": False, "max_length": 200},
+        "linkedin_url": {"required": False, "max_length": 500},
+        "phone": {"required": False, "max_length": 30},
+        "specialty": {"required": False, "max_length": 200},
+        "company_type": {"required": False, "max_length": 50},
+        "source": {"required": False, "max_length": 200},
+        "notes": {"required": False, "max_length": 5000},
     }
     validated, errors = validate_text_fields(data, schema)
     if errors:
-        return jsonify({'success': False, 'data': {'errors': errors}}), 400
+        return jsonify({"success": False, "data": {"errors": errors}}), 400
 
     try:
         recruiter = RecruiterService.create_recruiter(
@@ -551,12 +551,12 @@ def add_note(recruiter_id):
 
     # Validate and sanitize text fields
     schema = {
-        'content': {'required': True, 'max_length': 10000},
-        'note_type': {'required': False, 'max_length': 50},
+        "content": {"required": True, "max_length": 10000},
+        "note_type": {"required": False, "max_length": 50},
     }
     validated, errors = validate_text_fields(data, schema)
     if errors:
-        return jsonify({'success': False, 'data': {'errors': errors}}), 400
+        return jsonify({"success": False, "data": {"errors": errors}}), 400
 
     try:
         note = RecruiterService.add_note(

@@ -107,6 +107,7 @@ export function AgeGate({ value, onChange, error: externalError }: AgeGateProps)
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function validateBirthYear(birthYear: string): { valid: boolean; error?: string } {
   if (!birthYear) {
     return { valid: false, error: 'Birth year is required' };

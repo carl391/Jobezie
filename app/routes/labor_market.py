@@ -12,10 +12,7 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 
 from app.extensions import db, token_blocklist
 from app.models.user import User
-from app.services.labor_market_service import (
-    LaborMarketService,
-    get_market_overview_sync,
-)
+from app.services.labor_market_service import LaborMarketService, get_market_overview_sync
 from app.utils.decorators import feature_limit
 
 logger = logging.getLogger(__name__)
@@ -24,6 +21,7 @@ labor_market_bp = Blueprint("labor_market", __name__, url_prefix="/api/labor-mar
 
 
 # --- Redis cache helpers ---
+
 
 def _cache_get(key: str):
     """Get a value from Redis cache, returns None on miss or error."""

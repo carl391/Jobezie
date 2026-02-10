@@ -53,9 +53,9 @@ export function Resumes() {
       await resumeApi.upload(formData);
       toast.success('Resume uploaded successfully');
       fetchResumes();
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (!isHandledApiError(error)) toast.error('Failed to upload resume');
-      setUploadError(error?.response?.data?.message || 'Failed to upload resume');
+      setUploadError((error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to upload resume');
       console.error(error);
     }
   };

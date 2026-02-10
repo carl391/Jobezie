@@ -12,11 +12,10 @@ import {
   MessageSquare,
   Send,
   Plus,
-  Trash2,
 } from 'lucide-react';
 import { Modal } from '../ui/Modal';
-import { Badge, StageBadge } from '../ui/Badge';
-import { ScoreCircle, ScoreBar } from '../ui/ScoreCircle';
+import { StageBadge } from '../ui/Badge';
+import { ScoreCircle } from '../ui/ScoreCircle';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/Tabs';
 import { recruiterApi, activityApi } from '../../lib/api';
 import type { Recruiter, RecruiterNote, Activity } from '../../types';

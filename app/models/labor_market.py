@@ -28,7 +28,9 @@ class Occupation(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Relationships
-    skills = db.relationship("OccupationSkill", back_populates="occupation", cascade="all, delete-orphan")
+    skills = db.relationship(
+        "OccupationSkill", back_populates="occupation", cascade="all, delete-orphan"
+    )
 
     def __repr__(self):
         return f"<Occupation {self.id}: {self.title}>"
@@ -59,7 +61,9 @@ class Skill(db.Model):
     description = db.Column(db.Text)
 
     # Relationships
-    occupations = db.relationship("OccupationSkill", back_populates="skill", cascade="all, delete-orphan")
+    occupations = db.relationship(
+        "OccupationSkill", back_populates="skill", cascade="all, delete-orphan"
+    )
 
     def __repr__(self):
         return f"<Skill {self.id}: {self.name}>"

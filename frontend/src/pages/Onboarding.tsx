@@ -20,7 +20,7 @@ export function Onboarding() {
 
   // Onboarding data state
   const [careerData, setCareerData] = useState<OnboardingData>({});
-  const [uploadedResume, setUploadedResume] = useState<Resume | null>(null);
+  const [_uploadedResume, setUploadedResume] = useState<Resume | null>(null);
   const [atsScore, setAtsScore] = useState<number | null>(null);
 
   // Load saved progress from localStorage

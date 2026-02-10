@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 import {
   Loader2,
   FileText,
-  Download,
-  ExternalLink,
   Calendar,
   HardDrive,
   Star,

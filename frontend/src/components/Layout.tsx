@@ -50,29 +50,16 @@ const TIER_BADGES: Record<string, { label: string; className: string }> = {
   career_keeper: { label: 'Keeper', className: 'bg-emerald-100 text-emerald-700' },
 };
 
-export function Layout({ children }: LayoutProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const { user, logout } = useAuth();
-  const { startTour } = useTour();
-  const location = useLocation();
-  const navigate = useNavigate();
+interface SidebarContentProps {
+  onLinkClick?: () => void;
+  currentPathname: string;
+  isFreeTier: boolean;
+  tierBadge: { label: string; className: string };
+  user: { full_name?: string; subscription_tier?: string } | null;
+}
 
-  const handleLogout = async () => {
-    await logout();
-    navigate('/login');
-  };
-
-  const handleStartTour = () => {
-    setUserMenuOpen(false);
-    startTour('main');
-  };
-
-  const tier = user?.subscription_tier || 'basic';
-  const tierBadge = TIER_BADGES[tier] || TIER_BADGES.basic;
-  const isFreeTier = tier === 'basic';
-
-  const SidebarContent = ({ onLinkClick }: { onLinkClick?: () => void }) => (
+function SidebarContent({ onLinkClick, currentPathname, isFreeTier, tierBadge, user }: SidebarContentProps) {
+  return (
     <>
       {/* Brand header */}
       <div className="flex items-center h-16 px-5 bg-gradient-to-r from-primary-600 to-purple-600">
@@ -84,7 +71,7 @@ export function Layout({ children }: LayoutProps) {
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
         {navigation.map((item) => {
-          const isActive = location.pathname === item.href;
+          const isActive = currentPathname === item.href;
           return (
             <Link
               key={item.name}
@@ -144,6 +131,29 @@ export function Layout({ children }: LayoutProps) {
       </div>
     </>
   );
+}
+
+export function Layout({ children }: LayoutProps) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const { startTour } = useTour();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
+
+  const handleStartTour = () => {
+    setUserMenuOpen(false);
+    startTour('main');
+  };
+
+  const tier = user?.subscription_tier || 'basic';
+  const tierBadge = TIER_BADGES[tier] || TIER_BADGES.basic;
+  const isFreeTier = tier === 'basic';
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -169,14 +179,14 @@ export function Layout({ children }: LayoutProps) {
           <X className="w-5 h-5 text-white" />
         </button>
         <div className="flex flex-col h-full">
-          <SidebarContent onLinkClick={() => setSidebarOpen(false)} />
+          <SidebarContent onLinkClick={() => setSidebarOpen(false)} currentPathname={location.pathname} isFreeTier={isFreeTier} tierBadge={tierBadge} user={user} />
         </div>
       </div>
 
       {/* Desktop sidebar */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
         <div className="flex flex-col flex-1 bg-white border-r border-gray-200">
-          <SidebarContent />
+          <SidebarContent currentPathname={location.pathname} isFreeTier={isFreeTier} tierBadge={tierBadge} user={user} />
         </div>
       </div>
 

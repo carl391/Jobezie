@@ -48,11 +48,14 @@ def upload_resume():
 
         return (
             jsonify(
-                {"success": True, "data": {
-                    "message": "Resume uploaded successfully",
-                    "resume": resume.to_dict(),
-                    "ats_analysis": ats_result,
-                }}
+                {
+                    "success": True,
+                    "data": {
+                        "message": "Resume uploaded successfully",
+                        "resume": resume.to_dict(),
+                        "ats_analysis": ats_result,
+                    },
+                }
             ),
             201,
         )
@@ -83,10 +86,13 @@ def get_resumes():
 
     return (
         jsonify(
-            {"success": True, "data": {
-                "resumes": [r.to_dict() for r in resumes],
-                "count": len(resumes),
-            }}
+            {
+                "success": True,
+                "data": {
+                    "resumes": [r.to_dict() for r in resumes],
+                    "count": len(resumes),
+                },
+            }
         ),
         200,
     )
@@ -105,13 +111,19 @@ def get_master_resume():
     resume = ResumeService.get_master_resume(user_id)
 
     if not resume:
-        return jsonify({"success": True, "data": {"resume": None, "message": "No master resume set"}}), 200
+        return (
+            jsonify({"success": True, "data": {"resume": None, "message": "No master resume set"}}),
+            200,
+        )
 
     return (
         jsonify(
-            {"success": True, "data": {
-                "resume": resume.to_dict(include_analysis=True),
-            }}
+            {
+                "success": True,
+                "data": {
+                    "resume": resume.to_dict(include_analysis=True),
+                },
+            }
         ),
         200,
     )
@@ -134,9 +146,12 @@ def get_resume(resume_id):
 
     return (
         jsonify(
-            {"success": True, "data": {
-                "resume": resume.to_dict(include_analysis=True),
-            }}
+            {
+                "success": True,
+                "data": {
+                    "resume": resume.to_dict(include_analysis=True),
+                },
+            }
         ),
         200,
     )
@@ -175,10 +190,13 @@ def set_master(resume_id):
         resume = ResumeService.set_master_resume(resume_id, user_id)
         return (
             jsonify(
-                {"success": True, "data": {
-                    "message": "Master resume updated",
-                    "resume": resume.to_dict(),
-                }}
+                {
+                    "success": True,
+                    "data": {
+                        "message": "Master resume updated",
+                        "resume": resume.to_dict(),
+                    },
+                }
             ),
             200,
         )
@@ -218,13 +236,16 @@ def score_for_job(resume_id):
 
         return (
             jsonify(
-                {"success": True, "data": {
-                    "score": result["total_score"],
-                    "components": result["components"],
-                    "recommendations": result["recommendations"],
-                    "missing_keywords": result["missing_keywords"],
-                    "weak_sections": result["weak_sections"],
-                }}
+                {
+                    "success": True,
+                    "data": {
+                        "score": result["total_score"],
+                        "components": result["components"],
+                        "recommendations": result["recommendations"],
+                        "missing_keywords": result["missing_keywords"],
+                        "weak_sections": result["weak_sections"],
+                    },
+                }
             ),
             200,
         )
@@ -275,10 +296,13 @@ def create_tailored_version(resume_id):
 
         return (
             jsonify(
-                {"success": True, "data": {
-                    "message": "Tailored resume created",
-                    "resume": tailored.to_dict(include_analysis=True),
-                }}
+                {
+                    "success": True,
+                    "data": {
+                        "message": "Tailored resume created",
+                        "resume": tailored.to_dict(include_analysis=True),
+                    },
+                }
             ),
             201,
         )
@@ -335,25 +359,28 @@ def get_analysis(resume_id):
 
     return (
         jsonify(
-            {"success": True, "data": {
-                "resume_id": str(resume.id),
-                "title": resume.title,
-                "ats_analysis": {
-                    "total_score": resume.ats_total_score,
-                    "components": {
-                        "compatibility": resume.ats_compatibility_score,
-                        "keywords": resume.ats_keywords_score,
-                        "achievements": resume.ats_achievements_score,
-                        "formatting": resume.ats_formatting_score,
-                        "progression": resume.ats_progression_score,
-                        "completeness": resume.ats_completeness_score,
-                        "fit": resume.ats_fit_score,
+            {
+                "success": True,
+                "data": {
+                    "resume_id": str(resume.id),
+                    "title": resume.title,
+                    "ats_analysis": {
+                        "total_score": resume.ats_total_score,
+                        "components": {
+                            "compatibility": resume.ats_compatibility_score,
+                            "keywords": resume.ats_keywords_score,
+                            "achievements": resume.ats_achievements_score,
+                            "formatting": resume.ats_formatting_score,
+                            "progression": resume.ats_progression_score,
+                            "completeness": resume.ats_completeness_score,
+                            "fit": resume.ats_fit_score,
+                        },
+                        "recommendations": ensure_list(resume.ats_recommendations),
+                        "weak_sections": ensure_list(resume.weak_sections),
+                        "missing_keywords": ensure_list(resume.missing_keywords),
                     },
-                    "recommendations": ensure_list(resume.ats_recommendations),
-                    "weak_sections": ensure_list(resume.weak_sections),
-                    "missing_keywords": ensure_list(resume.missing_keywords),
                 },
-            }}
+            }
         ),
         200,
     )

@@ -380,10 +380,10 @@ def validate_text_fields(data: dict, schema: dict) -> tuple:
     errors = []
 
     for field, rules in schema.items():
-        value = data.get(field, '')
+        value = data.get(field, "")
 
         # Handle required field check
-        if rules.get('required') and not value:
+        if rules.get("required") and not value:
             errors.append(f"{field} is required")
             continue
 
@@ -396,8 +396,8 @@ def validate_text_fields(data: dict, schema: dict) -> tuple:
             value = value.strip()
 
             # Check length constraints
-            min_len = rules.get('min_length', 0)
-            max_len = rules.get('max_length', 1000)
+            min_len = rules.get("min_length", 0)
+            max_len = rules.get("max_length", 1000)
 
             if len(value) < min_len:
                 errors.append(f"{field} must be at least {min_len} characters")

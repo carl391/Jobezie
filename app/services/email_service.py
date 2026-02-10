@@ -10,15 +10,7 @@ from typing import Dict, List, Optional
 
 from flask import current_app, render_template_string
 from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import (
-    Attachment,
-    Email,
-    FileContent,
-    FileName,
-    FileType,
-    Mail,
-    To,
-)
+from sendgrid.helpers.mail import Attachment, Email, FileContent, FileName, FileType, Mail, To
 
 
 class EmailService:

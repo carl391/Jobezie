@@ -22,10 +22,9 @@ def send_weekly_summaries(self):
     and sends them a personalized summary email.
     """
     from app import create_app
-    from app.extensions import db
-    from app.models.user import User
     from app.models.message import Message
     from app.models.recruiter import Recruiter
+    from app.models.user import User
     from app.services.email_service import EmailService
 
     app = create_app()
@@ -89,9 +88,7 @@ def send_weekly_summaries(self):
                     logger.error(f"Error sending weekly summary to {user.email}: {e}")
                     error_count += 1
 
-            logger.info(
-                f"Weekly summary complete: {success_count} sent, {error_count} errors"
-            )
+            logger.info(f"Weekly summary complete: {success_count} sent, {error_count} errors")
             return {"success": success_count, "errors": error_count}
 
         except Exception as exc:
@@ -108,9 +105,8 @@ def check_follow_up_reminders(self):
     pipeline stages who haven't been contacted recently.
     """
     from app import create_app
-    from app.extensions import db
-    from app.models.user import User
     from app.models.recruiter import Recruiter
+    from app.models.user import User
     from app.services.email_service import EmailService
 
     app = create_app()
@@ -143,9 +139,7 @@ def check_follow_up_reminders(self):
                         for recruiter in recruiters:
                             days_since = (datetime.utcnow() - recruiter.last_contact_date).days
 
-                            EmailService.send_follow_up_reminder_email(
-                                user, recruiter, days_since
-                            )
+                            EmailService.send_follow_up_reminder_email(user, recruiter, days_since)
                             success_count += 1
 
                 except Exception as e:
@@ -208,7 +202,9 @@ def _generate_weekly_priorities(user, stats: dict) -> list:
         priorities.append("Send at least 5 outreach messages this week to build momentum")
 
     if stats["response_rate"] < 20 and stats["messages_sent"] > 0:
-        priorities.append("Review your message templates - AI Coach can help improve response rates")
+        priorities.append(
+            "Review your message templates - AI Coach can help improve response rates"
+        )
 
     if stats["recruiters_added"] == 0:
         priorities.append("Add new recruiters to expand your network")

@@ -7,10 +7,7 @@ Handles admin authentication and administrative operations.
 from datetime import datetime
 
 from flask import Blueprint, jsonify, request
-from flask_jwt_extended import (
-    create_access_token,
-    create_refresh_token,
-)
+from flask_jwt_extended import create_access_token, create_refresh_token
 
 from app.extensions import db
 from app.models.user import User

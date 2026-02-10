@@ -124,6 +124,7 @@ def generate_message():
 
     # Increment usage counter
     from app.models.user import User
+
     current_user = User.query.get(user_id)
     if current_user:
         current_user.monthly_message_count += 1
@@ -182,6 +183,7 @@ def optimize_resume():
 
     # Increment usage counter
     from app.models.user import User
+
     current_user = User.query.get(user_id)
     if current_user:
         current_user.monthly_research_count += 1
@@ -224,18 +226,16 @@ def career_coach():
 
     # Validate and sanitize text fields
     schema = {
-        'question': {'required': True, 'max_length': 5000},
+        "question": {"required": True, "max_length": 5000},
     }
     validated, errors = validate_text_fields(data, schema)
     if errors:
-        return jsonify({'success': False, 'errors': errors}), 400
+        return jsonify({"success": False, "errors": errors}), 400
 
     question = validated["question"]
 
     # Get user context from profile
     from app.models.user import User
-    from app.models.resume import Resume
-    from app.models.recruiter import Recruiter
 
     user = User.query.get(user_id)
 
@@ -305,10 +305,10 @@ def _get_algorithm_context(user_id: str, user) -> dict:
         - engagement_avg: Average recruiter engagement
         - market_shortage: Shortage scores for target roles
     """
-    from app.models.resume import Resume
     from app.models.recruiter import Recruiter
-    from app.services.scoring import calculate_career_readiness
+    from app.models.resume import Resume
     from app.services.labor_market_service import LaborMarketService
+    from app.services.scoring import calculate_career_readiness
 
     context = {
         "ats_score": None,
@@ -327,9 +327,7 @@ def _get_algorithm_context(user_id: str, user) -> dict:
         )
         if not latest_resume:
             latest_resume = (
-                Resume.query.filter_by(user_id=user_id)
-                .order_by(Resume.updated_at.desc())
-                .first()
+                Resume.query.filter_by(user_id=user_id).order_by(Resume.updated_at.desc()).first()
             )
         if latest_resume and latest_resume.ats_total_score:
             context["ats_score"] = {
@@ -353,7 +351,9 @@ def _get_algorithm_context(user_id: str, user) -> dict:
                 context["engagement_avg"] = {
                     "average": sum(engagement_scores) // len(engagement_scores),
                     "count": len(recruiters),
-                    "active": len([r for r in recruiters if r.pipeline_stage not in ["archived", "rejected"]]),
+                    "active": len(
+                        [r for r in recruiters if r.pipeline_stage not in ["archived", "rejected"]]
+                    ),
                 }
 
         # Get market shortage for target roles
@@ -366,11 +366,13 @@ def _get_algorithm_context(user_id: str, user) -> dict:
                 role=role,
                 industry=primary_industry,
             )
-            context["market_shortage"].append({
-                "role": role,
-                "score": shortage["total_score"],
-                "interpretation": shortage["interpretation"],
-            })
+            context["market_shortage"].append(
+                {
+                    "role": role,
+                    "score": shortage["total_score"],
+                    "interpretation": shortage["interpretation"],
+                }
+            )
 
         # Get skills gap for primary target role (uses O*NET skills, abilities, knowledge)
         if target_roles:
@@ -413,14 +415,14 @@ def interview_prep():
     if action == "evaluate":
         # Evaluate a user's answer to an interview question
         eval_schema = {
-            'job_title': {'required': True, 'max_length': 200},
-            'interview_type': {'required': False, 'max_length': 50},
-            'question': {'required': True, 'max_length': 2000},
-            'user_answer': {'required': True, 'max_length': 5000},
+            "job_title": {"required": True, "max_length": 200},
+            "interview_type": {"required": False, "max_length": 50},
+            "question": {"required": True, "max_length": 2000},
+            "user_answer": {"required": True, "max_length": 5000},
         }
         validated, errors = validate_text_fields(data, eval_schema)
         if errors:
-            return jsonify({'success': False, 'errors': errors}), 400
+            return jsonify({"success": False, "errors": errors}), 400
 
         result = evaluate_answer_sync(
             job_title=validated["job_title"],
@@ -432,20 +434,25 @@ def interview_prep():
         if not result["success"]:
             return jsonify({"error": result.get("error", "Failed to evaluate answer")}), 500
 
-        return jsonify({
-            "evaluation": result["evaluation"],
-            "provider": result["provider"],
-        }), 200
+        return (
+            jsonify(
+                {
+                    "evaluation": result["evaluation"],
+                    "provider": result["provider"],
+                }
+            ),
+            200,
+        )
 
     # Default: generate interview prep materials
     schema = {
-        'job_title': {'required': True, 'max_length': 200},
-        'company': {'required': False, 'max_length': 200},
-        'interview_type': {'required': False, 'max_length': 50},
+        "job_title": {"required": True, "max_length": 200},
+        "company": {"required": False, "max_length": 200},
+        "interview_type": {"required": False, "max_length": 50},
     }
     validated, errors = validate_text_fields(data, schema)
     if errors:
-        return jsonify({'success': False, 'errors': errors}), 400
+        return jsonify({"success": False, "errors": errors}), 400
 
     job_title = validated["job_title"]
 
@@ -476,6 +483,7 @@ def interview_prep():
 
     # Increment usage counter
     from app.models.user import User
+
     current_user = User.query.get(user_id)
     if current_user:
         current_user.monthly_interview_prep_count += 1

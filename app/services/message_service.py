@@ -10,10 +10,7 @@ from typing import Dict, List, Optional, Tuple
 from app.extensions import db
 from app.models.message import Message, MessageStatus
 from app.models.recruiter import Recruiter
-from app.services.scoring.message import (
-    calculate_message_quality,
-    validate_message_length,
-)
+from app.services.scoring.message import calculate_message_quality, validate_message_length
 
 # Message templates for AI generation context
 MESSAGE_TEMPLATES = {

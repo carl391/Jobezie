@@ -213,9 +213,10 @@ export function AICoach() {
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error getting AI response:', err);
-      setError(err?.response?.data?.message || 'Failed to get a response. Please try again.');
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      setError(axiosErr?.response?.data?.message || 'Failed to get a response. Please try again.');
     } finally {
       setIsLoading(false);
     }

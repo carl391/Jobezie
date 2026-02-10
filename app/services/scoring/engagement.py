@@ -99,10 +99,7 @@ def calculate_engagement_score(
     else:
         # Response Score only - redistribute weights: 55% response, 45% recency
         # This maintains transparency about what's being measured
-        total_score = int(
-            response_score * 0.55
-            + recency_score * 0.45
-        )
+        total_score = int(response_score * 0.55 + recency_score * 0.45)
 
         return {
             "total_score": total_score,

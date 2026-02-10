@@ -6,12 +6,10 @@ import {
   MessageSquare,
   Sparkles,
   BarChart3,
-  Shield,
   ArrowRight,
   Check,
   Star,
   TrendingUp,
-  Target,
   Linkedin,
   ChevronRight,
 } from 'lucide-react';

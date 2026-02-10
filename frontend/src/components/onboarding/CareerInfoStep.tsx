@@ -6,7 +6,7 @@ import { ChevronLeft, Briefcase, GraduationCap, TrendingUp, Award, Crown } from 
 import { authApi } from '../../lib/api';
 import { OccupationAutocomplete } from '../ui/OccupationAutocomplete';
 import { SkillsAutocomplete } from '../ui/SkillsAutocomplete';
-import type { OnboardingData, OccupationResult } from '../../types';
+import type { OnboardingData } from '../../types';
 
 const careerInfoSchema = z.object({
   search_status: z.string().min(1, 'Please select your job search status'),
@@ -92,12 +92,12 @@ export function CareerInfoStep({ onNext, onBack, initialData }: CareerInfoStepPr
     setStep('experience');
   };
 
-  const handleExperienceSelect = (value: string, years: number) => {
+  const handleExperienceSelect = (value: string, _years: number) => {
     setValue('career_stage', value);
     setStep('details');
   };
 
-  const handleAddTargetRole = () => {
+  const _handleAddTargetRole = () => {
     if (targetRoleInput.trim() && !targetRoles.includes(targetRoleInput.trim())) {
       setValue('target_roles', [...targetRoles, targetRoleInput.trim()]);
       setTargetRoleInput('');
@@ -284,7 +284,7 @@ export function CareerInfoStep({ onNext, onBack, initialData }: CareerInfoStepPr
         <label className="label">Target Roles *</label>
         <OccupationAutocomplete
           value={targetRoleInput}
-          onChange={(title, occupation) => {
+          onChange={(title, _occupation) => {
             if (title && !targetRoles.includes(title)) {
               setValue('target_roles', [...targetRoles, title]);
             }

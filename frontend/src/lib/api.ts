@@ -75,7 +75,7 @@ api.interceptors.response.use(
           duration: 6000,
         }
       );
-      (error as any)._handled = true;
+      (error as unknown as Record<string, boolean>)._handled = true;
     } else if (errData.error === 'subscription_required') {
       toast.error(
         (errData.message as string) || 'This feature requires a higher subscription tier.',
@@ -87,7 +87,7 @@ api.interceptors.response.use(
           duration: 6000,
         }
       );
-      (error as any)._handled = true;
+      (error as unknown as Record<string, boolean>)._handled = true;
     }
 
     return Promise.reject(error);
@@ -96,7 +96,7 @@ api.interceptors.response.use(
 
 // Check if an API error was already handled by the global interceptor (limit/subscription errors)
 export function isHandledApiError(error: unknown): boolean {
-  return !!(error as any)?._handled;
+  return !!(error as unknown as Record<string, boolean>)?._handled;
 }
 
 // Auth API

@@ -39,8 +39,8 @@ export function CookieConsent({ privacyPolicyUrl = '/privacy' }: { privacyPolicy
     setConsentStatus('accepted');
     setVisible(false);
     try {
-      if ((window as any).posthog) {
-        (window as any).posthog.opt_in_capturing();
+      if ((window as unknown as Record<string, unknown>).posthog) {
+        ((window as unknown as Record<string, unknown>).posthog as { opt_in_capturing: () => void }).opt_in_capturing();
       }
     } catch { /* noop */ }
   };
@@ -49,8 +49,8 @@ export function CookieConsent({ privacyPolicyUrl = '/privacy' }: { privacyPolicy
     setConsentStatus('declined');
     setVisible(false);
     try {
-      if ((window as any).posthog) {
-        (window as any).posthog.opt_out_capturing();
+      if ((window as unknown as Record<string, unknown>).posthog) {
+        ((window as unknown as Record<string, unknown>).posthog as { opt_out_capturing: () => void }).opt_out_capturing();
       }
     } catch { /* noop */ }
   };

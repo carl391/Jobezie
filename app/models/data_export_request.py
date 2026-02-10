@@ -31,23 +31,17 @@ class DataExportRequest(db.Model):
     error_message = db.Column(db.Text, nullable=True)
 
     # Relationship
-    user = db.relationship(
-        "User", backref=db.backref("export_requests", lazy="dynamic")
-    )
+    user = db.relationship("User", backref=db.backref("export_requests", lazy="dynamic"))
 
     def to_dict(self):
         return {
             "id": self.id,
             "status": self.status,
             "file_size_bytes": self.file_size_bytes,
-            "download_token": self.download_token
-            if self.status == "completed"
-            else None,
+            "download_token": self.download_token if self.status == "completed" else None,
             "expires_at": self.expires_at.isoformat() if self.expires_at else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
-            "completed_at": self.completed_at.isoformat()
-            if self.completed_at
-            else None,
+            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
         }
 
     def __repr__(self):

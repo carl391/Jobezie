@@ -163,7 +163,7 @@ export function ComposeMessageModal({
         setValue('subject', generated.subject || '');
         setValue('body', generated.body || '');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error generating message:', err);
       if (!isHandledApiError(err)) toast.error('Failed to generate message');
       setError(err?.response?.data?.message || 'Failed to generate message. Please try again.');
@@ -194,7 +194,7 @@ export function ComposeMessageModal({
       onSuccess(message);
       onClose();
       toast.success(editMessage ? 'Message updated' : 'Message created');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error saving message:', err);
       if (!isHandledApiError(err)) toast.error('Failed to save message');
       setError(err?.response?.data?.message || 'Failed to save message. Please try again.');

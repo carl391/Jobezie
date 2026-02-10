@@ -45,7 +45,7 @@ export function Login() {
     const savedEmail = localStorage.getItem('jobezie_remember_email');
     if (savedEmail) {
       setValue('email', savedEmail);
-      setRememberMe(true);
+      queueMicrotask(() => setRememberMe(true));
     }
   }, [setValue]);
 

@@ -41,15 +41,15 @@ def create_message():
 
     # Validate and sanitize text fields
     schema = {
-        'body': {'required': True, 'max_length': 10000},
-        'subject': {'required': False, 'max_length': 500},
-        'signature': {'required': False, 'max_length': 500},
-        'message_type': {'required': False, 'max_length': 50},
-        'generation_prompt': {'required': False, 'max_length': 5000},
+        "body": {"required": True, "max_length": 10000},
+        "subject": {"required": False, "max_length": 500},
+        "signature": {"required": False, "max_length": 500},
+        "message_type": {"required": False, "max_length": 50},
+        "generation_prompt": {"required": False, "max_length": 5000},
     }
     validated, errors = validate_text_fields(data, schema)
     if errors:
-        return jsonify({'success': False, 'data': {'errors': errors}}), 400
+        return jsonify({"success": False, "data": {"errors": errors}}), 400
 
     try:
         message, quality_result = MessageService.create_message(

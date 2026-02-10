@@ -102,10 +102,11 @@ export function AddRecruiterModal({ isOpen, onClose, onSuccess }: AddRecruiterMo
       onSuccess(recruiter);
       onClose();
       toast.success('Recruiter added successfully');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error creating recruiter:', err);
       if (!isHandledApiError(err)) toast.error('Failed to add recruiter');
-      setError(err?.response?.data?.message || 'Failed to add recruiter. Please try again.');
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      setError(axiosErr?.response?.data?.message || 'Failed to add recruiter. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

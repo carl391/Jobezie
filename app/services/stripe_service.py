@@ -371,10 +371,7 @@ class StripeService:
         # Send subscription confirmation email
         try:
             tier_features = cls.get_tier_info()["tiers"]
-            features = next(
-                (t["features"] for t in tier_features if t["id"] == tier),
-                []
-            )
+            features = next((t["features"] for t in tier_features if t["id"] == tier), [])
             EmailService.send_subscription_confirmed_email(user, tier, features)
         except Exception as e:
             current_app.logger.error(f"Failed to send subscription email: {e}")
@@ -410,7 +407,6 @@ class StripeService:
             return {"success": False, "error": "User not found"}
 
         # Downgrade to basic
-        previous_tier = user.subscription_tier
         user.subscription_tier = SubscriptionTier.BASIC.value
         user.stripe_subscription_id = None
         user.subscription_expires_at = None

@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Activity as ActivityIcon,
   Calendar,
-  Clock,
   CheckCircle,
   MessageSquare,
   FileText,
@@ -15,8 +14,6 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { activityApi, recruiterApi } from '../lib/api';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/Tabs';
-import { Badge } from '../components/ui/Badge';
 import type { Activity, PipelineItem, Recruiter } from '../types';
 
 const ACTIVITY_ICONS: Record<string, React.ReactNode> = {
@@ -63,7 +60,7 @@ export function Activity() {
   const [isLoading, setIsLoading] = useState(true);
   const [activeView, setActiveView] = useState<'timeline' | 'kanban'>('timeline');
   const [activityFilter, setActivityFilter] = useState('all');
-  const [timelineData, setTimelineData] = useState<{ date: string; count: number }[]>([]);
+  const [_timelineData, setTimelineData] = useState<{ date: string; count: number }[]>([]);
   const [stats, setStats] = useState({
     total_activities: 0,
     messages_sent: 0,

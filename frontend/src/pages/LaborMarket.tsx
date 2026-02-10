@@ -115,9 +115,9 @@ export function LaborMarket() {
         location: shortageForm.location || undefined,
       });
       setShortageData(response.data.data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching shortage data:', err);
-      setError(err?.response?.data?.message || 'Failed to fetch shortage data. Please try again.');
+      setError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to fetch shortage data. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -134,9 +134,9 @@ export function LaborMarket() {
         location: salaryForm.location || undefined,
       });
       setSalaryData(response.data.data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching salary data:', err);
-      setError(err?.response?.data?.message || 'Failed to fetch salary data. Please try again.');
+      setError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to fetch salary data. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -152,9 +152,9 @@ export function LaborMarket() {
         skills: user?.technical_skills,
       });
       setOpportunityData(response.data.data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error analyzing opportunity:', err);
-      setError(err?.response?.data?.message || 'Failed to analyze opportunity. Please try again.');
+      setError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to analyze opportunity. Please try again.');
     } finally {
       setIsLoading(false);
     }

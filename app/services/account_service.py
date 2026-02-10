@@ -232,9 +232,7 @@ def create_data_export(user_id) -> dict:
         return {"error": "User not found", "status_code": 404}
 
     # Throttle: one active export at a time
-    active = DataExportRequest.query.filter_by(
-        user_id=user_id, status="processing"
-    ).first()
+    active = DataExportRequest.query.filter_by(user_id=user_id, status="processing").first()
     if active:
         return {"error": "An export is already in progress", "status_code": 409}
 
@@ -480,9 +478,7 @@ def _to_json(data) -> str:
 def _delete_user_resume_files(user_id):
     """Delete all resume files from disk for a user."""
     rows = db.session.execute(
-        db.text(
-            "SELECT file_path, saved_filename FROM resumes WHERE user_id = :uid"
-        ),
+        db.text("SELECT file_path, saved_filename FROM resumes WHERE user_id = :uid"),
         {"uid": str(user_id)},
     ).fetchall()
 
@@ -500,9 +496,7 @@ def _delete_user_resume_files(user_id):
 def _delete_user_export_files(user_id):
     """Delete all export ZIPs from disk for a user."""
     rows = db.session.execute(
-        db.text(
-            "SELECT file_path FROM data_export_requests WHERE user_id = :uid"
-        ),
+        db.text("SELECT file_path FROM data_export_requests WHERE user_id = :uid"),
         {"uid": str(user_id)},
     ).fetchall()
 
@@ -524,9 +518,7 @@ def _cancel_subscription(user):
         sub_id = getattr(user, "stripe_subscription_id", None)
         if sub_id:
             stripe.Subscription.cancel(sub_id)
-            logger.info(
-                f"Cancelled Stripe subscription {sub_id} for user {user.id}"
-            )
+            logger.info(f"Cancelled Stripe subscription {sub_id} for user {user.id}")
     except Exception as e:
         logger.warning(f"Stripe cancellation failed for user {user.id}: {e}")
 

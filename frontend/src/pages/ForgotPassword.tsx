@@ -30,7 +30,7 @@ export function ForgotPassword() {
     try {
       await authApi.forgotPassword(data.email);
       setSubmitted(true);
-    } catch (err: unknown) {
+    } catch (_err: unknown) {
       // Always show success to avoid email enumeration
       setSubmitted(true);
     }

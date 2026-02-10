@@ -5,26 +5,17 @@ Custom CLI commands for database management and data seeding.
 """
 
 import csv
+import logging
 import os
 from collections import defaultdict
 from datetime import datetime
 
 import click
 import requests
-from flask import current_app
 from flask.cli import with_appcontext
 
 from app.extensions import db
-from app.models.labor_market import (
-    LaborMarketData,
-    Occupation,
-    OccupationSkill,
-    ShortageScore,
-    Skill,
-)
-
-
-import logging
+from app.models.labor_market import LaborMarketData, Occupation, OccupationSkill, Skill
 
 logger = logging.getLogger(__name__)
 
@@ -93,7 +84,9 @@ def seed_market_data(onet_path, skip_bls):
     if not os.path.exists(onet_occupation_file):
         click.echo(f"Warning: O*NET occupation file not found at {onet_occupation_file}")
         click.echo("Download from: https://www.onetcenter.org/database.html#individual-files")
-        click.echo("Place 'Occupation Data.txt', 'Skills.txt', 'Abilities.txt', 'Knowledge.txt' in the onet-path directory")
+        click.echo(
+            "Place 'Occupation Data.txt', 'Skills.txt', 'Abilities.txt', 'Knowledge.txt' in the onet-path directory"
+        )
     else:
         _seed_onet_occupations(onet_occupation_file)
 
@@ -222,7 +215,9 @@ def _seed_onet_elements(filepath: str, category: str):
 
         # Commit skills first
         db.session.commit()
-        click.echo(f"  Found {len(elements_loaded)} unique {category}, {len(pair_data)} occupation mappings")
+        click.echo(
+            f"  Found {len(elements_loaded)} unique {category}, {len(pair_data)} occupation mappings"
+        )
 
         # Clear existing mappings for this category to avoid merge overhead
         skill_ids = list(elements_loaded)
@@ -253,8 +248,12 @@ def _seed_onet_elements(filepath: str, category: str):
             db.session.bulk_save_objects(batch)
             db.session.commit()
 
-        logger.info(f"Loaded {len(elements_loaded)} {category}, {len(pair_data)} occupation mappings")
-        click.echo(f"Loaded {len(elements_loaded)} {category}, {len(pair_data)} occupation mappings")
+        logger.info(
+            f"Loaded {len(elements_loaded)} {category}, {len(pair_data)} occupation mappings"
+        )
+        click.echo(
+            f"Loaded {len(elements_loaded)} {category}, {len(pair_data)} occupation mappings"
+        )
 
     except FileNotFoundError:
         logger.warning(f"{filepath} not found, skipping {category}")

@@ -15,7 +15,7 @@ export function AIDisclosure({ featureId }: AIDisclosureProps) {
 
   useEffect(() => {
     const stored = localStorage.getItem(getStorageKey(featureId));
-    setDismissed(stored === 'dismissed');
+    queueMicrotask(() => setDismissed(stored === 'dismissed'));
   }, [featureId]);
 
   const handleDismiss = () => {

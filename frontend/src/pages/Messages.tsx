@@ -4,7 +4,6 @@ import {
   MessageSquare,
   Plus,
   Search,
-  Filter,
   Inbox,
   Send,
   Clock,

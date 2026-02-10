@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { driver, type DriveStep, type Driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
-import { TOURS, type TourConfig, createDescriptionWithImage } from '../config/tours';
+import { TOURS, createDescriptionWithImage } from '../config/tours';
 import { api } from '../lib/api';
 
 interface TourContextType {
@@ -28,24 +28,16 @@ const TOUR_SEEN_KEY = 'jobezie_tour_seen';
 export function TourProvider({ children }: { children: ReactNode }) {
   const [isTourActive, setIsTourActive] = useState(false);
   const [currentTourId, setCurrentTourId] = useState<string | null>(null);
-  const [completedTours, setCompletedTours] = useState<string[]>([]);
-  const [driverInstance, setDriverInstance] = useState<Driver | null>(null);
-
-  // Load completed tours from localStorage on mount
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        setCompletedTours(JSON.parse(stored));
-      } catch {
-        // Invalid JSON, reset
-        localStorage.removeItem(STORAGE_KEY);
-      }
+  const [completedTours, setCompletedTours] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      localStorage.removeItem(STORAGE_KEY);
+      return [];
     }
-
-    // Also try to fetch from backend
-    fetchTourStatus();
-  }, []);
+  });
+  const [driverInstance, setDriverInstance] = useState<Driver | null>(null);
 
   // Fetch tour status from backend
   const fetchTourStatus = async () => {
@@ -64,6 +56,12 @@ export function TourProvider({ children }: { children: ReactNode }) {
       // Backend endpoint may not exist yet, use localStorage only
     }
   };
+
+  // Fetch tour status from backend on mount
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchTourStatus();
+  }, []);
 
   // Sync tour completion to backend
   const syncToBackend = async (tourId: string) => {

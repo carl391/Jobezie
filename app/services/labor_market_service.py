@@ -64,20 +64,20 @@ class LaborMarketService:
     # Shortage score weights per spec (Differentiator 4)
     # Research basis: 2.2 openings per worker in skilled trades, 70% of jobs in hidden market
     SHORTAGE_WEIGHTS = {
-        "openings": 30,      # Openings per unemployed ratio
-        "quits": 20,         # Voluntary quit rate (worker confidence indicator)
-        "growth": 20,        # Employment growth %
-        "salary": 15,        # Salary growth %
-        "projection": 15,    # 10-year BLS projection %
+        "openings": 30,  # Openings per unemployed ratio
+        "quits": 20,  # Voluntary quit rate (worker confidence indicator)
+        "growth": 20,  # Employment growth %
+        "salary": 15,  # Salary growth %
+        "projection": 15,  # 10-year BLS projection %
     }
 
     # User match weights per spec
     USER_MATCH_WEIGHTS = {
-        "skills": 40,        # Skill alignment with role requirements
-        "experience": 20,    # Experience level match
-        "location": 15,      # Geographic fit
-        "salary": 10,        # Salary expectations alignment
-        "interest": 15,      # Career interest alignment
+        "skills": 40,  # Skill alignment with role requirements
+        "experience": 20,  # Experience level match
+        "location": 15,  # Geographic fit
+        "salary": 10,  # Salary expectations alignment
+        "interest": 15,  # Career interest alignment
     }
 
     # Shortage score benchmarks per spec
@@ -202,34 +202,27 @@ class LaborMarketService:
         # Openings score: Based on role shortage indicator (proxy for openings/unemployed)
         base_shortage = role_data["shortage_score"]
         openings_score = cls._score_against_benchmark(
-            base_shortage / 50,  # Convert to ~ratio format
-            cls.SHORTAGE_BENCHMARKS["openings"]
+            base_shortage / 50, cls.SHORTAGE_BENCHMARKS["openings"]  # Convert to ~ratio format
         )
 
         # Quits score: Higher shortage = more worker confidence to quit
         quits_score = cls._score_against_benchmark(
-            base_shortage / 25,  # Proxy quit rate
-            cls.SHORTAGE_BENCHMARKS["quits"]
+            base_shortage / 25, cls.SHORTAGE_BENCHMARKS["quits"]  # Proxy quit rate
         )
 
         # Growth score: Employment growth rate
         growth_rate = role_data["growth_rate"]
-        growth_score = cls._score_against_benchmark(
-            growth_rate,
-            cls.SHORTAGE_BENCHMARKS["growth"]
-        )
+        growth_score = cls._score_against_benchmark(growth_rate, cls.SHORTAGE_BENCHMARKS["growth"])
 
         # Salary score: High-demand roles have higher salary growth
         salary_growth = growth_rate * 0.4  # Proxy: ~40% of employment growth
         salary_score = cls._score_against_benchmark(
-            salary_growth,
-            cls.SHORTAGE_BENCHMARKS["salary"]
+            salary_growth, cls.SHORTAGE_BENCHMARKS["salary"]
         )
 
         # Projection score: 10-year outlook
         projection_score = cls._score_against_benchmark(
-            growth_rate,
-            cls.SHORTAGE_BENCHMARKS["projection"]
+            growth_rate, cls.SHORTAGE_BENCHMARKS["projection"]
         )
 
         # Apply industry adjustment
@@ -418,9 +411,7 @@ class LaborMarketService:
         normalized = cls._normalize_role(target_role)
         search_term = normalized.replace("_", " ")
 
-        occupation = Occupation.query.filter(
-            Occupation.title.ilike(f"%{search_term}%")
-        ).first()
+        occupation = Occupation.query.filter(Occupation.title.ilike(f"%{search_term}%")).first()
 
         if not occupation:
             return {"error": "Occupation not found", "role": target_role}
@@ -770,9 +761,7 @@ class LaborMarketService:
         search_term = normalized.replace("_", " ")
 
         # Find matching occupation by title
-        occupation = Occupation.query.filter(
-            Occupation.title.ilike(f"%{search_term}%")
-        ).first()
+        occupation = Occupation.query.filter(Occupation.title.ilike(f"%{search_term}%")).first()
 
         if not occupation:
             # Fallback to generic skills

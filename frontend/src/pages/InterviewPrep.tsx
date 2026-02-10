@@ -9,11 +9,8 @@ import {
   AlertCircle,
   Lightbulb,
   Star,
-  ThumbsUp,
-  ThumbsDown,
   RotateCcw,
   Play,
-  Pause,
 } from 'lucide-react';
 import { aiApi } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -88,9 +85,9 @@ export function InterviewPrep() {
         interview_type: practiceForm.question_type,
       });
       setCurrentQuestion(response.data.data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error generating question:', err);
-      setError(err?.response?.data?.message || 'Failed to generate question. Please try again.');
+      setError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to generate question. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -111,9 +108,9 @@ export function InterviewPrep() {
         user_answer: userAnswer,
       });
       setFeedback(response.data.data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error evaluating answer:', err);
-      setError(err?.response?.data?.message || 'Failed to evaluate answer. Please try again.');
+      setError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to evaluate answer. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -130,9 +127,9 @@ export function InterviewPrep() {
         question_type: practiceForm.question_type,
       });
       setTips(response.data.data?.tips || []);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching tips:', err);
-      setError(err?.response?.data?.message || 'Failed to fetch tips. Please try again.');
+      setError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to fetch tips. Please try again.');
     } finally {
       setIsLoading(false);
     }

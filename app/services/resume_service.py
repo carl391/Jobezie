@@ -18,12 +18,14 @@ from app.services.scoring.ats import calculate_ats_score
 # Document parsing libraries
 try:
     from docx import Document as DocxDocument
+
     DOCX_AVAILABLE = True
 except ImportError:
     DOCX_AVAILABLE = False
 
 try:
     from PyPDF2 import PdfReader
+
     PDF_AVAILABLE = True
 except ImportError:
     PDF_AVAILABLE = False
@@ -183,10 +185,7 @@ class ResumeService:
             # Remove NUL characters and other problematic bytes
             text = text.replace("\x00", "")
             # Keep only printable characters, newlines, and common whitespace
-            text = "".join(
-                char for char in text
-                if char.isprintable() or char in "\n\r\t"
-            )
+            text = "".join(char for char in text if char.isprintable() or char in "\n\r\t")
             return text.strip()
         except Exception:
             return ""

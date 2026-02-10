@@ -43,7 +43,14 @@ def log_activity():
     valid_types = [t.value for t in ActivityType]
     if activity_type not in valid_types:
         return (
-            jsonify({"success": False, "data": {"error": f'Invalid activity_type. Must be one of: {", ".join(valid_types)}'}}),
+            jsonify(
+                {
+                    "success": False,
+                    "data": {
+                        "error": f'Invalid activity_type. Must be one of: {", ".join(valid_types)}'
+                    },
+                }
+            ),
             400,
         )
 

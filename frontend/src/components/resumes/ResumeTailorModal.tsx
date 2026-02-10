@@ -8,7 +8,6 @@ import {
   Check,
   Building2,
   Briefcase,
-  Download,
 } from 'lucide-react';
 import { resumeApi } from '../../lib/api';
 
@@ -72,9 +71,10 @@ export function ResumeTailorModal({
       setResult(response.data.data);
       setStep('result');
       onTailored?.();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error tailoring resume:', err);
-      setError(err?.response?.data?.message || 'Failed to tailor resume. Please try again.');
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      setError(axiosErr?.response?.data?.message || 'Failed to tailor resume. Please try again.');
     } finally {
       setIsLoading(false);
     }

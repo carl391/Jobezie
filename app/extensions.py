@@ -63,7 +63,9 @@ class TokenBlocklist:
                 self._use_redis = True
                 app.logger.info("Token blocklist: Using Redis backend")
             except (redis.ConnectionError, redis.RedisError) as e:
-                app.logger.warning(f"Token blocklist: Redis unavailable ({e}), using in-memory fallback")
+                app.logger.warning(
+                    f"Token blocklist: Redis unavailable ({e}), using in-memory fallback"
+                )
                 self._use_redis = False
         else:
             app.logger.info("Token blocklist: No Redis URL configured, using in-memory storage")

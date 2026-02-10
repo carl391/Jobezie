@@ -20,7 +20,6 @@ import { Modal, ModalFooter } from '../ui/Modal';
 import { ScoreCircle, ScoreBar } from '../ui/ScoreCircle';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/Tabs';
 import { resumeApi, aiApi, isHandledApiError } from '../../lib/api';
-import type { Resume, ATSBreakdown } from '../../types';
 
 interface ATSScoreData {
   total_score: number;
@@ -62,7 +61,7 @@ export function ATSScoreModal({
   onClose,
   resumeId,
   resumeName,
-  initialScore,
+  initialScore: _initialScore,
   onScoreUpdated,
 }: ATSScoreModalProps) {
   const [score, setScore] = useState<ATSScoreData | null>(null);
@@ -84,7 +83,7 @@ export function ATSScoreModal({
     }
   }, [isOpen, resumeId]);
 
-  const fetchScore = async (jobDesc?: string) => {
+  const fetchScore = async (_jobDesc?: string) => {
     setIsLoading(true);
     setError(null);
 
@@ -139,11 +138,11 @@ export function ATSScoreModal({
       const raw = resData?.ai_suggestions || resData?.suggestions || '';
       const text = Array.isArray(raw) ? raw.join('\n') : String(raw);
       setOptimizedResume(text || null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error optimizing resume:', err);
       setOptimizedResume(null);
       if (!isHandledApiError(err)) {
-        const errData = err?.response?.data;
+        const errData = (err as { response?: { data?: { message?: string; error?: string } } })?.response?.data;
         toast.error(errData?.message || errData?.error || 'Failed to generate optimized resume. Please try again.');
       }
     } finally {

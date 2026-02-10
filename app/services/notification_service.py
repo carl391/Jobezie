@@ -40,10 +40,7 @@ class NotificationService:
 
         total = query.count()
         notifications = (
-            query.order_by(Notification.created_at.desc())
-            .offset(offset)
-            .limit(limit)
-            .all()
+            query.order_by(Notification.created_at.desc()).offset(offset).limit(limit).all()
         )
 
         return notifications, total
@@ -51,9 +48,7 @@ class NotificationService:
     @staticmethod
     def get_unread_count(user_id):
         """Get count of unread notifications for a user."""
-        return Notification.query.filter_by(
-            user_id=user_id, is_read=False
-        ).count()
+        return Notification.query.filter_by(user_id=user_id, is_read=False).count()
 
     @staticmethod
     def mark_read(notification_id, user_id):
@@ -70,9 +65,7 @@ class NotificationService:
         Raises:
             ValueError: If notification not found or not owned by user
         """
-        notification = Notification.query.filter_by(
-            id=notification_id, user_id=user_id
-        ).first()
+        notification = Notification.query.filter_by(id=notification_id, user_id=user_id).first()
 
         if not notification:
             raise ValueError("Notification not found")
@@ -92,15 +85,16 @@ class NotificationService:
         Returns:
             Number of notifications marked as read
         """
-        count = Notification.query.filter_by(
-            user_id=user_id, is_read=False
-        ).update({"is_read": True})
+        count = Notification.query.filter_by(user_id=user_id, is_read=False).update(
+            {"is_read": True}
+        )
         db.session.commit()
         return count
 
     @staticmethod
-    def create_notification(user_id, title, body=None, notification_type=None,
-                            action_url=None, metadata=None):
+    def create_notification(
+        user_id, title, body=None, notification_type=None, action_url=None, metadata=None
+    ):
         """
         Create a new notification.
 
@@ -180,7 +174,7 @@ class NotificationService:
                 user_id=user_id,
                 title=f"Follow up with {full_name}",
                 body=f"It's been {days_since} days since you last contacted {full_name} at {company}. "
-                     f"Send a follow-up to keep the conversation going.",
+                f"Send a follow-up to keep the conversation going.",
                 notification_type=NotificationType.FOLLOW_UP_REMINDER.value,
                 action_url=f"/messages?recruiterId={recruiter.id}",
                 metadata={
@@ -245,7 +239,7 @@ class NotificationService:
                     user_id=user_id,
                     title=f"{friendly_name} limit almost reached",
                     body=f"You've used {used} of {limit_val} {friendly_name.lower()} this month. "
-                         f"{remaining} remaining.",
+                    f"{remaining} remaining.",
                     notification_type=NotificationType.USAGE_WARNING.value,
                     action_url="/settings",
                     metadata={
