@@ -5,7 +5,6 @@ Validates that feature limits are correctly enforced across all tiers,
 routes block users who have exceeded limits, and usage counters increment.
 """
 
-from app.extensions import db
 from app.models.user import User
 
 

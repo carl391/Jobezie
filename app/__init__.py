@@ -209,9 +209,11 @@ def _register_response_wrapper(app):
             wrapped = {
                 "success": False,
                 "error": data.get("error", "unknown_error") if isinstance(data, dict) else "error",
-                "message": data.get("message", data.get("error", "An error occurred"))
-                if isinstance(data, dict)
-                else str(data),
+                "message": (
+                    data.get("message", data.get("error", "An error occurred"))
+                    if isinstance(data, dict)
+                    else str(data)
+                ),
             }
 
         response.data = _json.dumps(wrapped)

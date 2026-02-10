@@ -34,9 +34,7 @@ class TestLinkedInAnalyze:
             json={
                 "headline": "Senior Software Engineer | Python & Cloud Expert",
                 "summary": "10+ years building scalable systems with Python and AWS.",
-                "experience": [
-                    {"title": "Senior Engineer", "company": "TechCorp", "years": 5}
-                ],
+                "experience": [{"title": "Senior Engineer", "company": "TechCorp", "years": 5}],
                 "skills": ["Python", "AWS", "Docker", "Kubernetes"],
                 "education": [{"school": "MIT", "degree": "CS"}],
                 "photo": True,

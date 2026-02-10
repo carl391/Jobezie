@@ -12,10 +12,7 @@ from app.services.scoring.engagement import (
     calculate_fit_score,
     calculate_priority_score,
 )
-from app.services.scoring.message import (
-    calculate_message_quality,
-    validate_message_length,
-)
+from app.services.scoring.message import calculate_message_quality, validate_message_length
 from app.services.scoring.readiness import calculate_career_readiness
 
 

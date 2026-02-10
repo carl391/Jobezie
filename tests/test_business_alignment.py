@@ -62,8 +62,14 @@ class TestPipelineStages:
         with app.app_context():
             stages = [s.value for s in PipelineStage]
             expected = [
-                "new", "researching", "contacted", "responded",
-                "interviewing", "offer", "accepted", "declined",
+                "new",
+                "researching",
+                "contacted",
+                "responded",
+                "interviewing",
+                "offer",
+                "accepted",
+                "declined",
             ]
             assert set(stages) == set(expected)
             assert len(stages) == 8
@@ -84,13 +90,16 @@ class TestATSScoring:
             assert "total_score" in result
             assert "components" in result
             expected_components = [
-                "compatibility", "keywords", "achievements",
-                "formatting", "progression", "completeness", "fit",
+                "compatibility",
+                "keywords",
+                "achievements",
+                "formatting",
+                "progression",
+                "completeness",
+                "fit",
             ]
             for comp in expected_components:
-                assert comp in result["components"], (
-                    f"Missing ATS component: {comp}"
-                )
+                assert comp in result["components"], f"Missing ATS component: {comp}"
 
 
 class TestMessageQualityScoring:
@@ -112,12 +121,14 @@ class TestMessageQualityScoring:
             assert "components" in result
             # 5 components: words, personalization, metrics, cta, tone
             expected_components = [
-                "words", "personalization", "metrics", "cta", "tone",
+                "words",
+                "personalization",
+                "metrics",
+                "cta",
+                "tone",
             ]
             for comp in expected_components:
-                assert comp in result["components"], (
-                    f"Missing message quality component: {comp}"
-                )
+                assert comp in result["components"], f"Missing message quality component: {comp}"
 
 
 class TestAllFeaturesAccessible:
@@ -154,9 +165,10 @@ class TestAllFeaturesAccessible:
         ]
         for path in endpoints:
             resp = client.get(path)
-            assert resp.status_code in [401, 422], (
-                f"GET {path} should require auth, got {resp.status_code}"
-            )
+            assert resp.status_code in [
+                401,
+                422,
+            ], f"GET {path} should require auth, got {resp.status_code}"
 
     def test_all_core_pages_accessible(self, client, auth_headers):
         """All core API endpoints respond when authenticated."""
@@ -177,6 +189,4 @@ class TestAllFeaturesAccessible:
         ]
         for path in endpoints:
             resp = client.get(path, headers=auth_headers)
-            assert resp.status_code == 200, (
-                f"GET {path} returned {resp.status_code}, expected 200"
-            )
+            assert resp.status_code == 200, f"GET {path} returned {resp.status_code}, expected 200"

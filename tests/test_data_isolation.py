@@ -27,12 +27,8 @@ class TestDataIsolation:
         """User A cannot see User B's recruiters."""
         with app.app_context():
             # Create recruiters for each user
-            r1 = Recruiter(
-                user_id=test_user.id, first_name="User1", last_name="Recruiter"
-            )
-            r2 = Recruiter(
-                user_id=second_user.id, first_name="User2", last_name="Recruiter"
-            )
+            r1 = Recruiter(user_id=test_user.id, first_name="User1", last_name="Recruiter")
+            r2 = Recruiter(user_id=second_user.id, first_name="User2", last_name="Recruiter")
             db.session.add_all([r1, r2])
             db.session.commit()
 
@@ -119,15 +115,13 @@ class TestDataIsolation:
         data2 = get_data(resp2)
         assert data2["stats"]["recruiters"] == 0
 
-    def test_activities_isolated(
-        self, client, auth_headers, auth_headers_second
-    ):
+    def test_activities_isolated(self, client, auth_headers, auth_headers_second):
         """Each user sees only their own activities."""
         resp1 = client.get("/api/activities", headers=auth_headers)
-        data1 = get_data(resp1)
+        get_data(resp1)
 
         resp2 = client.get("/api/activities", headers=auth_headers_second)
-        data2 = get_data(resp2)
+        get_data(resp2)
 
         # Both should succeed but with independent data
         assert resp1.status_code == 200

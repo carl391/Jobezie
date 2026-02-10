@@ -88,8 +88,14 @@ class TestDashboard:
         data = get_data(response)
         pipeline = data["pipeline_summary"]
         expected_stages = [
-            "new", "researching", "contacted", "responded",
-            "interviewing", "offer", "accepted", "declined",
+            "new",
+            "researching",
+            "contacted",
+            "responded",
+            "interviewing",
+            "offer",
+            "accepted",
+            "declined",
         ]
         for stage in expected_stages:
             assert stage in pipeline, f"Missing pipeline stage: {stage}"

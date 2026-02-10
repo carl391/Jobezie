@@ -58,7 +58,12 @@ class TestActivationFlow:
 
         # Step 3: Upload resume
         data = {
-            "file": (io.BytesIO(b"Alice Johnson, Junior Developer, 2 years experience, Python, JavaScript"), "resume.txt"),
+            "file": (
+                io.BytesIO(
+                    b"Alice Johnson, Junior Developer, 2 years experience, Python, JavaScript"
+                ),
+                "resume.txt",
+            ),
             "title": "My Resume",
         }
         resp = client.post(
