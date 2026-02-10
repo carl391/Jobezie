@@ -59,11 +59,11 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Toaster richColors position="top-right" />
-      <CookieConsent />
       <AuthProvider>
         <TourProvider>
           <ErrorBoundary>
           <BrowserRouter>
+            <CookieConsent />
             <Suspense fallback={<PageLoader />}>
             <Routes>
             {/* Public routes */}
