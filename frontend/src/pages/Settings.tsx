@@ -21,6 +21,7 @@ import {
   HelpCircle,
   Compass,
   BookOpen,
+  Shield,
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/Tabs';
 import { Badge } from '../components/ui/Badge';
@@ -28,6 +29,7 @@ import { SkillsAutocomplete } from '../components/ui/SkillsAutocomplete';
 import { authApi, subscriptionApi, dashboardApi } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useTour } from '../contexts/TourContext';
+import { DataPrivacySettings } from '../components/settings/DataPrivacySettings';
 
 // Profile form schema
 const profileSchema = z.object({
@@ -322,6 +324,10 @@ export function Settings() {
           <TabsTrigger value="help">
             <HelpCircle className="w-4 h-4 mr-2" />
             Help
+          </TabsTrigger>
+          <TabsTrigger value="data-privacy">
+            <Shield className="w-4 h-4 mr-2" />
+            Data & Privacy
           </TabsTrigger>
         </TabsList>
 
@@ -862,6 +868,11 @@ export function Settings() {
               </p>
             </div>
           </div>
+        </TabsContent>
+
+        {/* Data & Privacy Tab */}
+        <TabsContent value="data-privacy">
+          <DataPrivacySettings />
         </TabsContent>
       </Tabs>
     </div>

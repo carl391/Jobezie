@@ -266,6 +266,21 @@ export function Layout({ children }: LayoutProps) {
         <main className="p-4 lg:p-8">
           <PageTransition>{children}</PageTransition>
         </main>
+
+        {/* Footer */}
+        <footer className="border-t border-gray-200 mt-auto py-4 px-4 lg:px-8">
+          <div className="flex items-center justify-between text-xs text-gray-400">
+            <span>&copy; {new Date().getFullYear()} Jobezie</span>
+            <div className="flex items-center gap-4">
+              <Link to="/privacy" className="hover:text-gray-600 transition-colors">
+                Privacy Policy
+              </Link>
+              <Link to="/terms" className="hover:text-gray-600 transition-colors">
+                Terms of Service
+              </Link>
+            </div>
+          </div>
+        </footer>
       </div>
       <CommandPalette />
     </div>

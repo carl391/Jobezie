@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { authApi } from '../lib/api';
+import { setUserContext, clearUserContext } from '../lib/monitoring';
 import type { User } from '../types';
 
 interface AuthContextType {
@@ -7,7 +8,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
+  register: (email: string, password: string, name: string, birthYear?: number) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -47,10 +48,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('access_token', access_token);
     localStorage.setItem('refresh_token', refresh_token);
     setUser(userData);
+    setUserContext(userData.id, userData.subscription_tier);
   };
 
-  const register = async (email: string, password: string, name: string) => {
-    const response = await authApi.register({ email, password, name });
+  const register = async (email: string, password: string, name: string, birthYear?: number) => {
+    const response = await authApi.register({ email, password, name, birth_year: birthYear });
     const { access_token, refresh_token, user: userData } = response.data.data;
 
     localStorage.setItem('access_token', access_token);
@@ -61,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('jobezie_completed_tours');
 
     setUser(userData);
+    setUserContext(userData.id, userData.subscription_tier);
   };
 
   const logout = async () => {
@@ -75,6 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem('jobezie_tour_seen');
       localStorage.removeItem('jobezie_completed_tours');
       setUser(null);
+      clearUserContext();
     }
   };
 

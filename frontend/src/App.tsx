@@ -6,6 +6,8 @@ import { AuthProvider } from './contexts/AuthContext';
 import { TourProvider } from './contexts/TourContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Layout } from './components/Layout';
+import { CookieConsent } from './components/ui/CookieConsent';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Pages (lazy loaded)
 const Login = lazy(() => import('./pages/Login').then(m => ({ default: m.Login })));
@@ -25,6 +27,9 @@ const Learn = lazy(() => import('./pages/Learn').then(m => ({ default: m.Learn }
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword').then(m => ({ default: m.ForgotPassword })));
 const ResetPassword = lazy(() => import('./pages/ResetPassword').then(m => ({ default: m.ResetPassword })));
 const Landing = lazy(() => import('./pages/Landing').then(m => ({ default: m.Landing })));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy').then(m => ({ default: m.PrivacyPolicy })));
+const TermsOfService = lazy(() => import('./pages/TermsOfService').then(m => ({ default: m.TermsOfService })));
+const VerifyEmail = lazy(() => import('./pages/VerifyEmail').then(m => ({ default: m.VerifyEmail })));
 const SubscriptionSuccess = lazy(() => import('./pages/SubscriptionSuccess').then(m => ({ default: m.SubscriptionSuccess })));
 const SubscriptionCancel = lazy(() => import('./pages/SubscriptionCancel').then(m => ({ default: m.SubscriptionCancel })));
 
@@ -54,8 +59,10 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Toaster richColors position="top-right" />
+      <CookieConsent />
       <AuthProvider>
         <TourProvider>
+          <ErrorBoundary>
           <BrowserRouter>
             <Suspense fallback={<PageLoader />}>
             <Routes>
@@ -63,14 +70,17 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password/:token" element={<ResetPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsOfService />} />
 
             {/* Onboarding route (protected but doesn't require onboarding completion) */}
             <Route
               path="/onboarding"
               element={
                 <ProtectedRoute requireOnboarding={false}>
-                  <Onboarding />
+                  <ErrorBoundary><Onboarding /></ErrorBoundary>
                 </ProtectedRoute>
               }
             />
@@ -81,7 +91,7 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Layout>
-                    <Dashboard />
+                    <ErrorBoundary><Dashboard /></ErrorBoundary>
                   </Layout>
                 </ProtectedRoute>
               }
@@ -91,7 +101,7 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Layout>
-                    <Resumes />
+                    <ErrorBoundary><Resumes /></ErrorBoundary>
                   </Layout>
                 </ProtectedRoute>
               }
@@ -101,7 +111,7 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Layout>
-                    <Recruiters />
+                    <ErrorBoundary><Recruiters /></ErrorBoundary>
                   </Layout>
                 </ProtectedRoute>
               }
@@ -111,7 +121,7 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Layout>
-                    <Messages />
+                    <ErrorBoundary><Messages /></ErrorBoundary>
                   </Layout>
                 </ProtectedRoute>
               }
@@ -121,7 +131,7 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Layout>
-                    <Activity />
+                    <ErrorBoundary><Activity /></ErrorBoundary>
                   </Layout>
                 </ProtectedRoute>
               }
@@ -131,7 +141,7 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Layout>
-                    <AICoach />
+                    <ErrorBoundary><AICoach /></ErrorBoundary>
                   </Layout>
                 </ProtectedRoute>
               }
@@ -141,7 +151,7 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Layout>
-                    <Settings />
+                    <ErrorBoundary><Settings /></ErrorBoundary>
                   </Layout>
                 </ProtectedRoute>
               }
@@ -151,7 +161,7 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Layout>
-                    <LinkedIn />
+                    <ErrorBoundary><LinkedIn /></ErrorBoundary>
                   </Layout>
                 </ProtectedRoute>
               }
@@ -161,7 +171,7 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Layout>
-                    <LaborMarket />
+                    <ErrorBoundary><LaborMarket /></ErrorBoundary>
                   </Layout>
                 </ProtectedRoute>
               }
@@ -171,7 +181,7 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Layout>
-                    <InterviewPrep />
+                    <ErrorBoundary><InterviewPrep /></ErrorBoundary>
                   </Layout>
                 </ProtectedRoute>
               }
@@ -181,7 +191,7 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Layout>
-                    <Learn />
+                    <ErrorBoundary><Learn /></ErrorBoundary>
                   </Layout>
                 </ProtectedRoute>
               }
@@ -226,6 +236,7 @@ function App() {
             </Routes>
             </Suspense>
           </BrowserRouter>
+          </ErrorBoundary>
         </TourProvider>
       </AuthProvider>
     </QueryClientProvider>

@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { aiApi } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
+import { AIDisclosureBanner } from '../components/ui/AIDisclosureBanner';
 
 type PrepMode = 'practice' | 'review' | 'tips';
 
@@ -154,6 +155,8 @@ export function InterviewPrep() {
           Practice interview questions and get AI-powered feedback to improve your answers
         </p>
       </div>
+
+      <AIDisclosureBanner featureKey="ai_coach" />
 
       {/* Mode Tabs */}
       <div className="flex gap-2" data-tour="interview-modes">

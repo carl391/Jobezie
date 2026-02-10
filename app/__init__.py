@@ -34,6 +34,10 @@ def create_app(config_name=None):
     # Initialize extensions
     init_extensions(app)
 
+    # Initialize Sentry error monitoring (before routes)
+    from app.monitoring import init_sentry
+    init_sentry(app)
+
     # Register blueprints
     _register_blueprints(app)
 
@@ -218,6 +222,7 @@ def _register_blueprints(app):
     from app.routes.notification import notification_bp
     from app.routes.recruiter import recruiter_bp
     from app.routes.resume import resume_bp
+    from app.routes.admin import admin_bp
     from app.routes.subscription import subscription_bp
 
     # Auth routes
@@ -238,6 +243,14 @@ def _register_blueprints(app):
     # Phase 4 routes
     app.register_blueprint(subscription_bp)  # url_prefix in blueprint
     app.register_blueprint(notification_bp)  # url_prefix in blueprint
+
+    # Admin routes
+    app.register_blueprint(admin_bp, url_prefix="/api/admin")
+
+    # Profile data rights routes (account deletion, DSAR export)
+    from app.routes.profile_data_routes import profile_data_bp
+
+    app.register_blueprint(profile_data_bp)  # url_prefix in blueprint
 
 
 def _register_error_handlers(app):
@@ -324,6 +337,8 @@ def _register_error_handlers(app):
     @app.errorhandler(500)
     def internal_error(error):
         db.session.rollback()
+        from app.monitoring import capture_exception
+        capture_exception(error)
         return (
             jsonify(
                 {

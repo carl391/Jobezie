@@ -6,6 +6,8 @@ with SQLAlchemy before migrations are created.
 """
 
 from app.models.activity import Activity, ActivityType, PipelineItem, PipelineStage
+from app.models.admin_audit_log import AdminAuditLog
+from app.models.data_export_request import DataExportRequest
 from app.models.labor_market import (
     LaborMarketData,
     Occupation,
@@ -51,4 +53,8 @@ __all__ = [
     "OccupationSkill",
     "LaborMarketData",
     "ShortageScore",
+    # Admin
+    "AdminAuditLog",
+    # Data Export
+    "DataExportRequest",
 ]

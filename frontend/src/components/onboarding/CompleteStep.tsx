@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Check, Loader2, PartyPopper, TrendingUp } from 'lucide-react';
+import { Check, Loader2, TrendingUp } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import { authApi, dashboardApi, laborMarketApi } from '../../lib/api';
 
 interface OpportunityPreview {
@@ -13,26 +14,30 @@ interface CompleteStepProps {
   onComplete: () => void;
   isLoading: boolean;
   atsScore: number | null;
-  hasRecruiter: boolean;
-  hasMessage: boolean;
+  userName?: string;
 }
 
 export function CompleteStep({
   onComplete,
   isLoading,
   atsScore,
-  hasRecruiter,
-  hasMessage,
+  userName,
 }: CompleteStepProps) {
-  const [showConfetti, setShowConfetti] = useState(false);
   const [realReadiness, setRealReadiness] = useState<number | null>(null);
   const [opportunities, setOpportunities] = useState<OpportunityPreview[]>([]);
 
   useEffect(() => {
+    // Fire confetti
+    confetti({
+      particleCount: 120,
+      spread: 80,
+      origin: { y: 0.6 },
+    });
+
     const markComplete = async () => {
       try {
         await authApi.updateProfile({
-          onboarding_step: 7,
+          onboarding_step: 6,
           onboarding_completed: true,
         });
       } catch (err) {
@@ -67,20 +72,14 @@ export function CompleteStep({
     markComplete();
     fetchReadiness();
     fetchOpportunities();
-
-    setShowConfetti(true);
-    const timer = setTimeout(() => setShowConfetti(false), 3000);
-    return () => clearTimeout(timer);
   }, []);
 
   const calculateReadiness = () => {
-    let score = 20;
+    let score = 30; // profile + career stage completed
     if (atsScore !== null && atsScore > 0) {
       score += 25;
       if (atsScore >= 60) score += 10;
     }
-    if (hasRecruiter) score += 25;
-    if (hasMessage) score += 10;
     return Math.min(score, 100);
   };
 
@@ -95,34 +94,29 @@ export function CompleteStep({
   const completedItems = [
     { label: 'Profile created', completed: true },
     { label: 'Career stage set', completed: true },
+    { label: 'Target roles configured', completed: true },
     {
       label: atsScore !== null && atsScore > 0 ? `Resume uploaded (ATS: ${atsScore}/100)` : 'Upload resume',
       completed: atsScore !== null && atsScore > 0,
     },
-    { label: 'First recruiter added', completed: hasRecruiter },
-    { label: 'First message generated', completed: hasMessage },
   ];
 
   const nextSteps = [
-    ...(atsScore === null || atsScore === 0 ? [{ label: 'Upload your resume' }] : []),
-    ...(!hasRecruiter ? [{ label: 'Add your first recruiter' }] : []),
-    ...(!hasMessage ? [{ label: 'Send your first message' }] : []),
+    { label: 'Build your recruiter pipeline' },
+    { label: 'Send your first outreach message' },
+    { label: 'Try the AI Career Coach' },
     { label: 'Optimize your LinkedIn profile' },
   ].slice(0, 3);
 
   return (
     <div className="text-center">
-      {showConfetti && (
-        <div className="fixed inset-0 pointer-events-none flex items-center justify-center">
-          <PartyPopper className="w-24 h-24 text-primary-500 animate-bounce" />
-        </div>
-      )}
-
       <div className="mb-8">
         <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
           <Check className="w-10 h-10 text-green-600" />
         </div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-3">You're all set!</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-3">
+          {userName ? `You're all set, ${userName}!` : "You're all set!"}
+        </h1>
         <p className="text-lg text-gray-600">
           Your Jobezie account is ready to help you land your dream job.
         </p>
@@ -200,7 +194,7 @@ export function CompleteStep({
       <button
         onClick={onComplete}
         disabled={isLoading}
-        className="btn btn-primary px-8 py-3 text-lg flex items-center justify-center gap-2 mx-auto"
+        className="w-full max-w-md mx-auto py-3 bg-gradient-to-r from-primary-600 to-purple-600 text-white rounded-xl font-semibold hover:opacity-90 transition flex items-center justify-center gap-2"
       >
         {isLoading ? (
           <>

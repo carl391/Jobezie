@@ -77,6 +77,33 @@ def register():
             400,
         )
 
+    # Validate birth year (age gate)
+    birth_year = data.get("birth_year")
+    if birth_year is not None:
+        try:
+            birth_year = int(birth_year)
+        except (TypeError, ValueError):
+            return (
+                jsonify({"success": False, "error": "validation_error", "message": "Invalid birth year"}),
+                400,
+            )
+        current_year = datetime.now().year
+        if birth_year < 1900 or birth_year > current_year:
+            return (
+                jsonify({"success": False, "error": "validation_error", "message": "Invalid birth year"}),
+                400,
+            )
+        if current_year - birth_year < 13:
+            return (
+                jsonify({
+                    "success": False,
+                    "error": "age_requirement",
+                    "message": "You must be at least 13 years old to use Jobezie.",
+                    "code": "AGE_REQUIREMENT_NOT_MET",
+                }),
+                403,
+            )
+
     # Check if email already exists
     if User.query.filter_by(email=email).first():
         return (
@@ -94,6 +121,9 @@ def register():
     user = User(email=email, first_name=first_name, last_name=last_name)
     user.set_password(password)
     user.verification_token = secrets.token_urlsafe(32)
+
+    if birth_year is not None:
+        user.birth_year = birth_year
 
     db.session.add(user)
     db.session.commit()
@@ -767,6 +797,21 @@ def update_profile():
         user.target_industries = data["target_industries"] if isinstance(data["target_industries"], list) else []
     if "technical_skills" in data:
         user.technical_skills = data["technical_skills"] if isinstance(data["technical_skills"], list) else []
+    if 'search_status' in data:
+        user.search_status = data['search_status']
+    if 'location_preferences' in data:
+        user.location_preferences = data['location_preferences']
+
+    if 'ai_disclosures_dismissed' in data:
+        valid_keys = {'ats_scoring', 'message_generation', 'ai_coach', 'skills_gap',
+                      'linkedin_optimizer', 'resume_generation', 'recruiter_research', 'career_readiness'}
+        raw = data['ai_disclosures_dismissed']
+        if isinstance(raw, list):
+            user.ai_disclosures_dismissed = [k for k in raw if k in valid_keys]
+
+    if 'cookie_consent' in data:
+        if data['cookie_consent'] in ('accepted', 'declined'):
+            user.cookie_consent = data['cookie_consent']
 
     # Update onboarding status
     if "onboarding_step" in data:

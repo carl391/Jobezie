@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { dashboardApi, activityApi, laborMarketApi } from '../lib/api';
+import { dashboardApi, activityApi, laborMarketApi, authApi } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useTour } from '../contexts/TourContext';
 import {
@@ -19,6 +19,9 @@ import {
   X,
 } from 'lucide-react';
 import { DashboardSkeleton } from '../components/ui/Skeleton';
+import { EmailVerificationBanner } from '../components/ui/EmailVerificationBanner';
+import { AIDisclosureBanner } from '../components/ui/AIDisclosureBanner';
+import { toast } from 'sonner';
 import type { DashboardData, Activity, SkillsMapData } from '../types';
 
 // Helper to compute pipeline total from flat stage dict
@@ -46,6 +49,7 @@ export function Dashboard() {
   const [showChecklist, setShowChecklist] = useState(() => {
     return localStorage.getItem('jobezie_hide_checklist') !== 'true';
   });
+  const [isResendingVerification, setIsResendingVerification] = useState(false);
   const tourStarted = useRef(false);
 
   useEffect(() => {
@@ -112,8 +116,30 @@ export function Dashboard() {
   const resumeCount = dashboardData?.stats?.resumes || 0;
   const isFreshUser = readinessScore === 0 && totalRecruiters === 0;
 
+  const handleResendVerification = async () => {
+    setIsResendingVerification(true);
+    try {
+      await authApi.resendVerification();
+      toast.success('Verification email sent! Check your inbox.');
+    } catch {
+      toast.error('Failed to send verification email. Please try again.');
+    } finally {
+      setIsResendingVerification(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* Email verification banner */}
+      {user && user.email_verified === false && (
+        <EmailVerificationBanner
+          onResend={handleResendVerification}
+          isResending={isResendingVerification}
+        />
+      )}
+
+      <AIDisclosureBanner featureKey="career_readiness" />
+
       {/* Welcome section */}
       <div className="flex items-center justify-between" data-tour="dashboard-header">
         <div>

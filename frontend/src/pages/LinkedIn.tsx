@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { linkedinApi } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
+import { AIDisclosureBanner } from '../components/ui/AIDisclosureBanner';
 
 type TabType = 'headline' | 'summary' | 'visibility';
 
@@ -164,6 +165,7 @@ export function LinkedIn() {
 
   return (
     <div className="space-y-6">
+      <AIDisclosureBanner featureKey="linkedin_optimizer" />
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">

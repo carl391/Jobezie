@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { AIDisclosureBanner } from '../components/ui/AIDisclosureBanner';
 import {
   Sparkles,
   Send,
@@ -257,6 +258,8 @@ export function AICoach() {
           </button>
         )}
       </div>
+
+      <AIDisclosureBanner featureKey="ai_coach" />
 
       {/* Mode selector */}
       <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg mb-4 overflow-x-auto">

@@ -101,7 +101,7 @@ export function isHandledApiError(error: unknown): boolean {
 
 // Auth API
 export const authApi = {
-  register: (data: { email: string; password: string; name: string }) => {
+  register: (data: { email: string; password: string; name: string; birth_year?: number }) => {
     // Split name into first_name and last_name for backend compatibility
     const nameParts = data.name.trim().split(/\s+/);
     const first_name = nameParts[0] || '';
@@ -111,6 +111,7 @@ export const authApi = {
       password: data.password,
       first_name,
       last_name,
+      birth_year: data.birth_year,
     });
   },
 
@@ -129,6 +130,12 @@ export const authApi = {
 
   resetPassword: (data: { token: string; password: string }) =>
     api.post('/auth/reset-password', data),
+
+  verifyEmail: (token: string) =>
+    api.post('/auth/verify-email', { token }),
+
+  resendVerification: () =>
+    api.post('/auth/resend-verification'),
 
   updateProfile: (data: Record<string, unknown>) =>
     api.put('/auth/profile', data),
@@ -292,6 +299,12 @@ export const notificationApi = {
   markRead: (id: string) => api.put(`/notifications/${id}/read`),
   markAllRead: () => api.put('/notifications/read-all'),
   generate: () => api.post('/notifications/generate'),
+};
+
+// Admin API
+export const adminApi = {
+  login: (data: { email: string; password: string }) =>
+    api.post('/admin/login', data),
 };
 
 // Labor Market API

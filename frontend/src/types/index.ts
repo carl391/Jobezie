@@ -14,15 +14,30 @@ export interface User {
   target_roles?: string[];
   target_industries?: string[];
   technical_skills?: string[];
+  soft_skills?: string[];
+  search_status?: string;
   location?: string;
+  location_preferences?: string[];
+  remote_preference?: string;
+  relocation_willing?: boolean;
   phone?: string;
   linkedin_url?: string;
+  // Email verification
+  email_verified?: boolean;
   // Onboarding
   onboarding_completed: boolean;
   onboarding_step?: number;
   // Tour tracking
   tour_completed?: boolean;
   completed_tours?: string[];
+  // Legal compliance
+  birth_year?: number;
+  ai_disclosures_dismissed?: string[];
+  // Account deletion
+  deletion_requested_at?: string | null;
+  deletion_scheduled_for?: string | null;
+  // Admin
+  is_admin?: boolean;
 }
 
 // Onboarding types
@@ -33,6 +48,11 @@ export interface OnboardingData {
   current_role?: string;
   target_roles?: string[];
   target_industries?: string[];
+  location_preferences?: string[];
+  remote_preference?: boolean;
+  relocation_open?: boolean;
+  technical_skills?: string[];
+  soft_skills?: string[];
 }
 
 export interface ProfileUpdateData {
@@ -43,11 +63,16 @@ export interface ProfileUpdateData {
   linkedin_url?: string;
   years_experience?: number;
   career_stage?: string;
+  search_status?: string;
   current_role?: string;
   target_roles?: string[];
   target_industries?: string[];
+  location_preferences?: string[];
+  technical_skills?: string[];
+  soft_skills?: string[];
   onboarding_step?: number;
   onboarding_completed?: boolean;
+  ai_disclosures_dismissed?: string[];
 }
 
 export interface AuthTokens {

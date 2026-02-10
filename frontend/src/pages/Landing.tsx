@@ -437,6 +437,8 @@ export function Landing() {
             <div className="flex items-center gap-6 text-sm text-gray-500">
               <a href="#features" className="hover:text-gray-900 transition-colors">Features</a>
               <a href="#pricing" className="hover:text-gray-900 transition-colors">Pricing</a>
+              <Link to="/privacy" className="hover:text-gray-900 transition-colors">Privacy</Link>
+              <Link to="/terms" className="hover:text-gray-900 transition-colors">Terms</Link>
               <Link to="/login" className="hover:text-gray-900 transition-colors">Sign In</Link>
             </div>
           </div>

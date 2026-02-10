@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { laborMarketApi } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
+import { AIDisclosureBanner } from '../components/ui/AIDisclosureBanner';
 
 interface MarketOverview {
   unemployment_rate: number;
@@ -191,6 +192,8 @@ export function LaborMarket() {
           Understand market trends, salary benchmarks, and opportunities for your career
         </p>
       </div>
+
+      <AIDisclosureBanner featureKey="skills_gap" />
 
       {/* Error Display */}
       {error && (

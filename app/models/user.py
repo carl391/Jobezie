@@ -130,6 +130,8 @@ class User(db.Model):
     target_roles = db.Column(JSONType(), default=list)
     target_industries = db.Column(JSONType(), default=list)
     target_companies = db.Column(JSONType(), default=list)
+    search_status = db.Column(db.String(50))
+    location_preferences = db.Column(JSONType)
 
     # Skills
     technical_skills = db.Column(JSONType(), default=list)
@@ -169,8 +171,19 @@ class User(db.Model):
     tour_completed = db.Column(db.Boolean, default=False)
     completed_tours = db.Column(JSONType(), default=list)
 
+    # Legal compliance
+    birth_year = db.Column(db.Integer, nullable=True)
+    ai_disclosures_dismissed = db.Column(JSONType(), default=list)
+    cookie_consent = db.Column(db.String(20), nullable=True)  # 'accepted', 'declined'
+
+    # Account deletion (CCPA/DSAR)
+    deletion_requested_at = db.Column(db.DateTime, nullable=True)
+    deletion_scheduled_for = db.Column(db.DateTime, nullable=True)
+    is_deleted = db.Column(db.Boolean, default=False)
+
     # Account Status
     is_active = db.Column(db.Boolean, default=True)
+    is_admin = db.Column(db.Boolean, default=False)
     last_login_at = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -293,6 +306,7 @@ class User(db.Model):
             "linkedin_url": self.linkedin_url,
             "years_experience": self.years_experience,
             "career_stage": self.career_stage,
+            "search_status": self.search_status,
             "current_role": self.current_role,
             "target_roles": self.target_roles,
             "target_industries": self.target_industries,
@@ -302,8 +316,19 @@ class User(db.Model):
             "onboarding_completed": self.onboarding_completed,
             "tour_completed": self.tour_completed,
             "completed_tours": self.completed_tours or [],
+            "birth_year": self.birth_year,
+            "ai_disclosures_dismissed": self.ai_disclosures_dismissed or [],
+            "is_admin": self.is_admin,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
+
+        if self.deletion_requested_at:
+            data["deletion_requested_at"] = self.deletion_requested_at.isoformat()
+            data["deletion_scheduled_for"] = (
+                self.deletion_scheduled_for.isoformat()
+                if self.deletion_scheduled_for
+                else None
+            )
 
         if include_private:
             data.update(
@@ -313,6 +338,7 @@ class User(db.Model):
                     "salary_expectation": self.salary_expectation,
                     "remote_preference": self.remote_preference,
                     "relocation_willing": self.relocation_willing,
+                    "location_preferences": self.location_preferences,
                     "communication_style": self.communication_style,
                     "stripe_customer_id": self.stripe_customer_id,
                     "subscription_expires_at": (

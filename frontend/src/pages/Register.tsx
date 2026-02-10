@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { subscriptionApi } from '../lib/api';
 import { Eye, EyeOff, Loader2, Check, X, Target, Sparkles, TrendingUp, CreditCard } from 'lucide-react';
 import clsx from 'clsx';
+import { AgeGate } from '../components/ui/AgeGate';
 
 const PLAN_INFO: Record<string, { name: string; price: number; period: string }> = {
   basic: { name: 'Basic', price: 0, period: 'Free forever' },
@@ -26,6 +27,10 @@ const registerSchema = z
       .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
       .regex(/[0-9]/, 'Password must contain at least one number'),
     confirmPassword: z.string(),
+    birthYear: z.string().min(1, 'Birth year is required'),
+    termsAccepted: z.literal(true, {
+      errorMap: () => ({ message: 'You must accept the Terms of Service and Privacy Policy' }),
+    }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
@@ -55,6 +60,7 @@ export function Register() {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
@@ -72,7 +78,7 @@ export function Register() {
   const onSubmit = async (data: RegisterFormData) => {
     setError(null);
     try {
-      await registerUser(data.email, data.password, data.name);
+      await registerUser(data.email, data.password, data.name, parseInt(data.birthYear));
 
       if (isPaidPlan) {
         // Redirect to Stripe checkout for paid plans
@@ -95,7 +101,7 @@ export function Register() {
         }
       }
 
-      navigate('/dashboard');
+      navigate('/onboarding');
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
       setError(error.response?.data?.message || 'Failed to create account. Please try again.');
@@ -294,6 +300,36 @@ export function Register() {
                 )}
               </div>
 
+              {/* Age verification & Terms acceptance */}
+              <div className="space-y-3">
+                <AgeGate
+                  value={watch('birthYear') || ''}
+                  onChange={(year) => setValue('birthYear', year, { shouldValidate: true })}
+                  error={errors.birthYear?.message}
+                />
+
+                <label className="flex items-start gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    {...register('termsAccepted')}
+                    className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500 mt-0.5"
+                  />
+                  <span className="text-sm text-gray-600">
+                    I agree to the{' '}
+                    <Link to="/terms" target="_blank" className="text-primary-600 hover:text-primary-500 underline">
+                      Terms of Service
+                    </Link>{' '}
+                    and{' '}
+                    <Link to="/privacy" target="_blank" className="text-primary-600 hover:text-primary-500 underline">
+                      Privacy Policy
+                    </Link>
+                  </span>
+                </label>
+                {errors.termsAccepted && (
+                  <p className="error-text ml-6">{errors.termsAccepted.message}</p>
+                )}
+              </div>
+
               <button
                 type="submit"
                 disabled={isSubmitting}
@@ -310,10 +346,6 @@ export function Register() {
                   'Create free account'
                 )}
               </button>
-
-              <p className="text-xs text-center text-gray-400">
-                By creating an account, you agree to our Terms of Service and Privacy Policy
-              </p>
             </form>
 
             <div className="mt-6 text-center">

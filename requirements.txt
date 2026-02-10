@@ -51,6 +51,9 @@ PyPDF2==3.0.1
 # Background Tasks (optional, for scheduled jobs)
 celery==5.3.6
 
+# Monitoring
+sentry-sdk[flask]>=2.0.0
+
 # Security Scanning
 bandit==1.7.7
 safety==3.2.0

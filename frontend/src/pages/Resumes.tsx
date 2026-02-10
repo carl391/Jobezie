@@ -6,6 +6,7 @@ import { ViewResumeModal } from '../components/resumes/ViewResumeModal';
 import { ATSScoreModal } from '../components/resumes/ATSScoreModal';
 import { ResumeAnalysisModal } from '../components/resumes/ResumeAnalysisModal';
 import { ResumeTailorModal } from '../components/resumes/ResumeTailorModal';
+import { AIDisclosureBanner } from '../components/ui/AIDisclosureBanner';
 import type { Resume } from '../types';
 
 export function Resumes() {
@@ -101,6 +102,7 @@ export function Resumes() {
 
   return (
     <div className="space-y-6">
+      <AIDisclosureBanner featureKey="ats_scoring" />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Resumes</h1>

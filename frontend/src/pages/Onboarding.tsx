@@ -2,16 +2,15 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { authApi } from '../lib/api';
-import { WelcomeStep } from '../components/onboarding/WelcomeStep';
-import { CareerInfoStep } from '../components/onboarding/CareerInfoStep';
+import { StepCareerStage } from '../components/onboarding/StepCareerStage';
+import { StepTargetRole } from '../components/onboarding/StepTargetRole';
+import { StepLocation } from '../components/onboarding/StepLocation';
+import { StepSkills } from '../components/onboarding/StepSkills';
 import { ResumeUploadStep } from '../components/onboarding/ResumeUploadStep';
-import { ATSResultsStep } from '../components/onboarding/ATSResultsStep';
-import { FirstRecruiterStep } from '../components/onboarding/FirstRecruiterStep';
-import { FirstMessageStep } from '../components/onboarding/FirstMessageStep';
 import { CompleteStep } from '../components/onboarding/CompleteStep';
-import type { OnboardingData, Resume, Recruiter } from '../types';
+import type { OnboardingData, Resume } from '../types';
 
-const TOTAL_STEPS = 7;
+const TOTAL_STEPS = 6;
 
 export function Onboarding() {
   const navigate = useNavigate();
@@ -23,23 +22,17 @@ export function Onboarding() {
   const [careerData, setCareerData] = useState<OnboardingData>({});
   const [uploadedResume, setUploadedResume] = useState<Resume | null>(null);
   const [atsScore, setAtsScore] = useState<number | null>(null);
-  const [firstRecruiter, setFirstRecruiter] = useState<Recruiter | null>(null);
-  const [generatedMessage, setGeneratedMessage] = useState<string | null>(null);
 
   // Load saved progress from localStorage
   useEffect(() => {
     const savedStep = localStorage.getItem('onboarding_step');
     const savedCareerData = localStorage.getItem('onboarding_career_data');
-    const savedResumeId = localStorage.getItem('onboarding_resume_id');
 
     if (savedStep) {
       setCurrentStep(parseInt(savedStep, 10));
     }
     if (savedCareerData) {
       setCareerData(JSON.parse(savedCareerData));
-    }
-    if (savedResumeId) {
-      // Could fetch resume details here if needed
     }
   }, []);
 
@@ -61,53 +54,30 @@ export function Onboarding() {
     }
   };
 
-  const handleBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
+  const handleStepSave = (data: Partial<OnboardingData>) => {
+    const updated = { ...careerData, ...data };
+    setCareerData(updated);
+    localStorage.setItem('onboarding_career_data', JSON.stringify(updated));
+
+    // Persist to backend
+    authApi.updateProfile({ ...data, onboarding_step: currentStep }).catch((err) => {
+      console.error('Error saving onboarding step:', err);
+    });
   };
 
-  const handleSkip = () => {
-    // If skipping Step 3 (Resume Upload), also skip Step 4 (ATS Results)
-    // since there's no resume to score
-    if (currentStep === 3) {
-      setCurrentStep(5);
-      return;
-    }
-    handleNext();
-  };
-
-  const handleCareerDataSave = (data: OnboardingData) => {
-    setCareerData(data);
-    localStorage.setItem('onboarding_career_data', JSON.stringify(data));
-    handleNext();
-  };
-
-  const handleResumeUploaded = (resume: Resume) => {
+  const handleResumeComplete = (resume: Resume | null, score: number) => {
     setUploadedResume(resume);
-    localStorage.setItem('onboarding_resume_id', resume.id);
-    handleNext();
-  };
-
-  const handleATSScoreReceived = (score: number) => {
     setAtsScore(score);
     handleNext();
   };
 
-  const handleRecruiterAdded = (recruiter: Recruiter) => {
-    setFirstRecruiter(recruiter);
-    handleNext();
-  };
-
-  const handleMessageGenerated = (message: string) => {
-    setGeneratedMessage(message);
+  const handleSkip = () => {
     handleNext();
   };
 
   const handleComplete = async () => {
     setIsLoading(true);
     try {
-      // Save career data and mark onboarding as complete
       await authApi.updateProfile({
         ...careerData,
         onboarding_completed: true,
@@ -116,7 +86,6 @@ export function Onboarding() {
       // Clear localStorage onboarding data
       localStorage.removeItem('onboarding_step');
       localStorage.removeItem('onboarding_career_data');
-      localStorage.removeItem('onboarding_resume_id');
 
       // Refresh user to get updated onboarding status
       await refreshUser();
@@ -133,56 +102,54 @@ export function Onboarding() {
   const renderStep = () => {
     switch (currentStep) {
       case 1:
-        return <WelcomeStep onNext={handleNext} userName={user?.first_name || ''} />;
+        return (
+          <StepCareerStage
+            data={careerData}
+            onSave={handleStepSave}
+            onNext={handleNext}
+          />
+        );
       case 2:
         return (
-          <CareerInfoStep
-            onNext={handleCareerDataSave}
-            onBack={handleBack}
-            initialData={careerData}
+          <StepTargetRole
+            data={careerData}
+            onSave={handleStepSave}
+            onNext={handleNext}
+            onSkip={handleSkip}
           />
         );
       case 3:
         return (
-          <ResumeUploadStep
-            onNext={handleResumeUploaded}
-            onBack={handleBack}
+          <StepLocation
+            data={careerData}
+            onSave={handleStepSave}
+            onNext={handleNext}
             onSkip={handleSkip}
           />
         );
       case 4:
         return (
-          <ATSResultsStep
-            onNext={handleATSScoreReceived}
-            onBack={handleBack}
-            resume={uploadedResume}
+          <StepSkills
+            data={careerData}
+            onSave={handleStepSave}
+            onNext={handleNext}
+            onSkip={handleSkip}
           />
         );
       case 5:
         return (
-          <FirstRecruiterStep
-            onNext={handleRecruiterAdded}
-            onBack={handleBack}
+          <ResumeUploadStep
+            onNext={handleResumeComplete}
             onSkip={handleSkip}
           />
         );
       case 6:
         return (
-          <FirstMessageStep
-            onNext={handleMessageGenerated}
-            onBack={handleBack}
-            onSkip={handleSkip}
-            recruiter={firstRecruiter}
-          />
-        );
-      case 7:
-        return (
           <CompleteStep
             onComplete={handleComplete}
             isLoading={isLoading}
             atsScore={atsScore}
-            hasRecruiter={!!firstRecruiter}
-            hasMessage={!!generatedMessage}
+            userName={user?.first_name || ''}
           />
         );
       default:

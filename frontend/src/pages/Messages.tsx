@@ -14,6 +14,7 @@ import { messageApi, recruiterApi } from '../lib/api';
 import { ComposeMessageModal } from '../components/messages/ComposeMessageModal';
 import { MessageCard } from '../components/messages/MessageCard';
 import { PillTabs } from '../components/ui/Tabs';
+import { AIDisclosureBanner } from '../components/ui/AIDisclosureBanner';
 import type { Message, Recruiter } from '../types';
 
 const STATUS_FILTERS = [
@@ -162,6 +163,7 @@ export function Messages() {
 
   return (
     <div className="space-y-6">
+      <AIDisclosureBanner featureKey="message_generation" />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
